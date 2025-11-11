@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/student_registration_screen.dart';
+import 'package:link_unity/student/student_login.dart';
+import 'package:link_unity/student/student_registration_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -9,7 +10,7 @@ class HomePage extends StatelessWidget {
   void _navigateToStudentLogin(BuildContext context) {
     // 🛑 MONGODB: (Later Step) Check if user is already logged in via Realm
     Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => const StudentRegistrationScreen()));
+        builder: (context) => const StudentLoginScreen()));
   }
 
   

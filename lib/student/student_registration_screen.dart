@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/api%20services/api_services.dart'; // 🟢 Import the service that talks to Node.js backend
+import 'package:link_unity/api%20services/api_services.dart';
+import 'package:link_unity/student/student_login.dart'; // 🟢 Import the service that talks to Node.js backend
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({super.key});
@@ -19,7 +20,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final TextEditingController _batchController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  // Section Dropdown
   String? _selectedSection;
   final List<String> _sections = ['A', 'B', 'C', 'D', 'E']; 
   
@@ -81,8 +81,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       print("Registration Successful. Received Token: $token");
       
       _showSuccess('Registration successful! You can now log in.');
-      // TODO: Navigate to the Student Login Screen
-      // Example: Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentLoginScreen())); 
+       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentLoginScreen())); 
 
     } catch (e) {
       // 🟢 Error Handling using the message thrown by ApiService
@@ -188,7 +187,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       },
     );
   }
-
+  
   // Helper function for dropdown
   Widget _buildSectionDropdown() {
     return DropdownButtonFormField<String>(
