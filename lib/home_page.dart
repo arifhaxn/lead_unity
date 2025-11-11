@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/student_login.dart';
-import 'package:link_unity/student/student_registration_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

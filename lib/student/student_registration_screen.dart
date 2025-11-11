@@ -1,6 +1,15 @@
+// lib/screens/student_registration_screen.dart (REFACTORED)
+
 import 'package:flutter/material.dart';
-import 'package:link_unity/api%20services/api_services.dart';
-import 'package:link_unity/student/student_login.dart'; // 🟢 Import the service that talks to Node.js backend
+import 'package:link_unity/auth_provider.dart';
+// NOTE: I'm replacing your specific path for a standard Flutter path:
+// import 'package:link_unity/api%20services/api_services.dart'; 
+
+import 'package:provider/provider.dart'; // 🟢 NEW: For accessing the AuthProvider
+ // 🟢 NEW: Import the provider file
+
+// NOTE: You don't need to import student_login.dart anymore, 
+// as the provider handles navigation based on state.
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({super.key});
@@ -10,11 +19,13 @@ class StudentRegistrationScreen extends StatefulWidget {
 }
 
 class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
-  // --- Firebase and Form Setup ---
+  // --- Controllers and Setup ---
   final _formKey = GlobalKey<FormState>();
-  final ApiService _apiService = ApiService(); // 🟢 Instantiate the API service
 
-  // Controllers for input fields
+  // ❌ REMOVE: We no longer need to instantiate ApiService directly here.
+  // final ApiService _apiService = ApiService(); 
+
+  // Controllers for input fields (unchanged)
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _batchController = TextEditingController();
@@ -27,7 +38,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
   @override
   void dispose() {
-    // Clean up controllers to free up memory
     _nameController.dispose();
     _studentIdController.dispose();
     _batchController.dispose();
@@ -35,7 +45,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     super.dispose();
   }
   
-  // --- Utility Functions for Messaging ---
+  // --- Utility Functions for Messaging (unchanged) ---
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: $message'), backgroundColor: Colors.red),
@@ -48,11 +58,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     );
   }
 
-  // --- 🚀 API Integration Logic ---
+  // --- 🚀 Provider Integration Logic ---
   Future<void> _registerStudent() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (!_formKey.currentState!.validate() || _selectedSection == null) return;
     
-    setState(() { _isLoading = true; }); // Start loading indicator
+    setState(() { _isLoading = true; }); 
 
     final String name = _nameController.text.trim();
     final String studentId = _studentIdController.text.trim();
@@ -60,101 +70,102 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     final String password = _passwordController.text;
     final String section = _selectedSection!;
     
-    // 🟢 CRITICAL: Construct the unique email alias the backend expects
-    // This uses the student ID to create an email for the Node.js authentication system.
+    // Construct the unique email alias
     final String emailAlias = '${studentId.toLowerCase()}@leadunity.edu'; 
     
+    // 🟢 ACCESS THE AUTH PROVIDER
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     try {
-      // 🟢 CALLING THE NODE.JS API SERVICE
-      final responseBody = await _apiService.register(
+      // 🟢 CALLING THE AUTH PROVIDER, which internally calls ApiService
+      await authProvider.register(
         name, 
         emailAlias, 
         password,
         studentId, // Passed
-        batch,     // Passed
-        section,   // Passed
+        batch,  // Passed
+        section, // Passed
       );
 
-      // On Success: Store the received JWT token
-      final String token = responseBody['token'];
-      // TODO: Store this token securely (e.g., using flutter_secure_storage) for future requests.
-      print("Registration Successful. Received Token: $token");
+      // On success, the AuthProvider has stored the token and updated state.
+      _showSuccess('Registration successful! You are now logged in.');
       
-      _showSuccess('Registration successful! You can now log in.');
-       Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentLoginScreen())); 
+      // ❌ REMOVE MANUAL NAVIGATION: The main.dart Consumer handles routing 
+      // automatically when authProvider notifies listeners.
 
     } catch (e) {
-      // 🟢 Error Handling using the message thrown by ApiService
-      // Cleans up the "Exception: " prefix
+      // 🟢 Error Handling
       _showError(e.toString().replaceFirst('Exception: ', '')); 
     } finally {
-      setState(() { _isLoading = false; }); // Stop loading indicator
+      setState(() { _isLoading = false; }); 
     }
   }
 
-  // --- UI Build Method ---
+  // --- UI Build Method and Helpers (unchanged, as they look good) ---
   @override
   Widget build(BuildContext context) {
+    // ... (The entire build method and helper functions remain the same) ...
+    
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Student Registration'),
-        backgroundColor: Colors.blueAccent,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                const Text(
-                  'Student Account Setup',
-                  style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 30),
-
-                // Full Name Field
-                _buildFormField(controller: _nameController, label: 'Full Name', icon: Icons.person),
-                const SizedBox(height: 16),
-
-                // Student ID Field
-                _buildFormField(controller: _studentIdController, label: 'Student ID', icon: Icons.badge, keyboardType: TextInputType.number),
-                const SizedBox(height: 16),
-
-                // Batch Field
-                _buildFormField(controller: _batchController, label: 'Batch (e.g., 61)', icon: Icons.school, keyboardType: TextInputType.number),
-                const SizedBox(height: 16),
-                
-                // Section Dropdown
-                _buildSectionDropdown(),
-                const SizedBox(height: 16),
-
-                // Password Field
-                _buildPasswordField(),
-                const SizedBox(height: 30),
-
-                // Register Button
-                _isLoading
-                    ? const Center(child: CircularProgressIndicator())
-                    : ElevatedButton(
-                        onPressed: _registerStudent,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          padding: const EdgeInsets.symmetric(vertical: 15),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                        ),
-                        child: const Text(
-                          'Register Account',
-                          style: TextStyle(color: Colors.white, fontSize: 18),
-                        ),
-                      ),
-              ],
-            ),
-          ),
+        appBar: AppBar(
+            title: const Text('Student Registration'),
+            backgroundColor: Colors.blueAccent,
         ),
-      ),
+        body: Center(
+            child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Form(
+                    key: _formKey,
+                    child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: <Widget>[
+                            const Text(
+                                'Student Account Setup',
+                                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                                textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Full Name Field
+                            _buildFormField(controller: _nameController, label: 'Full Name', icon: Icons.person),
+                            const SizedBox(height: 16),
+
+                            // Student ID Field
+                            _buildFormField(controller: _studentIdController, label: 'Student ID', icon: Icons.badge, keyboardType: TextInputType.number),
+                            const SizedBox(height: 16),
+
+                            // Batch Field
+                            _buildFormField(controller: _batchController, label: 'Batch (e.g., 61)', icon: Icons.school, keyboardType: TextInputType.number),
+                            const SizedBox(height: 16),
+                            
+                            // Section Dropdown
+                            _buildSectionDropdown(),
+                            const SizedBox(height: 16),
+
+                            // Password Field
+                            _buildPasswordField(),
+                            const SizedBox(height: 30),
+
+                            // Register Button
+                            _isLoading
+                                ? const Center(child: CircularProgressIndicator())
+                                : ElevatedButton(
+                                    onPressed: _registerStudent,
+                                    style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blueAccent,
+                                        padding: const EdgeInsets.symmetric(vertical: 15),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                                    ),
+                                    child: const Text(
+                                        'Register Account',
+                                        style: TextStyle(color: Colors.white, fontSize: 18),
+                                    ),
+                                ),
+                        ],
+                    ),
+                ),
+            ),
+        ),
     );
   }
   

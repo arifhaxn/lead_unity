@@ -1,30 +1,33 @@
-// lib/screens/student_dashboard_screen.dart (REVISED)
-
 import 'package:flutter/material.dart';
+import 'package:link_unity/auth_provider.dart';
+import 'package:provider/provider.dart'; // 🟢 NEW: Import Provider // 🟢 NEW: Import AuthProvider
 
-class StudentDashboard extends StatefulWidget {
+class StudentDashboard extends StatefulWidget { // Renamed to 'Screen' for consistency
   const StudentDashboard({super.key});
 
   @override
-  State<StudentDashboard> createState() => _StudentDashboardScreenState();
+  State<StudentDashboard> createState() => _StudentDashboardState();
 }
 
-class _StudentDashboardScreenState extends State<StudentDashboard> {
-  // 🟢 Placeholder for student data fetched after login.
-  // Set to null to test the "No Team" flow, or to a value like "ABC-001" for "Has Team" flow.
-  String? _currentTeamId = "ABC-001"; // Change to null to test 'Request Team' in the first slot
-  String _studentName = "Alice Johnson"; // Example name
+class _StudentDashboardState extends State<StudentDashboard> {
+  // 🟢 Fetched from AuthProvider
+  String? _currentTeamId; 
+  String _studentName = "Loading..."; 
 
   @override
   void initState() {
     super.initState();
-    // TODO: Fetch the student's status (teamID, proposals) here.
+    // No need to fetch in initState; we'll grab it directly in build via Provider.
   }
 
   // --- Navigation Handlers (Placeholders) ---
   void _navigateToTeamInfo() => print('Navigating to Team Info for $_currentTeamId');
-  void _navigateToSubmitProposal() => print('Navigating to Submit Proposal');
+  
+  // 🟢 TODO: Implement actual navigation to the Submission Screen
+  void _navigateToSubmitProposal() => print('Navigating to Submit Proposal'); 
+  
   void _navigateToRequestTeam() => print('Navigating to Request Team/Invite Screen');
+  
   void _downloadTemplate() {
     print('Downloading Project Template...');
     ScaffoldMessenger.of(context).showSnackBar(
@@ -32,17 +35,35 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
     );
   }
 
+  // 🟢 UPDATED: Secure Logout using AuthProvider
   void _logout() {
-    // TODO: Clear the JWT token and navigate to the HomePage.
-    print('User logged out.');
-    Navigator.of(context).popUntil((route) => route.isFirst); 
+    // 1. Access the provider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    
+    // 2. Call the logout method, which clears the token and notifies listeners
+    authProvider.logout(); 
+    
+    // NOTE: The main.dart Consumer will automatically route to the login screen.
+    print('User logged out via Provider.');
   }
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 ACCESS AUTH PROVIDER TO GET REAL DATA
+    final authProvider = Provider.of<AuthProvider>(context);
+    
+    // Get the actual user's name and ID from the provider
+    final String actualStudentName = authProvider.user?.name ?? 'Student';
+    // 🛑 Note: You'll need an API call to get the current team ID, but for now:
+    // We'll use the placeholder logic, or pull a default from the User model if available.
+    _currentTeamId = "ABC-001"; // Keep placeholder for team logic demo
+
+    // Decide which card to show first based on team status
+    final bool hasTeam = _currentTeamId != null;
+
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Dashboard'),
+        title: const Text('Student Dashboard'),
         backgroundColor: Colors.white,
         elevation: 1, 
         foregroundColor: Colors.black87,
@@ -61,7 +82,8 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
           children: <Widget>[
             // --- Welcome Section ---
             Text(
-              'Hello, $_studentName',
+              // 🟢 Use the actual name
+              'Hello, $actualStudentName',
               style: const TextStyle(
                 fontSize: 30, 
                 fontWeight: FontWeight.bold, 
@@ -71,7 +93,7 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
             const SizedBox(height: 10),
             
             // --- Status Banner ---
-            _buildStatusBanner(),
+            _buildStatusBanner(hasTeam, _currentTeamId),
             
             const Divider(height: 40),
 
@@ -84,7 +106,7 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
               physics: const NeverScrollableScrollPhysics(),
               children: <Widget>[
                 // 1. Team Management Card (Conditional: Info OR Request)
-                _currentTeamId != null
+                hasTeam
                     ? _buildSlickCard(
                         icon: Icons.groups_2_outlined,
                         title: 'Team Info',
@@ -118,12 +140,12 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
                   onTap: _downloadTemplate,
                 ),
 
-                // 4. Request Team Card (Fixed in this slot - consistent placement)
+                // 4. Request Team Card (Fixed in this slot)
                 _buildSlickCard(
                     icon: Icons.person_add_alt_1_outlined,
                     title: 'Request Team',
                     action: 'Form / Join',
-                    color: Colors.redAccent, // Use a distinct color for the separate action
+                    color: Colors.redAccent, 
                     onTap: _navigateToRequestTeam,
                 ),
               ],
@@ -134,12 +156,11 @@ class _StudentDashboardScreenState extends State<StudentDashboard> {
     );
   }
   
-  // --- Status Banner Widget (Unchanged) ---
-  Widget _buildStatusBanner() {
-    final bool hasTeam = _currentTeamId != null;
+  // --- Status Banner Widget (Updated to accept data) ---
+  Widget _buildStatusBanner(bool hasTeam, String? teamId) {
     final Color bannerColor = hasTeam ? Colors.green.shade50 : Colors.red.shade50;
     final Color textColor = hasTeam ? Colors.green.shade800 : Colors.red.shade800;
-    final String statusText = hasTeam ? 'You are part of Team $_currentTeamId.' : 'Action required: You are not yet on a team.';
+    final String statusText = hasTeam ? 'You are part of Team $teamId.' : 'Action required: You are not yet on a team.';
 
     return Container(
       padding: const EdgeInsets.all(16),

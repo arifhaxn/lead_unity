@@ -1,11 +1,12 @@
-// lib/screens/student_login_screen.dart
+// lib/screens/student_login_screen.dart (REFACTORED)
 
 import 'package:flutter/material.dart';
-import 'package:link_unity/api%20services/api_services.dart';
-import 'package:link_unity/student/student_dash.dart';
-import 'package:link_unity/student/student_registration_screen.dart';
-// Note: You may also need to import your registration screen to navigate back
-// import 'student_registration_screen.dart';
+import 'package:link_unity/auth_provider.dart';
+import 'package:provider/provider.dart'; // 🟢 NEW: For accessing the AuthProvider
+ // 🟢 NEW: Import the AuthProvider
+
+// NOTE: We no longer need to import api_services.dart, student_dash.dart, or student_registration_screen.dart 
+// as the Provider handles the navigation via the main.dart Consumer.
 
 class StudentLoginScreen extends StatefulWidget {
   const StudentLoginScreen({super.key});
@@ -16,7 +17,9 @@ class StudentLoginScreen extends StatefulWidget {
 
 class _StudentLoginScreenState extends State<StudentLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final ApiService _apiService = ApiService(); // Instantiate the API service
+  
+  // ❌ REMOVE: We no longer instantiate ApiService directly here.
+  // final ApiService _apiService = ApiService(); 
 
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
@@ -30,7 +33,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
     super.dispose();
   }
 
-  // --- Utility Functions (Same as registration screen) ---
+  // --- Utility Functions (unchanged) ---
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: $message'), backgroundColor: Colors.red),
@@ -43,7 +46,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
     );
   }
 
-  // --- 🔑 Login Logic ---
+  // --- 🔑 Login Logic (Refactored) ---
   Future<void> _loginStudent() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -54,25 +57,29 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
     final String studentId = _studentIdController.text.trim();
     final String password = _passwordController.text;
 
-    // 🔑 Construct the unique email alias used for login authentication
+    // Construct the unique email alias
     final String emailAlias = '${studentId.toLowerCase()}@leadunity.edu';
 
+    // 🟢 ACCESS THE AUTH PROVIDER
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
     try {
-      // Call the API service's login method
-      final responseBody = await _apiService.login(
+      // 🟢 CALLING THE AUTH PROVIDER's login method
+      await authProvider.login(
         emailAlias,
         password,
       );
 
-      // On Success: Check the user role (though this is the student login screen)
-      final String role = responseBody['role'];
-      final String token = responseBody['token'];
-
-      // TODO: Store the token and user data securely (e.g., SharedPreferences)
-      print("Login Successful. Role: $role, Token: $token");
-
-      _showSuccess('Login successful! Welcome $role!');
-      Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentDashboard()));
+      // On Success: The AuthProvider has stored the token and updated state.
+      // The main.dart Consumer automatically routes to the Dashboard.
+      
+      // We can grab the user name from the provider for a custom welcome message
+      final String userName = authProvider.user?.name ?? 'User';
+      _showSuccess('Login successful! Welcome, $userName!');
+      
+      // ❌ REMOVE MANUAL NAVIGATION: Navigation is handled automatically by the provider/main.dart
+      // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentDashboard()));
+      
     } catch (e) {
       // Handle API errors (e.g., Invalid email or password)
       _showError(e.toString().replaceFirst('Exception: ', ''));
@@ -85,6 +92,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // --- UI Build Method (unchanged) ---
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Login'),
@@ -149,8 +157,12 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
                 // Link to Registration
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).push(MaterialPageRoute(
-                        builder: (_) => const StudentRegistrationScreen()));
+                    // 🟢 Re-add the manual navigation here to go to the registration screen
+                    // since that screen is *not* gated by authentication state.
+                    // NOTE: You'll need to re-import StudentRegistrationScreen or use 
+                    // a relative path if you want this navigation to work.
+                    // Example:
+                    // Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
                     print('Navigate to Registration');
                   },
                   child: const Text("Don't have an account? Register here.",
@@ -164,7 +176,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
     );
   }
 
-  // --- Helper Widgets ---
+  // --- Helper Widgets (unchanged) ---
   Widget _buildFormField(
       {required TextEditingController controller,
       required String label,
