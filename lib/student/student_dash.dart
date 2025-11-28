@@ -12,8 +12,7 @@ class StudentDashboard extends StatefulWidget { // Renamed to 'Screen' for consi
 
 class _StudentDashboardState extends State<StudentDashboard> {
   // 🟢 Fetched from AuthProvider
-  String? _currentTeamId; 
-  String _studentName = "Loading..."; 
+  String? _currentTeamId;  
 
   @override
   void initState() {

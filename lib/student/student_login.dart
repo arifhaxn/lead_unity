@@ -2,7 +2,6 @@
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
-import 'package:link_unity/student/student_dash.dart';
 import 'package:link_unity/student/student_registration_screen.dart'; // 🟢 REQUIRED IMPORT
 import 'package:provider/provider.dart'; 
  // 🟢 NEW: Import the AuthProvider

@@ -1,6 +1,3 @@
-// lib/models/proposal_model.dart
-
-import '../models/user_model.dart'; // Assuming you might link a User object later
 
 class Proposal {
   final String id;
