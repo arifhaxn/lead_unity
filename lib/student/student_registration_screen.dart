@@ -1,15 +1,8 @@
-// lib/screens/student_registration_screen.dart (REFACTORED)
+// lib/student/student_registration_screen.dart (FINAL)
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
-// NOTE: I'm replacing your specific path for a standard Flutter path:
-// import 'package:link_unity/api%20services/api_services.dart'; 
-
-import 'package:provider/provider.dart'; // 🟢 NEW: For accessing the AuthProvider
- // 🟢 NEW: Import the provider file
-
-// NOTE: You don't need to import student_login.dart anymore, 
-// as the provider handles navigation based on state.
+import 'package:provider/provider.dart'; 
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({super.key});
@@ -22,10 +15,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   // --- Controllers and Setup ---
   final _formKey = GlobalKey<FormState>();
 
-  // ❌ REMOVE: We no longer need to instantiate ApiService directly here.
-  // final ApiService _apiService = ApiService(); 
-
-  // Controllers for input fields (unchanged)
+  // Controllers for input fields
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _studentIdController = TextEditingController();
   final TextEditingController _batchController = TextEditingController();
@@ -45,7 +35,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     super.dispose();
   }
   
-  // --- Utility Functions for Messaging (unchanged) ---
+  // --- Utility Functions for Messaging ---
   void _showError(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('Error: $message'), backgroundColor: Colors.red),
@@ -58,10 +48,13 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     );
   }
 
-  // --- 🚀 Provider Integration Logic ---
+  // --- 🚀 Backend Integration Logic ---
   Future<void> _registerStudent() async {
     if (!_formKey.currentState!.validate() || _selectedSection == null) return;
     
+    // 1. Check if registration is open (via a placeholder check or a future API call)
+    // NOTE: This check is currently done on your Node.js backend.
+
     setState(() { _isLoading = true; }); 
 
     final String name = _nameController.text.trim();
@@ -70,42 +63,38 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     final String password = _passwordController.text;
     final String section = _selectedSection!;
     
-    // Construct the unique email alias
+    // 2. Construct the unique email alias as required by the backend User model
     final String emailAlias = '${studentId.toLowerCase()}@leadunity.edu'; 
     
-    // 🟢 ACCESS THE AUTH PROVIDER
+    // 3. Access the AuthProvider
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
 
     try {
-      // 🟢 CALLING THE AUTH PROVIDER, which internally calls ApiService
+      // 4. Call the AuthProvider to handle the API request and token storage
       await authProvider.register(
         name, 
         emailAlias, 
         password,
-        studentId, // Passed
-        batch,  // Passed
-        section, // Passed
+        studentId, 
+        batch,  
+        section, 
       );
 
       // On success, the AuthProvider has stored the token and updated state.
+      // main.dart will automatically route the user to the StudentDashboard.
       _showSuccess('Registration successful! You are now logged in.');
       
-      // ❌ REMOVE MANUAL NAVIGATION: The main.dart Consumer handles routing 
-      // automatically when authProvider notifies listeners.
-
     } catch (e) {
-      // 🟢 Error Handling
+      // Handle API errors (e.g., registration closed, user already exists)
       _showError(e.toString().replaceFirst('Exception: ', '')); 
     } finally {
       setState(() { _isLoading = false; }); 
     }
   }
 
-  // --- UI Build Method and Helpers (unchanged, as they look good) ---
+  // --- UI Build Method ---
   @override
   Widget build(BuildContext context) {
-    // ... (The entire build method and helper functions remain the same) ...
-    
     return Scaffold(
         appBar: AppBar(
             title: const Text('Student Registration'),

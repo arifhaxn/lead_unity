@@ -13,7 +13,7 @@ import 'home_page.dart'; // The screen showing Login/Admin options
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // 🟢 WRAP the app in ChangeNotifierProvider and immediately try to auto-login
   runApp(
     ChangeNotifierProvider(
@@ -42,15 +42,15 @@ class LeadUnityApp extends StatelessWidget {
           if (auth.isAuthenticated) {
             // Check the user's role to determine the dashboard
             if (auth.user?.isStudent == true) {
-              return const StudentDashboard(); 
+              return const StudentDashboard();
             } else {
               // TODO: return const AdminDashboardScreen();
               // For now, if logged in but not student, send to student dashboard
-              return const StudentDashboard(); 
+              return const StudentDashboard();
             }
           } else {
             // User is not logged in, show the initial choice screen
-            return const HomePage(); 
+            return const HomePage();
           }
         },
       ),

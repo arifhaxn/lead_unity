@@ -5,7 +5,7 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // 🔴 IMPORTANT: CHANGE THIS URL to your teammate's actual server IP and Port.
-  static const String _baseUrl = 'http://localhost:5000/api'; 
+  static const String _baseUrl = 'https://leading-unity-backend.vercel.app/api'; 
 
   // --- Student Registration (Slight adjustment to match current UI inputs) ---
   Future<Map<String, dynamic>> register(

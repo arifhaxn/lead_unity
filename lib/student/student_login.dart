@@ -1,8 +1,10 @@
-// lib/screens/student_login_screen.dart (REFACTORED)
+// lib/student/student_login.dart
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
-import 'package:provider/provider.dart'; // 🟢 NEW: For accessing the AuthProvider
+import 'package:link_unity/student/student_dash.dart';
+import 'package:link_unity/student/student_registration_screen.dart'; // 🟢 REQUIRED IMPORT
+import 'package:provider/provider.dart'; 
  // 🟢 NEW: Import the AuthProvider
 
 // NOTE: We no longer need to import api_services.dart, student_dash.dart, or student_registration_screen.dart 
@@ -57,7 +59,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
     final String studentId = _studentIdController.text.trim();
     final String password = _passwordController.text;
 
-    // Construct the unique email alias
+    // Construct the unique email alias (This matches your backend's expectation for login)
     final String emailAlias = '${studentId.toLowerCase()}@leadunity.edu';
 
     // 🟢 ACCESS THE AUTH PROVIDER
@@ -71,14 +73,8 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
       );
 
       // On Success: The AuthProvider has stored the token and updated state.
-      // The main.dart Consumer automatically routes to the Dashboard.
-      
-      // We can grab the user name from the provider for a custom welcome message
       final String userName = authProvider.user?.name ?? 'User';
       _showSuccess('Login successful! Welcome, $userName!');
-      
-      // ❌ REMOVE MANUAL NAVIGATION: Navigation is handled automatically by the provider/main.dart
-      // Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const StudentDashboard()));
       
     } catch (e) {
       // Handle API errors (e.g., Invalid email or password)
@@ -157,13 +153,8 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
                 // Link to Registration
                 TextButton(
                   onPressed: () {
-                    // 🟢 Re-add the manual navigation here to go to the registration screen
-                    // since that screen is *not* gated by authentication state.
-                    // NOTE: You'll need to re-import StudentRegistrationScreen or use 
-                    // a relative path if you want this navigation to work.
-                    // Example:
-                    // Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
-                    print('Navigate to Registration');
+                    // 🟢 FIX: Navigate to the correct registration screen
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
                   },
                   child: const Text("Don't have an account? Register here.",
                       style: TextStyle(color: Colors.blueGrey)),

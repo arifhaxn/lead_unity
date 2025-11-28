@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/submit_proposal.dart';
 import 'package:provider/provider.dart'; // 🟢 NEW: Import Provider // 🟢 NEW: Import AuthProvider
 
 class StudentDashboard extends StatefulWidget { // Renamed to 'Screen' for consistency
@@ -24,7 +25,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void _navigateToTeamInfo() => print('Navigating to Team Info for $_currentTeamId');
   
   // 🟢 TODO: Implement actual navigation to the Submission Screen
-  void _navigateToSubmitProposal() => print('Navigating to Submit Proposal'); 
+  void _navigateToSubmitProposal() => Navigator.push(
+    context,
+    MaterialPageRoute(builder: (context) => const SubmitProposalScreen()),
+  );
   
   void _navigateToRequestTeam() => print('Navigating to Request Team/Invite Screen');
   
