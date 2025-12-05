@@ -154,7 +154,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
                 TextButton(
                   onPressed: () {
                     // 🟢 FIX: Navigate to the correct registration screen
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentDashboard())); 
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
                   },
                   child: const Text("Don't have an account? Register here.",
                       style: TextStyle(color: Colors.blueGrey)),
