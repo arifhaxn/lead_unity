@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/student/student_dash.dart';
 import 'package:link_unity/student/student_registration_screen.dart'; // 🟢 REQUIRED IMPORT
 import 'package:provider/provider.dart'; 
  // 🟢 NEW: Import the AuthProvider
@@ -153,7 +154,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
                 TextButton(
                   onPressed: () {
                     // 🟢 FIX: Navigate to the correct registration screen
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentDashboard())); 
                   },
                   child: const Text("Don't have an account? Register here.",
                       style: TextStyle(color: Colors.blueGrey)),

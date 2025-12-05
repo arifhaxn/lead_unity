@@ -75,7 +75,7 @@ class HomePage extends StatelessWidget {
               // --- Admin/Supervisor Login Option ---
               _buildLoginOptionCard(
                 context: context,
-                title: 'Admin/Supervisor',
+                title: 'Supervisor',
                 subtitle:
                     'Log in to view, approve, and assign student projects.',
                 icon: Icons.security,
