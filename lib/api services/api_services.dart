@@ -4,10 +4,10 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class ApiService {
-  // 🔴 IMPORTANT: CHANGE THIS URL to your teammate's actual server IP and Port.
+  // 🔴 URL provided in your initial code
   static const String _baseUrl = 'https://leading-unity-backend.vercel.app/api'; 
 
-  // --- Student Registration (Slight adjustment to match current UI inputs) ---
+  // --- 1. Student Registration ---
   Future<Map<String, dynamic>> register(
       String name, 
       String email, 
@@ -37,7 +37,7 @@ class ApiService {
     }
   }
 
-  // --- Student/User Login (No changes needed) ---
+  // --- 2. User Login ---
   Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/auth/login'),
@@ -57,24 +57,66 @@ class ApiService {
     }
   }
 
-  // 🟢 NEW METHOD: Submit Proposal
-  Future<void> submitProposal(String title, String description, String token) async {
+  // --- 3. Fetch Courses (For Tabs) ---
+  Future<List<dynamic>> getCourses() async {
+    final response = await http.get(
+      Uri.parse('$_baseUrl/courses'), 
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception('Failed to load courses');
+    }
+  }
+
+  // --- 4. Fetch Supervisors (For Dropdowns) ---
+  Future<List<dynamic>> getSupervisors(String token) async {
+    // We fetch all users, then filter for supervisors on the client side 
+    // (or adjust backend endpoint if available)
+    final response = await http.get(
+      Uri.parse('$_baseUrl/users'), 
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $token', 
+      },
+    );
+
+    if (response.statusCode == 200) {
+      List<dynamic> allUsers = json.decode(response.body);
+      // Filter: Return only users where role is 'supervisor'
+      return allUsers.where((user) => user['role'] == 'supervisor').toList();
+    } else {
+      throw Exception('Failed to load supervisors');
+    }
+  }
+
+  // --- 5. Submit Proposal (Updated with Team Members) ---
+  Future<void> submitProposal({
+    required String title,
+    required String description,
+    required String supervisorId,
+    required String courseId,
+    required List<Map<String, String>> teamMembers, // 🟢 Added Team Members
+    required String token,
+  }) async {
     final response = await http.post(
-      // 🛑 ASSUMPTION: The proposal endpoint is /api/proposals
       Uri.parse('$_baseUrl/proposals'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        // 🔑 CRITICAL: Attach the JWT token for authorization
         'Authorization': 'Bearer $token', 
       },
-      body: jsonEncode(<String, String>{
+      body: jsonEncode({
         'title': title,
         'description': description,
+        'supervisorId': supervisorId,
+        'courseId': courseId,
+        'teamMembers': teamMembers, // 🟢 Send List to Backend
       }),
     );
 
     if (response.statusCode != 201) {
-      // Expecting a 201 CREATED response from the backend
       throw Exception(json.decode(response.body)['message'] ?? 'Failed to submit proposal');
     }
   }

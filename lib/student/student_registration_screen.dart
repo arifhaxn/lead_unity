@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/student/student_dash.dart';
 import 'package:provider/provider.dart'; 
 
 class StudentRegistrationScreen extends StatefulWidget {
@@ -83,6 +84,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       // On success, the AuthProvider has stored the token and updated state.
       // main.dart will automatically route the user to the StudentDashboard.
       _showSuccess('Registration successful! You are now logged in.');
+      Navigator.push(context, 
+        MaterialPageRoute(builder: (_) => const StudentDashboard()),
+      );
       
     } catch (e) {
       // Handle API errors (e.g., registration closed, user already exists)

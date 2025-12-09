@@ -75,6 +75,9 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
       // On Success: The AuthProvider has stored the token and updated state.
       final String userName = authProvider.user?.name ?? 'User';
       _showSuccess('Login successful! Welcome, $userName!');
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const StudentDashboard()),
+      );
       
     } catch (e) {
       // Handle API errors (e.g., Invalid email or password)
@@ -154,7 +157,7 @@ class _StudentLoginScreenState extends State<StudentLoginScreen> {
                 TextButton(
                   onPressed: () {
                     // 🟢 FIX: Navigate to the correct registration screen
-                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentRegistrationScreen())); 
+                    Navigator.of(context).push(MaterialPageRoute(builder: (_) => const StudentDashboard())); 
                   },
                   child: const Text("Don't have an account? Register here.",
                       style: TextStyle(color: Colors.blueGrey)),
