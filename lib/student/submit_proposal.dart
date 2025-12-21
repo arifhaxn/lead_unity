@@ -1,5 +1,3 @@
-// lib/student/submit_proposal_screen.dart
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:link_unity/auth_provider.dart'; 
@@ -193,40 +191,57 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
     
+    // Check if at least one supervisor is selected
     if (_preferredSupervisor1Id == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please select Supervisor 1.'), backgroundColor: Colors.red),
-      );
+      _showErrorDialog('Please select at least Supervisor 1.');
       return;
     }
 
     setState(() { _isSubmitting = true; });
 
-    // 1. Collect Team Member Data
+    // 🟢 1. Collect Supervisors into a List
+    List<String> selectedSupervisors = [];
+    if (_preferredSupervisor1Id != null) selectedSupervisors.add(_preferredSupervisor1Id!);
+    if (_preferredSupervisor2Id != null) selectedSupervisors.add(_preferredSupervisor2Id!);
+    if (_preferredSupervisor3Id != null) selectedSupervisors.add(_preferredSupervisor3Id!);
+
+    // 🟢 2. Collect Team Member Data & Check Duplicates
     List<Map<String, String>> collectedMembers = [];
+    Set<String> localIds = {}; // To detect duplicate inputs in form
     int memberCount = _hasFourthMember ? 4 : 3;
 
     for (int i = 0; i < memberCount; i++) {
+      String id = _memberControllers[i]['id']!.text.trim();
+      String name = _memberControllers[i]['name']!.text.trim();
+
       // Only add if Name and ID are provided
-      if (_memberControllers[i]['name']!.text.isNotEmpty && _memberControllers[i]['id']!.text.isNotEmpty) {
+      if (name.isNotEmpty && id.isNotEmpty) {
+        
+        // Check for duplicates in form
+        if (localIds.contains(id)) {
+          setState(() { _isSubmitting = false; });
+          _showErrorDialog('Duplicate Student ID detected: $id. Every member must be unique.');
+          return;
+        }
+        localIds.add(id);
+
         collectedMembers.add({
-          'name': _memberControllers[i]['name']!.text,
-          'studentId': _memberControllers[i]['id']!.text,
-          'cgpa': _memberControllers[i]['cgpa']!.text,
-          'email': _memberControllers[i]['email']!.text,
-          'mobile': _memberControllers[i]['mobile']!.text,
+          'name': name,
+          'studentId': id,
+          'cgpa': _memberControllers[i]['cgpa']!.text.trim(),
+          'email': _memberControllers[i]['email']!.text.trim(),
+          'mobile': _memberControllers[i]['mobile']!.text.trim(),
         });
       }
     }
 
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
     try {
-      // 2. Call API
+      // 🟢 3. Call API
       await _apiService.submitProposal(
-        title: _titleController.text,
-        description: _linkController.text,
-        supervisorId: _preferredSupervisor1Id!,
+        title: _titleController.text.trim(),
+        description: _linkController.text.trim(),
+        supervisorIds: selectedSupervisors, 
         courseId: widget.courseId,
         teamMembers: collectedMembers,
         token: authProvider.token!,
@@ -234,21 +249,38 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Proposal for ${widget.courseCode} submitted!'), backgroundColor: Colors.green),
+          SnackBar(content: Text('Proposal for ${widget.courseCode} submitted successfully!'), backgroundColor: Colors.green),
         );
         Navigator.pop(context); // Return to previous screen
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-        );
+        // Clean the error message
+        String cleanMessage = e.toString().replaceAll('Exception: ', '');
+        _showErrorDialog(cleanMessage);
       }
     } finally {
       if (mounted) {
         setState(() { _isSubmitting = false; });
       }
     }
+  }
+
+  // Helper to show errors clearly
+  void _showErrorDialog(String message) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text("Submission Error", style: TextStyle(color: Colors.red)),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text("OK"),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -326,7 +358,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             const Text('Team Member Details', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blueGrey)),
             const SizedBox(height: 10),
             
-            _buildMemberTile('Details of Member - 1 (You)', 0, isExpanded: true),
+            _buildMemberTile('Details of Member - 1 (Leader)', 0, isExpanded: true),
             _buildMemberTile('Details of Member - 2', 1),
             _buildMemberTile('Details of Member - 3', 2),
             

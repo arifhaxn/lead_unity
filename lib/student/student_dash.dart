@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
 import 'package:link_unity/student/submit_proposal.dart';
+import 'package:link_unity/view_template.dart';
 import 'package:provider/provider.dart'; 
 
 class StudentDashboard extends StatefulWidget { 
@@ -29,10 +30,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void _navigateToRequestTeam() => print('Navigating to Request Team/Invite Screen');
   
   void _downloadTemplate() {
-    print('Downloading Project Template...');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Downloading Project Template... (Functionality to be added)')),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen(),));
   }
 
   void _logout() {
