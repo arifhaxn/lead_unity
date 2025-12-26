@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
 import 'package:link_unity/student/submit_proposal.dart';
+import 'package:link_unity/student/team_info.dart';
 import 'package:link_unity/view_template.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
 
-class StudentDashboard extends StatefulWidget { 
+class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
 
   @override
@@ -12,7 +13,7 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  String? _currentTeamId; 
+  String? _currentTeamId;
 
   @override
   void initState() {
@@ -20,22 +21,30 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   // --- Navigation Handlers (Unchanged) ---
-  void _navigateToTeamInfo() => print('Navigating to Team Info for $_currentTeamId');
-  
+  void _navigateToTeamInfo() => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => const TeamInfoScreen()),
+      );
+
   void _navigateToSubmitProposal() => Navigator.push(
-    context,
-    MaterialPageRoute(builder: (context) => const SubmitProposalScreen()),
-  );
-  
-  void _navigateToRequestTeam() => print('Navigating to Request Team/Invite Screen');
-  
+        context,
+        MaterialPageRoute(builder: (context) => const SubmitProposalScreen()),
+      );
+
+  void _navigateToRequestTeam() =>
+      print('Navigating to Request Team/Invite Screen');
+
   void _downloadTemplate() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen(),));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ViewTemplateScreen(),
+        ));
   }
 
   void _logout() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.logout(); 
+    authProvider.logout();
     print('User logged out via Provider.');
   }
 
@@ -43,14 +52,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final String actualStudentName = authProvider.user?.name ?? 'Student';
-    _currentTeamId = "ABC-001"; 
+    _currentTeamId = "ABC-001";
     final bool hasTeam = _currentTeamId != null;
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Student Dashboard'),
         backgroundColor: Colors.white,
-        elevation: 1, 
+        elevation: 1,
         foregroundColor: Colors.black87,
         actions: [
           IconButton(
@@ -69,16 +78,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
             Text(
               'Hello, $actualStudentName',
               style: const TextStyle(
-                fontSize: 30, 
-                fontWeight: FontWeight.bold, 
-                color: Colors.black87
-              ),
+                  fontSize: 30,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black87),
             ),
             const SizedBox(height: 10),
-            
+
             // --- Status Banner ---
             _buildStatusBanner(hasTeam, _currentTeamId),
-            
+
             const Divider(height: 40),
 
             // --- Single-column (4-row) card layout ---
@@ -87,13 +95,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
               children: <Widget>[
                 // --- Row 1: Team Info / Request Team (Conditional) ---
                 _buildSlickCard(
-                    icon: hasTeam ? Icons.groups_2_outlined : Icons.person_add_alt_1_outlined,
-                    title: hasTeam ? 'Team Info' : 'Request Team',
-                    action: hasTeam ? 'View Members' : 'Form / Join',
-                    color: hasTeam ? Colors.blueAccent : Colors.orange,
-                    onTap: hasTeam ? _navigateToTeamInfo : _navigateToRequestTeam,
+                  icon: hasTeam
+                      ? Icons.groups_2_outlined
+                      : Icons.person_add_alt_1_outlined,
+                  title: hasTeam ? 'Team Info' : 'Request Team',
+                  action: hasTeam ? 'View Members' : 'Form / Join',
+                  color: hasTeam ? Colors.blueAccent : Colors.orange,
+                  onTap: hasTeam ? _navigateToTeamInfo : _navigateToRequestTeam,
                 ),
-                
+
                 // --- Row 2: Submit Proposal ---
                 _buildSlickCard(
                   icon: Icons.upload_file_outlined,
@@ -107,18 +117,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 _buildSlickCard(
                   icon: Icons.download_for_offline_outlined,
                   title: 'Get Template',
-                  action: 'Download Now',
+                  action: 'View and Download',
                   color: Colors.purple,
                   onTap: _downloadTemplate,
                 ),
 
                 // --- Row 4: Request Team (Always available) ---
                 _buildSlickCard(
-                    icon: Icons.person_add_alt_1_outlined,
-                    title: 'Request Team',
-                    action: 'Form / Join',
-                    color: Colors.redAccent, 
-                    onTap: _navigateToRequestTeam,
+                  icon: Icons.person_add_alt_1_outlined,
+                  title: 'Request Team',
+                  action: 'Form / Join',
+                  color: Colors.redAccent,
+                  onTap: _navigateToRequestTeam,
                 ),
               ],
             ),
@@ -127,12 +137,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
     );
   }
-  
+
   // --- Status Banner Widget (Unchanged) ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
-    final Color bannerColor = hasTeam ? Colors.green.shade50 : Colors.red.shade50;
-    final Color textColor = hasTeam ? Colors.green.shade800 : Colors.red.shade800;
-    final String statusText = hasTeam ? 'You are part of Team $teamId.' : 'Action required: You are not yet on a team.';
+    final Color bannerColor =
+        hasTeam ? Colors.green.shade50 : Colors.red.shade50;
+    final Color textColor =
+        hasTeam ? Colors.green.shade800 : Colors.red.shade800;
+    final String statusText = hasTeam
+        ? 'You are part of Team $teamId.'
+        : 'Action required: You are not yet on a team.';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -143,7 +157,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       child: Row(
         children: [
-          Icon(hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined, color: textColor),
+          Icon(
+              hasTeam
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: textColor),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -155,7 +173,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
     );
   }
-  
+
   // --- Slicker Card Widget (Logo on Left Fix) ---
   Widget _buildSlickCard({
     required IconData icon,
@@ -178,7 +196,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
             padding: const EdgeInsets.all(20.0),
             // 🟢 FIX: Changed the main structure to a Row to place icon and text horizontally
             child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center, // Centers items vertically
+              crossAxisAlignment:
+                  CrossAxisAlignment.center, // Centers items vertically
               children: <Widget>[
                 // 1. Icon (Logo) Container
                 Container(
@@ -189,10 +208,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                   child: Icon(icon, size: 30, color: color),
                 ),
-                
+
                 // 2. Horizontal Spacing
                 const SizedBox(width: 16),
-                
+
                 // 3. Title and Action (Expanded to take remaining space)
                 Expanded(
                   child: Column(
@@ -201,12 +220,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87),
+                        style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         action,
-                        style: TextStyle(fontSize: 14, color: color, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            fontSize: 14,
+                            color: color,
+                            fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),

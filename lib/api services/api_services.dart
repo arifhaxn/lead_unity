@@ -122,3 +122,19 @@ class ApiService {
     }
   }
 }
+//   // --- 6. Fetch User Proposals ---
+// Future<List<dynamic>> getUserProposals(String token) async {
+//   final response = await http.get(
+//     Uri.parse('$_baseUrl/proposals/my-proposals'), // Assuming this endpoint exists on your backend
+//     headers: {
+//       'Content-Type': 'application/json',
+//       'Authorization': 'Bearer $token',
+//     },
+//   );
+
+//   if (response.statusCode == 200) {
+//     return json.decode(response.body);
+//   } else {
+//     throw Exception('Failed to load your proposals');
+//   }
+// }
