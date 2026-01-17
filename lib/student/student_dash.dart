@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/chatbot_screen.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/team_info.dart';
 import 'package:link_unity/view_template.dart';
@@ -40,6 +41,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
         MaterialPageRoute(
           builder: (context) => ViewTemplateScreen(),
         ));
+  }
+
+  void _navigateToChatbot() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const ChatbotScreen(),
+      ),
+    );
   }
 
   void _logout() {
@@ -134,6 +144,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _navigateToChatbot,
+        backgroundColor: Colors.cyan,
+        shape: const CircleBorder(),
+        child: const Icon(Icons.message, color: Colors.white),
       ),
     );
   }

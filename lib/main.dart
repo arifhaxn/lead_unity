@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/chat_provider.dart';
 import 'package:link_unity/student/student_dash.dart';
 import 'package:provider/provider.dart'; // 🟢 ADDED for state management
 
@@ -16,8 +17,15 @@ void main() {
 
   // 🟢 WRAP the app in ChangeNotifierProvider and immediately try to auto-login
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => AuthProvider()..tryAutoLogin(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => AuthProvider()..tryAutoLogin(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => ChatProvider(),
+        ),
+      ],
       child: const LeadUnityApp(),
     ),
   );

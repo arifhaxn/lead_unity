@@ -3,16 +3,17 @@ import 'package:http/http.dart' as http;
 
 class ApiService {
   // 🔴 Ensure this URL matches your backend
-  static const String _baseUrl = 'https://leading-unity-backend.vercel.app/api'; 
+  static const String _baseUrl =
+      'https://leading-unity-nest-backend.vercel.app/api';
 
   // --- 1. Student Registration ---
   Future<Map<String, dynamic>> register(
-      String name, 
-      String email, 
-      String password,
-      String studentId, 
-      String batch,     
-      String section,   
+    String name,
+    String email,
+    String password,
+    String studentId,
+    String batch,
+    String section,
   ) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/auth/register/student'),
@@ -23,9 +24,9 @@ class ApiService {
         'name': name,
         'email': email,
         'password': password,
-        'studentId': studentId, 
-        'batch': batch,     
-        'section': section,   
+        'studentId': studentId,
+        'batch': batch,
+        'section': section,
       }),
     );
     if (response.statusCode == 201) {
@@ -49,7 +50,7 @@ class ApiService {
         'password': password,
       }),
     );
-    
+
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -61,7 +62,7 @@ class ApiService {
   // --- 3. Fetch Courses ---
   Future<List<dynamic>> getCourses() async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/courses'), 
+      Uri.parse('$_baseUrl/courses'),
       headers: {'Content-Type': 'application/json'},
     );
 
@@ -75,17 +76,20 @@ class ApiService {
   // --- 4. Fetch Supervisors ---
   Future<List<dynamic>> getSupervisors(String token) async {
     final response = await http.get(
-      Uri.parse('$_baseUrl/users'), 
+      Uri.parse('$_baseUrl/users'),
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token', 
+        'Authorization': 'Bearer $token',
       },
     );
 
     if (response.statusCode == 200) {
       List<dynamic> allUsers = json.decode(response.body);
       // Filter: Return only users where role is 'supervisor'
-      return allUsers.where((user) => user['role'].toString().toLowerCase() == 'supervisor').toList();
+      return allUsers
+          .where(
+              (user) => user['role'].toString().toLowerCase() == 'supervisor')
+          .toList();
     } else {
       throw Exception('Failed to load supervisors');
     }
@@ -97,14 +101,14 @@ class ApiService {
     required String description,
     required List<String> supervisorIds, // 🟢 Accepts List
     required String courseId,
-    required List<Map<String, String>> teamMembers, 
+    required List<Map<String, String>> teamMembers,
     required String token,
   }) async {
     final response = await http.post(
       Uri.parse('$_baseUrl/proposals'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
-        'Authorization': 'Bearer $token', 
+        'Authorization': 'Bearer $token',
       },
       body: jsonEncode({
         'title': title,
