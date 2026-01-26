@@ -14,9 +14,10 @@ class TeamInfoScreen extends StatefulWidget {
 
 class _TeamInfoScreenState extends State<TeamInfoScreen> {
   final ApiService _apiService = ApiService();
+
   bool _isLoading = true;
   List<dynamic> _courses = [];
-  Map<String, dynamic> _submittedProposals = {}; // Mapping Course ID to Proposal Data
+  Map<String, dynamic> _submittedProposals = {};
 
   @override
   void initState() {
@@ -31,22 +32,33 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     try {
       final results = await Future.wait([
         _apiService.getCourses(),
-       // _apiService.getUserProposal(token!),
+        //_apiService.getAllProposals(token!), // uses /proposals
       ]);
 
-      setState(() {
-        _courses = results[0];
-        // Organize proposals by courseId for easy lookup
-        for (var p in results[1]) {
-          _submittedProposals[p['course'].toString()] = p;
+      final courses = results[0] as List;
+      final proposals = results[1] as List;
+
+      final Map<String, dynamic> proposalMap = {};
+
+      for (var p in proposals) {
+        if (p['course'] != null && p['course']['_id'] != null) {
+          proposalMap[p['course']['_id']] = p;
         }
+      }
+
+      setState(() {
+        _courses = courses;
+        _submittedProposals = proposalMap;
         _isLoading = false;
       });
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
       setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load data: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -69,49 +81,85 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
 
                 return Card(
                   margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   elevation: 4,
                   child: ExpansionTile(
                     leading: Icon(
-                      isSubmitted ? Icons.check_circle : Icons.pending_actions,
+                      isSubmitted
+                          ? Icons.check_circle
+                          : Icons.pending_actions,
                       color: isSubmitted ? Colors.green : Colors.orange,
                     ),
                     title: Text(
                       course['courseCode'],
-                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
                     ),
                     subtitle: Text(
-                      isSubmitted ? 'Proposal Submitted' : 'No Proposal Submitted Yet',
-                      style: TextStyle(color: isSubmitted ? Colors.green : Colors.redAccent),
+                      isSubmitted
+                          ? 'Proposal Submitted'
+                          : 'No Proposal Submitted Yet',
+                      style: TextStyle(
+                        color:
+                            isSubmitted ? Colors.green : Colors.redAccent,
+                      ),
                     ),
                     children: [
                       if (isSubmitted)
                         Padding(
-                          padding: const EdgeInsets.all(16.0),
+                          padding: const EdgeInsets.all(16),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _buildInfoRow('Title', proposal['title']),
+                              _buildInfoRow(
+                                  'Title', proposal['title'] ?? 'N/A'),
                               const SizedBox(height: 8),
-                              _buildInfoRow('Status', proposal['status'].toUpperCase()),
+                              _buildInfoRow(
+                                'Status',
+                                (proposal['status'] ?? 'pending')
+                                    .toUpperCase(),
+                              ),
                               const SizedBox(height: 16),
-                              const Text('Team Members:', style: TextStyle(fontWeight: FontWeight.bold)),
+                              const Text(
+                                'Team Members',
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                               const Divider(),
-                              // Check if teamMembers exists in your proposal object
-                              if (proposal['teamMembers'] != null)
-                                ...((proposal['teamMembers'] as List).map((m) => Padding(
-                                      padding: const EdgeInsets.symmetric(vertical: 4),
-                                      child: Text('• ${m['name']} (${m['studentId']})'),
-                                    ))),
+                              if (proposal['teamMembers'] != null &&
+                                  proposal['teamMembers'].isNotEmpty)
+                                ...proposal['teamMembers'].map<Widget>((m) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 4),
+                                    child: Text(
+                                      '• ${m['name']} (${m['studentId']})',
+                                    ),
+                                  );
+                                }).toList()
+                              else
+                                const Text(
+                                  'No team members added.',
+                                  style: TextStyle(
+                                      fontStyle: FontStyle.italic),
+                                ),
                             ],
                           ),
                         )
                       else
                         const Padding(
-                          padding: EdgeInsets.all(16.0),
+                          padding: EdgeInsets.all(16),
                           child: Text(
-                            'You have not submitted a proposal for this course. Please go to the Submit Proposal screen to start.',
-                            style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+                            'You have not submitted a proposal for this course yet.',
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey,
+                            ),
                           ),
                         ),
                     ],
@@ -124,8 +172,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
 
   Widget _buildInfoRow(String label, String value) {
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold)),
+        Text(
+          '$label: ',
+          style: const TextStyle(fontWeight: FontWeight.bold),
+        ),
         Expanded(child: Text(value)),
       ],
     );

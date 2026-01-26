@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:link_unity/auth_provider.dart';
+import 'package:link_unity/student/student_login.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/team_info.dart';
 import 'package:link_unity/view_template.dart';
-import 'package:provider/provider.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -15,44 +16,40 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   String? _currentTeamId;
 
-  @override
-  void initState() {
-    super.initState();
+  // --- Navigation Handlers ---
+  void _navigateToTeamInfo() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
   }
 
-  // --- Navigation Handlers (Unchanged) ---
-  void _navigateToTeamInfo() => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const TeamInfoScreen()),
-      );
+  void _navigateToSubmitProposal() {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
+  }
 
-  void _navigateToSubmitProposal() => Navigator.push(
-        context,
-        MaterialPageRoute(builder: (context) => const SubmitProposalScreen()),
-      );
-
-  void _navigateToRequestTeam() =>
-      print('Navigating to Request Team/Invite Screen');
+  void _navigateToRequestTeam() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Request Team feature coming soon!')),
+    );
+  }
 
   void _downloadTemplate() {
     Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => ViewTemplateScreen(),
-        ));
+        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
 
   void _logout() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.logout();
-    print('User logged out via Provider.');
+    Navigator.pushReplacement(context,
+        MaterialPageRoute(builder: (context) => const StudentLoginScreen()));
   }
-
+  
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final String actualStudentName = authProvider.user?.name ?? 'Student';
-    _currentTeamId = "ABC-001";
+    _currentTeamId = "ABC-001"; // Placeholder
     final bool hasTeam = _currentTeamId != null;
 
     return Scaffold(
@@ -87,48 +84,60 @@ class _StudentDashboardState extends State<StudentDashboard> {
             // --- Status Banner ---
             _buildStatusBanner(hasTeam, _currentTeamId),
 
-            const Divider(height: 40),
+            const Divider(height: 30),
 
-            // --- Single-column (4-row) card layout ---
+            // --- Dashboard Cards Layout ---
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                // --- Row 1: Team Info / Request Team (Conditional) ---
-                _buildSlickCard(
-                  icon: hasTeam
-                      ? Icons.groups_2_outlined
-                      : Icons.person_add_alt_1_outlined,
-                  title: hasTeam ? 'Team Info' : 'Request Team',
-                  action: hasTeam ? 'View Members' : 'Form / Join',
-                  color: hasTeam ? Colors.blueAccent : Colors.orange,
-                  onTap: hasTeam ? _navigateToTeamInfo : _navigateToRequestTeam,
-                ),
-
-                // --- Row 2: Submit Proposal ---
+                // ROW 1: Submit Proposal (Prominent Size, Standard Color)
                 _buildSlickCard(
                   icon: Icons.upload_file_outlined,
                   title: 'Submit Proposal',
-                  action: 'Start Draft',
+                  action: 'Upload your team project proposal',
                   color: Colors.green,
                   onTap: _navigateToSubmitProposal,
+                  isProminent:
+                      true, // Keeps it bigger, but colors will now match others
                 ),
 
-                // --- Row 3: Get Template ---
+                // ROW 2: Team Info & Request Team (Side by Side & Equal Height)
+                IntrinsicHeight(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Expanded(
+                        child: _buildSlickCard(
+                          icon: Icons.groups_2_outlined,
+                          title: 'Team Info',
+                          action: 'View Submitted Info',
+                          color: Colors.blueAccent,
+                          onTap: _navigateToTeamInfo,
+                          isCompact: true,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: _buildSlickCard(
+                          icon: Icons.person_add_alt_1_outlined,
+                          title: 'Request Team',
+                          action: 'If You Don\'t Have a Team',
+                          color: Colors.orange,
+                          onTap: _navigateToRequestTeam,
+                          isCompact: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                // ROW 3: Get Template
                 _buildSlickCard(
                   icon: Icons.download_for_offline_outlined,
                   title: 'Get Template',
-                  action: 'View and Download',
+                  action: 'Preview and Download',
                   color: Colors.purple,
                   onTap: _downloadTemplate,
-                ),
-
-                // --- Row 4: Request Team (Always available) ---
-                _buildSlickCard(
-                  icon: Icons.person_add_alt_1_outlined,
-                  title: 'Request Team',
-                  action: 'Form / Join',
-                  color: Colors.redAccent,
-                  onTap: _navigateToRequestTeam,
                 ),
               ],
             ),
@@ -138,7 +147,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  // --- Status Banner Widget (Unchanged) ---
+  // --- Status Banner Widget ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
     final Color bannerColor =
         hasTeam ? Colors.green.shade50 : Colors.red.shade50;
@@ -164,80 +173,107 @@ class _StudentDashboardState extends State<StudentDashboard> {
               color: textColor),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(
-              statusText,
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w600),
-            ),
-          ),
+              child: Text(statusText,
+                  style: TextStyle(
+                      color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
   }
 
-  // --- Slicker Card Widget (Logo on Left Fix) ---
+  // --- Slicker Card Widget (Updated for Consistent Color Design) ---
   Widget _buildSlickCard({
     required IconData icon,
     required String title,
     required String action,
     required Color color,
     required VoidCallback onTap,
+    bool isProminent = false,
+    bool isCompact = false,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: Card(
-        elevation: 6,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
+        elevation: isProminent
+            ? 6
+            : 4, // Still slightly higher elevation for prominent
+        color: Colors.white, // 🟢 FIX: Always white background now
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
         child: InkWell(
           onTap: onTap,
           borderRadius: BorderRadius.circular(15),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            // 🟢 FIX: Changed the main structure to a Row to place icon and text horizontally
-            child: Row(
-              crossAxisAlignment:
-                  CrossAxisAlignment.center, // Centers items vertically
-              children: <Widget>[
-                // 1. Icon (Logo) Container
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: Icon(icon, size: 30, color: color),
-                ),
-
-                // 2. Horizontal Spacing
-                const SizedBox(width: 16),
-
-                // 3. Title and Action (Expanded to take remaining space)
-                Expanded(
-                  child: Column(
+            // Keep padding larger if prominent
+            padding: EdgeInsets.all(isProminent ? 25.0 : 20.0),
+            child: isCompact
+                ? Column(
+                    // Compact Mode
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(
-                        title,
-                        style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(icon, size: 30, color: color),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        action,
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: color,
-                            fontWeight: FontWeight.w500),
+                      const SizedBox(height: 12),
+                      Text(title,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87)),
+                      const SizedBox(height: 4),
+                      Text(action,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: color,
+                              fontWeight: FontWeight.w600)),
+                    ],
+                  )
+                : Row(
+                    // Standard/Prominent Mode
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          // 🟢 FIX: Always use light opacity background for icon
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        // 🟢 FIX: Always use the accent color for icon
+                        child: Icon(icon, size: 30, color: color),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(title,
+                                style: TextStyle(
+                                    fontSize: isProminent
+                                        ? 22
+                                        : 18, // Font is still bigger if prominent
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors
+                                        .black87 // 🟢 FIX: Always black text
+                                    )),
+                            const SizedBox(height: 2),
+                            Text(action,
+                                style: TextStyle(
+                                    fontSize: isProminent ? 16 : 14,
+                                    color:
+                                        color, // 🟢 FIX: Always accent color text
+                                    fontWeight: FontWeight.w500)),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
           ),
         ),
       ),
