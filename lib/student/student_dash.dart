@@ -5,6 +5,7 @@ import 'package:link_unity/student/student_login.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/team_info.dart';
 import 'package:link_unity/view_template.dart';
+import 'package:link_unity/chatbot_screen.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -44,7 +45,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
     Navigator.pushReplacement(context,
         MaterialPageRoute(builder: (context) => const StudentLoginScreen()));
   }
-  
+
+  void _openChatbot() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const ChatbotScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
@@ -143,6 +151,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _openChatbot,
+        backgroundColor: Colors.blue,
+        child: const Icon(Icons.message, color: Colors.white),
+        tooltip: 'Chat with Assistant',
       ),
     );
   }
