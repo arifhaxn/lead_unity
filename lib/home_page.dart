@@ -1,32 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/student/student_login.dart';
+import 'login_screen.dart'; // 🟢 Points to the unified LoginScreen we merged earlier
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  // --- Navigation Placeholders ---
-  // In a real app, these would navigate to the actual login screens.
+  // --- Logic Merge: Use the role-based navigation from his logic ---
   void _navigateToStudentLogin(BuildContext context) {
-    // 🛑 MONGODB: (Later Step) Check if user is already logged in via Realm
-    Navigator.of(context).push(MaterialPageRoute(
-        builder: (context) => const StudentLoginScreen()));
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(role: 'student'),
+      ),
+    );
   }
 
-  
-  void _navigateToAdminLogin(BuildContext context) 
-  {
-    // 🛑 MONGODB: (Later Step) Check if user is already logged in via Realm
-    // Navigator.of(context).push(MaterialPageRoute(builder: (context) => const AdminLoginScreen()));
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-          content: Text(
-              'Navigating to Admin/Supervisor Login... (To be implemented)')),
+  void _navigateToAdminLogin(BuildContext context) {
+    // 🟢 Fixed: Removed the placeholder SnackBar and connected to logic
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => const LoginScreen(role: 'supervisor'),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white, // 🟢 Keeping your clean white background
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(32.0),
@@ -34,9 +33,9 @@ class HomePage extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              // --- App Logo/Title ---
+              // --- Your Original Logo & Title ---
               const Icon(
-                Icons.lightbulb_outline, //
+                Icons.lightbulb_outline, 
                 size: 80,
                 color: Colors.blueAccent,
               ),
@@ -60,24 +59,22 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 60),
 
-              // --- Student Login Option ---
+              // --- Your Original Student Card ---
               _buildLoginOptionCard(
                 context: context,
                 title: 'Student',
-                subtitle:
-                    'Register or Log in to manage your project team and proposals.',
+                subtitle: 'Register or Log in to manage your project team and proposals.',
                 icon: Icons.school,
                 color: Colors.blueAccent,
                 onTap: () => _navigateToStudentLogin(context),
               ),
               const SizedBox(height: 30),
 
-              // --- Admin/Supervisor Login Option ---
+              // --- Your Original Supervisor Card ---
               _buildLoginOptionCard(
                 context: context,
                 title: 'Supervisor',
-                subtitle:
-                    'Log in to view, approve, and assign student projects.',
+                subtitle: 'Log in to view, approve, and assign student projects.',
                 icon: Icons.security,
                 color: Colors.deepOrange,
                 onTap: () => _navigateToAdminLogin(context),
@@ -89,7 +86,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- Helper Widget for Login Cards ---
+  // --- Your Original Card Design Helper ---
   Widget _buildLoginOptionCard({
     required BuildContext context,
     required String title,

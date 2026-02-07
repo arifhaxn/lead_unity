@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:link_unity/auth_provider.dart';
-import 'package:link_unity/api services/api_services.dart';
+import '../auth_provider.dart';
+import '../api services/api_services.dart';
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -10,8 +10,7 @@ class SubmitProposalScreen extends StatefulWidget {
   State<SubmitProposalScreen> createState() => _SubmitProposalScreenState();
 }
 
-class _SubmitProposalScreenState extends State<SubmitProposalScreen>
-    with TickerProviderStateMixin {
+class _SubmitProposalScreenState extends State<SubmitProposalScreen> with TickerProviderStateMixin {
   List<dynamic> _courses = [];
   List<dynamic> _supervisors = [];
   bool _isLoadingData = true;
@@ -27,21 +26,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   }
 
   Future<void> _fetchData() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
-
-    if (token == null) {
-      setState(() {
-        _isLoadingData = false;
-        _errorMessage = "Authentication error. Please log in again.";
-      });
-      return;
-    }
-
+    // 🟢 Fix: Using your friend's logic, the token is auto-injected by Dio.
+    // We don't need to manually pass it.
     try {
       final results = await Future.wait([
         _apiService.getCourses(),
-        _apiService.getSupervisors(token),
+        _apiService.getSupervisors(), // 🟢 Auto-uses token from storage
       ]);
 
       if (mounted) {
@@ -49,16 +39,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           _courses = results[0];
           _supervisors = results[1];
           _isLoadingData = false;
-          _tabController = TabController(
-              length: _courses.isEmpty ? 1 : _courses.length, vsync: this);
+          _tabController = TabController(length: _courses.isEmpty ? 1 : _courses.length, vsync: this);
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingData = false;
-          _errorMessage =
-              "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
+          _errorMessage = "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
           _tabController = TabController(length: 1, vsync: this);
         });
       }
@@ -70,7 +58,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
     if (!_isLoadingData) _tabController.dispose();
     super.dispose();
   }
-// 
+
   @override
   Widget build(BuildContext context) {
     if (_isLoadingData) {
@@ -79,34 +67,31 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar:
-            AppBar(title: const Text('Error'), backgroundColor: Colors.teal),
-        body: Center(
-            child: Text(_errorMessage!,
-                style: const TextStyle(color: Colors.red))),
+        appBar: AppBar(title: const Text('Error'), backgroundColor: Colors.teal),
+        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
       );
     }
 
     if (_courses.isEmpty) {
       return Scaffold(
-        appBar: AppBar(
-            title: const Text('Submit Proposal'), backgroundColor: Colors.teal),
+        appBar: AppBar(title: const Text('Submit Proposal'), backgroundColor: Colors.teal),
         body: const Center(child: Text("No courses available.")),
       );
     }
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Submit Proposal'),
+        title: const Text('Submit Proposal', style: TextStyle(color: Colors.white)),
         backgroundColor: Colors.teal,
+        iconTheme: const IconThemeData(color: Colors.white),
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
           labelColor: Colors.white,
-          indicatorColor: Colors.white,
-          tabs: _courses
-              .map<Widget>((course) => Tab(text: course['courseCode']))
-              .toList(),
+          indicatorColor: Colors.amber,
+          unselectedLabelColor: Colors.white70,
+          tabs: _courses.map<Widget>((course) => Tab(text: course['courseCode'])).toList(),
         ),
       ),
       body: TabBarView(
@@ -146,67 +131,66 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
 
-  final List<Map<String, TextEditingController>> _memberControllers =
-      List.generate(
-          4,
-          (index) => {
-                'name': TextEditingController(),
-                'id': TextEditingController(),
-                'cgpa': TextEditingController(),
-                'email': TextEditingController(),
-                'mobile': TextEditingController(),
-              });
+  // 🟢 Fixed: Using simple maps for member data, matching your friend's "Map<String, String>" logic
+  final List<Map<String, TextEditingController>> _memberControllers = List.generate(
+      4,
+      (index) => {
+            'name': TextEditingController(),
+            'id': TextEditingController(),
+            'cgpa': TextEditingController(),
+            'email': TextEditingController(),
+            'mobile': TextEditingController(),
+          });
 
   bool _isSubmitting = false;
-  bool _isSubmitted = false; // 🟢 Tracking successful submission
   bool _hasFourthMember = false;
 
-  String? _preferredSupervisor1Id;
-  String? _preferredSupervisor2Id;
-  String? _preferredSupervisor3Id;
+  String? _sup1, _sup2, _sup3;
 
   @override
   void dispose() {
     _titleController.dispose();
     _linkController.dispose();
     for (var map in _memberControllers) {
-      map.values.forEach((controller) => controller.dispose());
+      map.values.forEach((c) => c.dispose());
     }
     super.dispose();
   }
 
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
-    if (_preferredSupervisor1Id == null) {
-      _showErrorDialog('Please select at least Supervisor 1.');
+    
+    // 🟢 Logic Check: Ensure at least one supervisor is selected
+    if (_sup1 == null) {
+      _showError('Please select at least Supervisor 1.');
       return;
     }
 
     setState(() => _isSubmitting = true);
 
-    List<String> selectedSupervisors = [];
-    if (_preferredSupervisor1Id != null)
-      selectedSupervisors.add(_preferredSupervisor1Id!);
-    if (_preferredSupervisor2Id != null)
-      selectedSupervisors.add(_preferredSupervisor2Id!);
-    if (_preferredSupervisor3Id != null)
-      selectedSupervisors.add(_preferredSupervisor3Id!);
+    // 🟢 1. Collect Supervisor IDs
+    List<String> supervisorIds = [];
+    if (_sup1 != null) supervisorIds.add(_sup1!);
+    if (_sup2 != null) supervisorIds.add(_sup2!);
+    if (_sup3 != null) supervisorIds.add(_sup3!);
 
-    List<Map<String, String>> collectedMembers = [];
-    Set<String> localIds = {};
-    int memberCount = _hasFourthMember ? 4 : 3;
+    // 🟢 2. Collect Member Data
+    List<Map<String, String>> members = [];
+    Set<String> uniqueIds = {};
+    int count = _hasFourthMember ? 4 : 3;
 
-    for (int i = 0; i < memberCount; i++) {
+    for (int i = 0; i < count; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
-      if (name.isNotEmpty && id.isNotEmpty) {
-        if (localIds.contains(id)) {
-          setState(() => _isSubmitting = false);
-          _showErrorDialog('Duplicate Student ID detected: $id.');
-          return;
+      
+      if (id.isNotEmpty && name.isNotEmpty) {
+        if (uniqueIds.contains(id)) {
+           setState(() => _isSubmitting = false);
+           _showError('Duplicate Student ID: $id');
+           return;
         }
-        localIds.add(id);
-        collectedMembers.add({
+        uniqueIds.add(id);
+        members.add({
           'name': name,
           'studentId': id,
           'cgpa': _memberControllers[i]['cgpa']!.text.trim(),
@@ -216,47 +200,29 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     }
 
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
     try {
-      await _apiService.submitProposal(
-        title: _titleController.text.trim(),
-        description: _linkController.text.trim(),
-        supervisorIds: selectedSupervisors,
-        courseId: widget.courseId,
-        teamMembers: collectedMembers,
-        token: authProvider.token!,
-      );
+      // 🟢 3. Call API (Token is auto-injected by ApiService)
+      await _apiService.submitProposal({
+        'title': _titleController.text.trim(),
+        'description': _linkController.text.trim(),
+        'courseId': widget.courseId,
+        'supervisorIds': supervisorIds,
+        'teamMembers': members
+      });
 
       if (mounted) {
-        setState(() {
-          _isSubmitted = true; // 🟢 Set to true on success
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Proposal for ${widget.courseCode} submitted!'),
-              backgroundColor: Colors.green),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proposal Submitted Successfully!'), backgroundColor: Colors.green));
+        Navigator.pop(context); // Go back to Dashboard
       }
     } catch (e) {
-      if (mounted) _showErrorDialog(e.toString().replaceAll('Exception: ', ''));
+      if (mounted) _showError(e.toString().replaceAll('Exception: ', ''));
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  void _showErrorDialog(String message) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title:
-            const Text("Submission Error", style: TextStyle(color: Colors.red)),
-        content: Text(message),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.of(ctx).pop(), child: const Text("OK"))
-        ],
-      ),
-    );
+  void _showError(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
@@ -268,185 +234,133 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            Text('Submitting for: ${widget.courseCode}',
-                style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.teal)),
-            const SizedBox(height: 16),
             TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(
-                    labelText: 'Project Title', border: OutlineInputBorder())),
+                decoration: const InputDecoration(labelText: 'Project Title', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _linkController,
-                decoration: const InputDecoration(
-                    labelText: 'Google Drive Link',
-                    border: OutlineInputBorder())),
+                decoration: const InputDecoration(labelText: 'Google Drive Link', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
-
-            const Text('Preferred Supervisors (Select 3)',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
+            
+            const Text('Select Supervisors', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal)),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                _buildSupervisorDropdown(
-                    label: 'Sup 1',
-                    value: _preferredSupervisor1Id,
-                    onChanged: (val) =>
-                        setState(() => _preferredSupervisor1Id = val)),
-                const SizedBox(width: 8),
-                _buildSupervisorDropdown(
-                    label: 'Sup 2',
-                    value: _preferredSupervisor2Id,
-                    onChanged: (val) =>
-                        setState(() => _preferredSupervisor2Id = val)),
-                const SizedBox(width: 8),
-                _buildSupervisorDropdown(
-                    label: 'Sup 3',
-                    value: _preferredSupervisor3Id,
-                    onChanged: (val) =>
-                        setState(() => _preferredSupervisor3Id = val)),
-              ],
-            ),
+            Row(children: [
+              _buildSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
+              const SizedBox(width: 8),
+              _buildSupDropdown(2, _sup2, (v) => setState(() => _sup2 = v)),
+              const SizedBox(width: 8),
+              _buildSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
+            ]),
+            
             const SizedBox(height: 30),
+            const Text('Team Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal)),
+            const SizedBox(height: 10),
+            
+            ...List.generate(_hasFourthMember ? 4 : 3, (index) => _buildMemberCard(index)),
 
-            const Text('Team Member Details',
-                style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blueGrey)),
-            _buildMemberTile('Member 1 (Leader)', 0, isExpanded: true),
-            _buildMemberTile('Member 2', 1),
-            _buildMemberTile('Member 3', 2),
-            if (_hasFourthMember) _buildMemberTile('Member 4', 3),
-
-            TextButton.icon(
-              onPressed: () =>
-                  setState(() => _hasFourthMember = !_hasFourthMember),
-              icon: Icon(
-                  _hasFourthMember ? Icons.group_remove : Icons.group_add,
-                  color: _hasFourthMember ? Colors.red : Colors.blue),
-              label: Text(
-                  _hasFourthMember ? 'Remove 4th Member' : 'Add 4th Member',
-                  style: TextStyle(
-                      color: _hasFourthMember ? Colors.red : Colors.blue)),
-            ),
-
-            const SizedBox(height: 30),
-
-            // 🟢 Replacement Logic
-            if (_isSubmitting)
-              const Center(child: CircularProgressIndicator())
-            else if (_isSubmitted)
-              // 🟢 Show message instead of button if submitted
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                    color: Colors.red.shade100,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.shade400)),
-                child: Text(
-                  'Proposal Already Submitted for ${widget.courseCode}',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                      color: Colors.red.shade900, fontWeight: FontWeight.bold),
-                ),
-              )
-            else
-              // 🟢 Show Button if not yet submitted
-              ElevatedButton.icon(
-                onPressed: _submitProposal,
-                icon: const Icon(Icons.send, color: Colors.white),
-                label: const Text('Submit Proposal',
-                    style: TextStyle(color: Colors.white, fontSize: 18)),
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8))),
+            if (!_hasFourthMember)
+              TextButton.icon(
+                onPressed: () => setState(() => _hasFourthMember = true),
+                icon: const Icon(Icons.add, color: Colors.teal),
+                label: const Text('Add 4th Member', style: TextStyle(color: Colors.teal)),
               ),
+            
+            if (_hasFourthMember)
+               TextButton.icon(
+                onPressed: () => setState(() => _hasFourthMember = false),
+                icon: const Icon(Icons.remove, color: Colors.red),
+                label: const Text('Remove 4th Member', style: TextStyle(color: Colors.red)),
+              ),
+
+            const SizedBox(height: 30),
+            SizedBox(
+              height: 50,
+              child: ElevatedButton(
+                onPressed: _isSubmitting ? null : _submitProposal,
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
+                child: _isSubmitting 
+                  ? const CircularProgressIndicator(color: Colors.white) 
+                  : const Text('Submit Proposal', style: TextStyle(fontSize: 18, color: Colors.white)),
+              ),
+            ),
+            const SizedBox(height: 50), // Bottom padding
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSupervisorDropdown(
-      {required String label,
-      required String? value,
-      required ValueChanged<String?> onChanged}) {
+  Widget _buildSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: value,
+        isExpanded: true,
         decoration: InputDecoration(
-            labelText: label,
-            border: const OutlineInputBorder(),
-            contentPadding:
-                const EdgeInsets.symmetric(vertical: 15, horizontal: 10)),
-        items: widget.supervisors.map<DropdownMenuItem<String>>((dynamic user) {
-          String displayName = user['name'].toString().split(' ').last;
-          return DropdownMenuItem<String>(
-              value: user['_id'],
-              child: Text(displayName,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 12)));
+          labelText: 'Sup $index',
+          border: const OutlineInputBorder(),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
+          filled: true,
+          fillColor: Colors.white
+        ),
+        items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
+           // Helper to get first name only for small dropdown
+           String name = s['name'].toString().split(' ')[0]; 
+           return DropdownMenuItem(value: s['_id'], child: Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)));
         }).toList(),
         onChanged: onChanged,
-        validator: (val) => (label == 'Sup 1' && val == null) ? '' : null,
       ),
     );
   }
 
-  Widget _buildMemberTile(String title, int index, {bool isExpanded = false}) {
-    return ExpansionTile(
-      title: Text(title),
-      initiallyExpanded: isExpanded,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-          child: Column(
-            children: [
-              TextFormField(
-                  controller: _memberControllers[index]['name'],
-                  decoration: const InputDecoration(
-                      labelText: 'Name', border: OutlineInputBorder())),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  Expanded(
-                      child: TextFormField(
-                          controller: _memberControllers[index]['id'],
-                          decoration: const InputDecoration(
-                              labelText: 'Student ID',
-                              border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                      child: TextFormField(
-                          controller: _memberControllers[index]['cgpa'],
-                          decoration: const InputDecoration(
-                              labelText: 'CGPA', border: OutlineInputBorder()),
-                          keyboardType: TextInputType.number)),
-                ],
-              ),
-              const SizedBox(height: 10),
-              TextFormField(
-                  controller: _memberControllers[index]['email'],
-                  decoration: const InputDecoration(
-                      labelText: 'Email', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.emailAddress),
-              const SizedBox(height: 10),
-              TextFormField(
-                  controller: _memberControllers[index]['mobile'],
-                  decoration: const InputDecoration(
-                      labelText: 'Mobile', border: OutlineInputBorder()),
-                  keyboardType: TextInputType.phone),
-            ],
+  Widget _buildMemberCard(int index) {
+    bool isLeader = index == 0;
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.all(15),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: isLeader ? Colors.teal.withOpacity(0.5) : Colors.grey.shade300),
+        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))]
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(isLeader ? "Member 1 (Leader)" : "Member ${index + 1}", style: TextStyle(fontWeight: FontWeight.bold, color: isLeader ? Colors.teal : Colors.grey[700])),
+          const SizedBox(height: 10),
+          TextFormField(
+            controller: _memberControllers[index]['name'],
+            decoration: const InputDecoration(labelText: 'Name', isDense: true, border: OutlineInputBorder()),
+            validator: (v) => v!.isEmpty ? 'Required' : null,
           ),
-        )
-      ],
+          const SizedBox(height: 8),
+          Row(children: [
+             Expanded(child: TextFormField(
+               controller: _memberControllers[index]['id'],
+               decoration: const InputDecoration(labelText: 'ID', isDense: true, border: OutlineInputBorder()),
+               validator: (v) => v!.isEmpty ? 'Required' : null,
+             )),
+             const SizedBox(width: 8),
+             Expanded(child: TextFormField(
+               controller: _memberControllers[index]['cgpa'],
+               decoration: const InputDecoration(labelText: 'CGPA', isDense: true, border: OutlineInputBorder()),
+             )),
+          ]),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _memberControllers[index]['email'],
+            decoration: const InputDecoration(labelText: 'Email', isDense: true, border: OutlineInputBorder()),
+          ),
+          const SizedBox(height: 8),
+          TextFormField(
+            controller: _memberControllers[index]['mobile'],
+            decoration: const InputDecoration(labelText: 'Mobile', isDense: true, border: OutlineInputBorder()),
+          ),
+        ],
+      ),
     );
   }
 }

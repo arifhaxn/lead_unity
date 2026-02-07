@@ -1,230 +1,194 @@
-// lib/student/student_registration_screen.dart (FINAL)
-
 import 'package:flutter/material.dart';
-import 'package:link_unity/auth_provider.dart';
-import 'package:link_unity/student/student_dash.dart';
-import 'package:provider/provider.dart'; 
+import 'package:provider/provider.dart';
+import '../auth_provider.dart';
+import 'student_dash.dart';
 
 class StudentRegistrationScreen extends StatefulWidget {
-  const StudentRegistrationScreen({super.key});
+  const StudentRegistrationScreen({Key? key}) : super(key: key);
 
   @override
-  State<StudentRegistrationScreen> createState() => _StudentRegistrationScreenState();
+  _StudentRegistrationScreenState createState() => _StudentRegistrationScreenState();
 }
 
 class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
-  // --- Controllers and Setup ---
   final _formKey = GlobalKey<FormState>();
-
-  // Controllers for input fields
-  final TextEditingController _nameController = TextEditingController();
-  final TextEditingController _studentIdController = TextEditingController();
-  final TextEditingController _batchController = TextEditingController();
-  final TextEditingController _passwordController = TextEditingController();
-
-  String? _selectedSection;
-  final List<String> _sections = ['A', 'B', 'C', 'D', 'E']; 
-  
+  final Map<String, dynamic> _formData = {};
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _studentIdController.dispose();
-    _batchController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-  
-  // --- Utility Functions for Messaging ---
-  void _showError(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Error: $message'), backgroundColor: Colors.red),
-    );
-  }
-
-  void _showSuccess(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message), backgroundColor: Colors.green),
-    );
-  }
-
-  // --- 🚀 Backend Integration Logic ---
-  Future<void> _registerStudent() async {
-    if (!_formKey.currentState!.validate() || _selectedSection == null) return;
-    
-    // 1. Check if registration is open (via a placeholder check or a future API call)
-    // NOTE: This check is currently done on your Node.js backend.
-
-    setState(() { _isLoading = true; }); 
-
-    final String name = _nameController.text.trim();
-    final String studentId = _studentIdController.text.trim();
-    final String batch = _batchController.text.trim();
-    final String password = _passwordController.text;
-    final String section = _selectedSection!;
-    
-    // 2. Construct the unique email alias as required by the backend User model
-    final String emailAlias = '${studentId.toLowerCase()}@leadunity.edu'; 
-    
-    // 3. Access the AuthProvider
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-
-    try {
-      // 4. Call the AuthProvider to handle the API request and token storage
-      await authProvider.register(
-        name, 
-        emailAlias, 
-        password,
-        studentId, 
-        batch,  
-        section, 
-      );
-
-      // On success, the AuthProvider has stored the token and updated state.
-      // main.dart will automatically route the user to the StudentDashboard.
-      _showSuccess('Registration successful! You are now logged in.');
-      Navigator.push(context, 
-        MaterialPageRoute(builder: (_) => const StudentDashboard()),
-      );
+  void _submit() async {
+    if (_formKey.currentState!.validate()) {
+      _formKey.currentState!.save();
+      setState(() => _isLoading = true);
       
-    } catch (e) {
-      // Handle API errors (e.g., registration closed, user already exists)
-      _showError(e.toString().replaceFirst('Exception: ', '')); 
-    } finally {
-      setState(() { _isLoading = false; }); 
+      try {
+        // 🟢 Logic Merge: Using individual fields to match your AuthProvider's 
+        // register function while keeping your form structure.
+        await Provider.of<AuthProvider>(context, listen: false).register(
+          _formData['name'],
+          _formData['email'],
+          _formData['password'],
+          _formData['studentId'],
+          _formData['batch'],
+          _formData['section'],
+        );
+        
+        if (!mounted) return;
+        
+        // Navigate to Dashboard on success
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const StudentDashboard()),
+          (route) => false,
+        );
+      } catch (e) {
+        // Cleaning up the error message for the UI
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')), 
+            backgroundColor: Colors.red
+          )
+        );
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
+      }
     }
   }
 
-  // --- UI Build Method ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-        appBar: AppBar(
-            title: const Text('Student Registration'),
-            backgroundColor: Colors.blueAccent,
-        ),
-        body: Center(
-            child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Form(
-                    key: _formKey,
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: <Widget>[
-                            const Text(
-                                'Student Account Setup',
-                                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Colors.blueGrey),
-                                textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 30),
-
-                            // Full Name Field
-                            _buildFormField(controller: _nameController, label: 'Full Name', icon: Icons.person),
-                            const SizedBox(height: 16),
-
-                            // Student ID Field
-                            _buildFormField(controller: _studentIdController, label: 'Student ID', icon: Icons.badge, keyboardType: TextInputType.number),
-                            const SizedBox(height: 16),
-
-                            // Batch Field
-                            _buildFormField(controller: _batchController, label: 'Batch (e.g., 61)', icon: Icons.school, keyboardType: TextInputType.number),
-                            const SizedBox(height: 16),
-                            
-                            // Section Dropdown
-                            _buildSectionDropdown(),
-                            const SizedBox(height: 16),
-
-                            // Password Field
-                            _buildPasswordField(),
-                            const SizedBox(height: 30),
-
-                            // Register Button
-                            _isLoading
-                                ? const Center(child: CircularProgressIndicator())
-                                : ElevatedButton(
-                                    onPressed: _registerStudent,
-                                    style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blueAccent,
-                                        padding: const EdgeInsets.symmetric(vertical: 15),
-                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                                    ),
-                                    child: const Text(
-                                        'Register Account',
-                                        style: TextStyle(color: Colors.white, fontSize: 18),
-                                    ),
-                                ),
-                        ],
-                    ),
+      backgroundColor: Colors.white, // 🟢 Keeping your white UI
+      appBar: AppBar(
+        title: const Text('Create Account', style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        iconTheme: const IconThemeData(color: Colors.black),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🟢 Your specific headers and typography
+              const Text(
+                'Join the Community',
+                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Fill in your details to get started with your research journey.',
+                style: TextStyle(fontSize: 14, color: Colors.grey),
+              ),
+              const SizedBox(height: 30),
+              
+              _buildLabel('Personal Info'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Full Name', 
+                  prefixIcon: Icon(Icons.person_outline), 
+                  border: OutlineInputBorder()
                 ),
-            ),
+                onSaved: (v) => _formData['name'] = v,
+                validator: (v) => v!.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Email Address', 
+                  prefixIcon: Icon(Icons.email_outlined), 
+                  border: OutlineInputBorder()
+                ),
+                keyboardType: TextInputType.emailAddress,
+                onSaved: (v) => _formData['email'] = v,
+                validator: (v) => v!.isEmpty ? 'Required' : null,
+              ),
+              
+              const SizedBox(height: 24),
+              _buildLabel('Academic Info'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Student ID', 
+                  prefixIcon: Icon(Icons.badge_outlined), 
+                  border: OutlineInputBorder()
+                ),
+                onSaved: (v) => _formData['studentId'] = v,
+                validator: (v) => v!.isEmpty ? 'Required' : null,
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Batch', 
+                        prefixIcon: Icon(Icons.calendar_today_outlined), 
+                        border: OutlineInputBorder()
+                      ),
+                      onSaved: (v) => _formData['batch'] = v,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextFormField(
+                      decoration: const InputDecoration(
+                        labelText: 'Section', 
+                        prefixIcon: Icon(Icons.class_outlined), 
+                        border: OutlineInputBorder()
+                      ),
+                      onSaved: (v) => _formData['section'] = v,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 24),
+              _buildLabel('Security'),
+              TextFormField(
+                decoration: const InputDecoration(
+                  labelText: 'Password', 
+                  prefixIcon: Icon(Icons.lock_outline), 
+                  border: OutlineInputBorder()
+                ),
+                obscureText: true,
+                onSaved: (v) => _formData['password'] = v,
+                validator: (v) => v!.length < 6 ? 'Min 6 chars' : null,
+              ),
+
+              const SizedBox(height: 40),
+              // 🟢 Your custom-styled button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _submit,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueAccent,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: _isLoading 
+                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                    : const Text('Register', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                ),
+              ),
+              const SizedBox(height: 30),
+            ],
+          ),
         ),
-    );
-  }
-  
-  // Helper function for text input decoration
-  Widget _buildFormField({required TextEditingController controller, required String label, required IconData icon, TextInputType keyboardType = TextInputType.text}) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: _buildInputDecoration(label, icon),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please enter your $label.';
-        }
-        return null;
-      },
-    );
-  }
-  
-  // Helper function for password field
-  Widget _buildPasswordField() {
-    return TextFormField(
-      controller: _passwordController,
-      obscureText: true,
-      decoration: _buildInputDecoration('Password (min 6 characters)', Icons.lock),
-      validator: (value) {
-        if (value == null || value.length < 6) {
-          return 'Password must be at least 6 characters long.';
-        }
-        return null;
-      },
-    );
-  }
-  
-  // Helper function for dropdown
-  Widget _buildSectionDropdown() {
-    return DropdownButtonFormField<String>(
-      value: _selectedSection,
-      decoration: _buildInputDecoration('Section', Icons.group),
-      hint: const Text('Select your section'),
-      items: _sections.map((String section) {
-        return DropdownMenuItem<String>(
-          value: section,
-          child: Text(section),
-        );
-      }).toList(),
-      onChanged: (String? newValue) {
-        setState(() {
-          _selectedSection = newValue;
-        });
-      },
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return 'Please select your section.';
-        }
-        return null;
-      },
+      ),
     );
   }
 
-  // Common input decoration style
-  InputDecoration _buildInputDecoration(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      border: const OutlineInputBorder(borderRadius: BorderRadius.all(Radius.circular(8))),
-      prefixIcon: Icon(icon, color: Colors.blueAccent),
-      contentPadding: const EdgeInsets.symmetric(vertical: 15, horizontal: 10),
+  Widget _buildLabel(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Text(
+        text, 
+        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F766E))
+      ),
     );
   }
 }

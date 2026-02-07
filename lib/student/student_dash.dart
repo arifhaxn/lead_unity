@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import 'package:link_unity/auth_provider.dart';
-import 'package:link_unity/student/student_login.dart';
 import 'package:link_unity/student/submit_proposal.dart';
-import 'package:link_unity/student/team_info.dart';
-import 'package:link_unity/view_template.dart';
-import 'package:link_unity/chatbot_screen.dart';
+import 'package:provider/provider.dart';
+
+// 🟢 Correct Imports
+import '../auth_provider.dart';
+import '../home_page.dart';
+import '../view_template.dart';
+import '../chatbot_screen.dart';
+import 'team_info.dart'; 
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -15,17 +17,13 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  String? _currentTeamId;
-
   // --- Navigation Handlers ---
   void _navigateToTeamInfo() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
   }
 
   void _navigateToSubmitProposal() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
   }
 
   void _navigateToRequestTeam() {
@@ -35,37 +33,44 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _downloadTemplate() {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
 
   void _logout() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.logout();
-    Navigator.pushReplacement(context,
-        MaterialPageRoute(builder: (context) => const StudentLoginScreen()));
+    
+    // 🟢 Use pushAndRemoveUntil to clear stack so user can't go back
+    Navigator.pushAndRemoveUntil(
+      context, 
+      MaterialPageRoute(builder: (context) => const HomePage()),
+      (route) => false
+    );
   }
 
   void _openChatbot() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => const ChatbotScreen()),
-    );
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatbotScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
+    // 🟢 Logic Fix: Listen to AuthProvider updates to keep name/status fresh
     final authProvider = Provider.of<AuthProvider>(context);
-    final String actualStudentName = authProvider.user?.name ?? 'Student';
-    _currentTeamId = "ABC-001"; // Placeholder
-    final bool hasTeam = _currentTeamId != null;
+    final user = authProvider.user;
+    
+    // Safely access properties from your User model
+    final String studentName = user?.name ?? 'Student';
+    // Logic placeholder: In a real app, you'd check if user.teamId is not null
+    final bool hasTeam = false; 
+    final String? currentTeamId = null;
 
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC), // 🟢 Keeping his clean background color
       appBar: AppBar(
-        title: const Text('Student Dashboard'),
+        title: const Text('Student Dashboard', style: TextStyle(color: Colors.black87)),
         backgroundColor: Colors.white,
-        elevation: 1,
-        foregroundColor: Colors.black87,
+        elevation: 0, // Flat modern look
+        iconTheme: const IconThemeData(color: Colors.black87),
         actions: [
           IconButton(
             icon: const Icon(Icons.logout, color: Colors.blueGrey),
@@ -75,41 +80,40 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(24.0), // 🟢 Increased padding for modern feel
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // --- Welcome Section ---
             Text(
-              'Hello, $actualStudentName',
+              'Hello, $studentName',
               style: const TextStyle(
-                  fontSize: 30,
+                  fontSize: 28, // Slightly smaller than 30 for better fit
                   fontWeight: FontWeight.bold,
-                  color: Colors.black87),
+                  color: Color(0xFF1E293B)), // Slate 800
             ),
             const SizedBox(height: 10),
 
             // --- Status Banner ---
-            _buildStatusBanner(hasTeam, _currentTeamId),
+            _buildStatusBanner(hasTeam, currentTeamId),
 
-            const Divider(height: 30),
+            const SizedBox(height: 30), // Replaced Divider with clean space
 
             // --- Dashboard Cards Layout ---
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                // ROW 1: Submit Proposal (Prominent Size, Standard Color)
+                // ROW 1: Submit Proposal
                 _buildSlickCard(
                   icon: Icons.upload_file_outlined,
                   title: 'Submit Proposal',
                   action: 'Upload your team project proposal',
                   color: Colors.green,
                   onTap: _navigateToSubmitProposal,
-                  isProminent:
-                      true, // Keeps it bigger, but colors will now match others
+                  isProminent: true,
                 ),
 
-                // ROW 2: Team Info & Request Team (Side by Side & Equal Height)
+                // ROW 2: Team Info & Request Team
                 IntrinsicHeight(
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -129,7 +133,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         child: _buildSlickCard(
                           icon: Icons.person_add_alt_1_outlined,
                           title: 'Request Team',
-                          action: 'If You Don\'t Have a Team',
+                          action: 'Find a group',
                           color: Colors.orange,
                           onTap: _navigateToRequestTeam,
                           isCompact: true,
@@ -154,7 +158,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openChatbot,
-        backgroundColor: Colors.blue,
+        backgroundColor: const Color(0xFF0F766E), // Teal to match theme
         child: const Icon(Icons.message, color: Colors.white),
         tooltip: 'Chat with Assistant',
       ),
@@ -163,10 +167,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // --- Status Banner Widget ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
-    final Color bannerColor =
-        hasTeam ? Colors.green.shade50 : Colors.red.shade50;
-    final Color textColor =
-        hasTeam ? Colors.green.shade800 : Colors.red.shade800;
+    final Color bannerColor = hasTeam ? Colors.green.shade50 : Colors.red.shade50;
+    final Color textColor = hasTeam ? Colors.green.shade800 : Colors.red.shade800;
     final String statusText = hasTeam
         ? 'You are part of Team $teamId.'
         : 'Action required: You are not yet on a team.';
@@ -181,21 +183,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: Row(
         children: [
           Icon(
-              hasTeam
-                  ? Icons.check_circle_outline
-                  : Icons.warning_amber_outlined,
-              color: textColor),
+              hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined,
+              color: textColor
+          ),
           const SizedBox(width: 12),
           Expanded(
               child: Text(statusText,
-                  style: TextStyle(
-                      color: textColor, fontWeight: FontWeight.w600))),
+                  style: TextStyle(color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
   }
 
-  // --- Slicker Card Widget (Updated for Consistent Color Design) ---
+  // --- Slicker Card Widget ---
   Widget _buildSlickCard({
     required IconData icon,
     required String title,
@@ -207,88 +207,80 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: Card(
-        elevation: isProminent
-            ? 6
-            : 4, // Still slightly higher elevation for prominent
-        color: Colors.white, // 🟢 FIX: Always white background now
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(15),
-          child: Padding(
-            // Keep padding larger if prominent
-            padding: EdgeInsets.all(isProminent ? 25.0 : 20.0),
-            child: isCompact
-                ? Column(
-                    // Compact Mode
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(icon, size: 30, color: color),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(title,
-                          style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.black87)),
-                      const SizedBox(height: 4),
-                      Text(action,
-                          style: TextStyle(
-                              fontSize: 12,
-                              color: color,
-                              fontWeight: FontWeight.w600)),
-                    ],
-                  )
-                : Row(
-                    // Standard/Prominent Mode
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: <Widget>[
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          // 🟢 FIX: Always use light opacity background for icon
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        // 🟢 FIX: Always use the accent color for icon
-                        child: Icon(icon, size: 30, color: color),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Text(title,
-                                style: TextStyle(
-                                    fontSize: isProminent
-                                        ? 22
-                                        : 18, // Font is still bigger if prominent
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors
-                                        .black87 // 🟢 FIX: Always black text
-                                    )),
-                            const SizedBox(height: 2),
-                            Text(action,
-                                style: TextStyle(
-                                    fontSize: isProminent ? 16 : 14,
-                                    color:
-                                        color, // 🟢 FIX: Always accent color text
-                                    fontWeight: FontWeight.w500)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.grey.withOpacity(0.05), 
+                blurRadius: 10, 
+                offset: const Offset(0, 4)
+              )
+            ],
           ),
+          padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
+          child: isCompact
+              ? Column( // Compact Layout (Vertical)
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 28, color: color),
+                    ),
+                    const SizedBox(height: 16),
+                    Text(title,
+                        style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1E293B))),
+                    const SizedBox(height: 4),
+                    Text(action,
+                        style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500)),
+                  ],
+                )
+              : Row( // Standard/Prominent Layout (Horizontal)
+                  children: <Widget>[
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Icon(icon, size: 30, color: color),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(title,
+                              style: TextStyle(
+                                  fontSize: isProminent ? 20 : 18,
+                                  fontWeight: FontWeight.bold,
+                                  color: const Color(0xFF1E293B))),
+                          const SizedBox(height: 4),
+                          Text(action,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600])),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey[300]),
+                  ],
+                ),
         ),
       ),
     );

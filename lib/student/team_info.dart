@@ -1,8 +1,4 @@
-// lib/student/view_teams_screen.dart
-
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
-import '../auth_provider.dart';
 import '../api services/api_services.dart';
 
 class TeamInfoScreen extends StatefulWidget {
@@ -15,171 +11,146 @@ class TeamInfoScreen extends StatefulWidget {
 class _TeamInfoScreenState extends State<TeamInfoScreen> {
   final ApiService _apiService = ApiService();
 
-  bool _isLoading = true;
-  List<dynamic> _courses = [];
-  Map<String, dynamic> _submittedProposals = {};
-
-  @override
-  void initState() {
-    super.initState();
-    _fetchStatus();
-  }
-
-  Future<void> _fetchStatus() async {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final token = authProvider.token;
-
-    try {
-      final results = await Future.wait([
-        _apiService.getCourses(),
-        //_apiService.getAllProposals(token!), // uses /proposals
-      ]);
-
-      final courses = results[0] as List;
-      final proposals = results[1] as List;
-
-      final Map<String, dynamic> proposalMap = {};
-
-      for (var p in proposals) {
-        if (p['course'] != null && p['course']['_id'] != null) {
-          proposalMap[p['course']['_id']] = p;
-        }
-      }
-
-      setState(() {
-        _courses = courses;
-        _submittedProposals = proposalMap;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to load data: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8FAFC),
       appBar: AppBar(
-        title: const Text('Proposal Status & Teams'),
-        backgroundColor: Colors.blueAccent,
+        title: const Text('My Team & Proposal'),
+        backgroundColor: Colors.blueAccent, // 🟢 Keeping your blue theme
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: _courses.length,
-              itemBuilder: (context, index) {
-                final course = _courses[index];
-                final proposal = _submittedProposals[course['_id']];
-                final bool isSubmitted = proposal != null;
+      body: FutureBuilder<List<dynamic>>(
+        // 🟢 Using his API method which automatically attaches the token
+        future: _apiService.getUserProposals(), 
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.diversity_3_outlined, size: 80, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  const Text(
+                    "No Team Found", 
+                    style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey)
+                  ),
+                  const SizedBox(height: 8),
+                  const Text("Submit a proposal to form a team.", style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            );
+          }
 
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+          // 🟢 Logic: Display the first active proposal (similar to his logic)
+          final proposal = snapshot.data![0];
+          final members = proposal['teamMembers'] as List? ?? [];
+          final course = proposal['course'] ?? {};
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // 🟢 Your Card UI for the Project Info
+                Card(
                   elevation: 4,
-                  child: ExpansionTile(
-                    leading: Icon(
-                      isSubmitted
-                          ? Icons.check_circle
-                          : Icons.pending_actions,
-                      color: isSubmitted ? Colors.green : Colors.orange,
-                    ),
-                    title: Text(
-                      course['courseCode'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                      ),
-                    ),
-                    subtitle: Text(
-                      isSubmitted
-                          ? 'Proposal Submitted'
-                          : 'No Proposal Submitted Yet',
-                      style: TextStyle(
-                        color:
-                            isSubmitted ? Colors.green : Colors.redAccent,
-                      ),
-                    ),
-                    children: [
-                      if (isSubmitted)
-                        Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              _buildInfoRow(
-                                  'Title', proposal['title'] ?? 'N/A'),
-                              const SizedBox(height: 8),
-                              _buildInfoRow(
-                                'Status',
-                                (proposal['status'] ?? 'pending')
-                                    .toUpperCase(),
-                              ),
-                              const SizedBox(height: 16),
-                              const Text(
-                                'Team Members',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const Divider(),
-                              if (proposal['teamMembers'] != null &&
-                                  proposal['teamMembers'].isNotEmpty)
-                                ...proposal['teamMembers'].map<Widget>((m) {
-                                  return Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                        vertical: 4),
-                                    child: Text(
-                                      '• ${m['name']} (${m['studentId']})',
-                                    ),
-                                  );
-                                }).toList()
-                              else
-                                const Text(
-                                  'No team members added.',
-                                  style: TextStyle(
-                                      fontStyle: FontStyle.italic),
-                                ),
-                            ],
-                          ),
-                        )
-                      else
-                        const Padding(
-                          padding: EdgeInsets.all(16),
-                          child: Text(
-                            'You have not submitted a proposal for this course yet.',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: Colors.grey,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Chip(
+                              label: Text(course['courseCode'] ?? 'N/A'),
+                              backgroundColor: Colors.blue.shade50,
+                              labelStyle: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
                             ),
-                          ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                color: _getStatusColor(proposal['status']),
+                                borderRadius: BorderRadius.circular(12)
+                              ),
+                              child: Text(
+                                (proposal['status'] ?? 'PENDING').toString().toUpperCase(),
+                                style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            )
+                          ],
                         ),
-                    ],
+                        const SizedBox(height: 12),
+                        const Text("Project Title", style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        Text(
+                          proposal['title'] ?? 'Untitled Project', 
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))
+                        ),
+                        const SizedBox(height: 8),
+                        const Divider(),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Description/Link', proposal['description'] ?? 'No link provided'),
+                      ],
+                    ),
                   ),
-                );
-              },
+                ),
+                
+                const SizedBox(height: 24),
+                const Text("Team Members", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))),
+                const SizedBox(height: 12),
+
+                // 🟢 Your List-based UI for members
+                ...members.map((m) => Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Colors.blue.shade50,
+                      child: Text(
+                        (m['name']?[0] ?? 'U').toString().toUpperCase(),
+                        style: const TextStyle(color: Colors.blueAccent, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    title: Text(m['name'] ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w600)),
+                    subtitle: Text(m['studentId'] ?? 'No ID', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        const Text("CGPA", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                        Text(m['cgpa'] ?? 'N/A', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                      ],
+                    ),
+                  ),
+                )).toList(),
+              ],
             ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildInfoRow(String label, String value) {
-    return Row(
+    return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          '$label: ',
-          style: const TextStyle(fontWeight: FontWeight.bold),
-        ),
-        Expanded(child: Text(value)),
+        Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+        Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       ],
     );
+  }
+
+  Color _getStatusColor(String? status) {
+    switch (status?.toLowerCase()) {
+      case 'approved': return Colors.green;
+      case 'rejected': return Colors.red;
+      default: return Colors.orange;
+    }
   }
 }
