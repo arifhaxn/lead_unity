@@ -7,7 +7,9 @@ import '../auth_provider.dart';
 import '../home_page.dart';
 import '../view_template.dart';
 import '../chatbot_screen.dart';
-import 'team_info.dart'; 
+import 'team_info.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -19,11 +21,13 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   // --- Navigation Handlers ---
   void _navigateToTeamInfo() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
   }
 
   void _navigateToSubmitProposal() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
   }
 
   void _navigateToRequestTeam() {
@@ -33,64 +37,73 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _downloadTemplate() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
 
   void _logout() {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     authProvider.logout();
-    
+
     // 🟢 Use pushAndRemoveUntil to clear stack so user can't go back
     Navigator.pushAndRemoveUntil(
-      context, 
-      MaterialPageRoute(builder: (context) => const HomePage()),
-      (route) => false
-    );
+        context,
+        MaterialPageRoute(builder: (context) => const HomePage()),
+        (route) => false);
   }
 
   void _openChatbot() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatbotScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const ChatbotScreen()));
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     // 🟢 Logic Fix: Listen to AuthProvider updates to keep name/status fresh
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
-    
+
     // Safely access properties from your User model
     final String studentName = user?.name ?? 'Student';
     // Logic placeholder: In a real app, you'd check if user.teamId is not null
-    final bool hasTeam = false; 
+    final bool hasTeam = false;
     final String? currentTeamId = null;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC), // 🟢 Keeping his clean background color
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Student Dashboard', style: TextStyle(color: Colors.black87)),
-        backgroundColor: Colors.white,
-        elevation: 0, // Flat modern look
-        iconTheme: const IconThemeData(color: Colors.black87),
+        title: const Text('Student Dashboard'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout, color: Colors.blueGrey),
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          ),
+          IconButton(
+            icon: Icon(Icons.logout, color: theme.colorScheme.onSurfaceVariant),
             onPressed: _logout,
             tooltip: 'Logout',
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0), // 🟢 Increased padding for modern feel
+        padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             // --- Welcome Section ---
             Text(
               'Hello, $studentName',
-              style: const TextStyle(
-                  fontSize: 28, // Slightly smaller than 30 for better fit
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF1E293B)), // Slate 800
+              style: theme.textTheme.displaySmall,
             ),
             const SizedBox(height: 10),
 
@@ -105,10 +118,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
               children: <Widget>[
                 // ROW 1: Submit Proposal
                 _buildSlickCard(
+                  context: context,
                   icon: Icons.upload_file_outlined,
                   title: 'Submit Proposal',
                   action: 'Upload your team project proposal',
-                  color: Colors.green,
+                  color: AppColors.accentTeal,
                   onTap: _navigateToSubmitProposal,
                   isProminent: true,
                 ),
@@ -120,10 +134,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     children: [
                       Expanded(
                         child: _buildSlickCard(
+                          context: context,
                           icon: Icons.groups_2_outlined,
                           title: 'Team Info',
                           action: 'View Submitted Info',
-                          color: Colors.blueAccent,
+                          color: AppColors.primary,
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
                         ),
@@ -131,10 +146,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       const SizedBox(width: 16),
                       Expanded(
                         child: _buildSlickCard(
+                          context: context,
                           icon: Icons.person_add_alt_1_outlined,
                           title: 'Request Team',
                           action: 'Find a group',
-                          color: Colors.orange,
+                          color: AppColors.accentLime,
                           onTap: _navigateToRequestTeam,
                           isCompact: true,
                         ),
@@ -145,10 +161,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
                 // ROW 3: Get Template
                 _buildSlickCard(
+                  context: context,
                   icon: Icons.download_for_offline_outlined,
                   title: 'Get Template',
                   action: 'Preview and Download',
-                  color: Colors.purple,
+                  color: AppColors.accentCoral,
                   onTap: _downloadTemplate,
                 ),
               ],
@@ -158,7 +175,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openChatbot,
-        backgroundColor: const Color(0xFF0F766E), // Teal to match theme
+        backgroundColor: AppColors.primary,
         child: const Icon(Icons.message, color: Colors.white),
         tooltip: 'Chat with Assistant',
       ),
@@ -167,8 +184,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // --- Status Banner Widget ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
-    final Color bannerColor = hasTeam ? Colors.green.shade50 : Colors.red.shade50;
-    final Color textColor = hasTeam ? Colors.green.shade800 : Colors.red.shade800;
+    final Color bannerColor = hasTeam
+        ? AppColors.accentTeal.withOpacity(0.12)
+        : AppColors.accentCoral.withOpacity(0.12);
+    final Color textColor =
+        hasTeam ? AppColors.accentTeal : AppColors.accentCoral;
     final String statusText = hasTeam
         ? 'You are part of Team $teamId.'
         : 'Action required: You are not yet on a team.';
@@ -183,13 +203,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: Row(
         children: [
           Icon(
-              hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined,
-              color: textColor
-          ),
+              hasTeam
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: textColor),
           const SizedBox(width: 12),
           Expanded(
               child: Text(statusText,
-                  style: TextStyle(color: textColor, fontWeight: FontWeight.w600))),
+                  style: TextStyle(
+                      color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -197,6 +219,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // --- Slicker Card Widget ---
   Widget _buildSlickCard({
+    required BuildContext context,
     required IconData icon,
     required String title,
     required String action,
@@ -205,26 +228,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
     bool isProminent = false,
     bool isCompact = false,
   }) {
+    final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: AppRadii.card,
         child: Container(
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.grey.withOpacity(0.05), 
-                blurRadius: 10, 
-                offset: const Offset(0, 4)
-              )
-            ],
+            color: theme.colorScheme.surface,
+            borderRadius: AppRadii.card,
+            boxShadow: AppShadows.level1,
           ),
           padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
           child: isCompact
-              ? Column( // Compact Layout (Vertical)
+              ? Column(
+                  // Compact Layout (Vertical)
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -238,19 +257,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     ),
                     const SizedBox(height: 16),
                     Text(title,
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E293B))),
+                        style:
+                            theme.textTheme.titleLarge?.copyWith(fontSize: 16)),
                     const SizedBox(height: 4),
                     Text(action,
                         style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey[600],
+                            color: theme.colorScheme.onSurfaceVariant,
                             fontWeight: FontWeight.w500)),
                   ],
                 )
-              : Row( // Standard/Prominent Layout (Horizontal)
+              : Row(
+                  // Standard/Prominent Layout (Horizontal)
                   children: <Widget>[
                     Container(
                       padding: const EdgeInsets.all(12),
@@ -269,16 +287,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               style: TextStyle(
                                   fontSize: isProminent ? 20 : 18,
                                   fontWeight: FontWeight.bold,
-                                  color: const Color(0xFF1E293B))),
+                                  color: theme.colorScheme.onSurface)),
                           const SizedBox(height: 4),
                           Text(action,
                               style: TextStyle(
                                   fontSize: 14,
-                                  color: Colors.grey[600])),
+                                  color: theme.colorScheme.onSurfaceVariant)),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.grey[300]),
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: theme.colorScheme.outline),
                   ],
                 ),
         ),

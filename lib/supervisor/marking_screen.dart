@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 // 🟢 No need for Provider to get token anymore
 import '../api services/api_services.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
@@ -13,10 +16,10 @@ class MarkingScreen extends StatefulWidget {
 class _MarkingScreenState extends State<MarkingScreen> {
   Map<String, dynamic>? _settings;
   bool _isLoading = true;
-  
+
   // Marks State: { studentId: { c1: 0, c2: 0, absent: false, data: {} } }
   final Map<String, Map<String, dynamic>> _studentMarks = {};
-  final ApiService _apiService = ApiService(); 
+  final ApiService _apiService = ApiService();
 
   @override
   void initState() {
@@ -27,8 +30,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
   _loadSettingsAndMarks() async {
     try {
       // 🟢 1. Fetch Criteria Settings (Token auto-injected)
-      final s = await _apiService.getEvaluationSettings(); 
-      
+      final s = await _apiService.getEvaluationSettings();
+
       // 2. Map Existing Saved Marks (if any)
       final List<dynamic> existingMarksList = widget.team['marks'] ?? [];
       Map<String, dynamic> existingMarksMap = {};
@@ -41,8 +44,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
       // 4. Initialize Local State
       for (var student in allStudents) {
-        String uid = student['studentId'] ?? student['_id']; 
-        
+        String uid = student['studentId'] ?? student['_id'];
+
         if (existingMarksMap.containsKey(uid)) {
           // Load Saved Data
           var saved = existingMarksMap[uid];
@@ -71,7 +74,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error loading settings: $e")));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Error loading settings: $e")));
         setState(() => _isLoading = false);
       }
     }
@@ -79,9 +83,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
   void _submitMarks() async {
     setState(() => _isLoading = true);
-    
+
     List<Map<String, dynamic>> payload = [];
-    
+
     _studentMarks.forEach((key, value) {
       payload.add({
         'studentId': key,
@@ -93,63 +97,78 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
     try {
       // 🟢 Token auto-injected. No need to pass it.
-      await _apiService.saveTeamMarks(widget.team['_id'], payload); 
-      
-      if(mounted) {
-         Navigator.pop(context);
-         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Evaluations Saved Successfully"), backgroundColor: Colors.green));
+      await _apiService.saveTeamMarks(widget.team['_id'], payload);
+
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text("Evaluations Saved Successfully"),
+            backgroundColor: Colors.green));
       }
     } catch (e) {
-      if(mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
-         setState(() => _isLoading = false);
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(e.toString()), backgroundColor: Colors.red));
+        setState(() => _isLoading = false);
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    if (_isLoading)
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    final c1Name = _settings?['criteria1']['name'];
-    final c1Max = _settings?['criteria1']['max'];
-    final c2Name = _settings?['criteria2']['name'];
-    final c2Max = _settings?['criteria2']['max'];
+    final c1Name =
+        _settings?['criteria1']['name'] ?? 'Problem Definition, Design & Viva';
+    final c1Max = _settings?['criteria1']['max'] ?? 30;
+    final c2Name =
+        _settings?['criteria2']['name'] ?? 'Presentation, Testing & Report';
+    final c2Max = _settings?['criteria2']['max'] ?? 30;
 
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Evaluation"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
-        elevation: 1,
+        title: Text(widget.team['title'] ?? 'Untitled Project'),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Info
-            Text(
-              widget.team['title'] ?? 'Untitled Project', 
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Color(0xFF1E293B))
-            ),
-            const SizedBox(height: 10),
-            
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFFF8FAFC),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade200)
-              ),
+                  color: theme.colorScheme.surface,
+                  borderRadius: AppRadii.card,
+                  border: Border.all(color: theme.colorScheme.outline),
+                  boxShadow: AppShadows.level1),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCriteriaRow("Criteria 1", c1Name, c1Max),
+                  _buildCriteriaRow("Criteria - 1", c1Name, c1Max),
                   const SizedBox(height: 8),
-                  _buildCriteriaRow("Criteria 2", c2Name, c2Max),
+                  _buildCriteriaRow("Criteria - 2", c2Name, c2Max),
                 ],
               ),
             ),
@@ -169,22 +188,26 @@ class _MarkingScreenState extends State<MarkingScreen> {
             }).toList(),
 
             const SizedBox(height: 20),
-            
+
             SizedBox(
               width: double.infinity,
               height: 56,
               child: ElevatedButton(
                 onPressed: _submitMarks,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF0F766E), 
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
-                ),
+                    backgroundColor: AppColors.primary,
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: AppRadii.button)),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: const [
                     Icon(Icons.save_rounded, color: Colors.white),
                     SizedBox(width: 10),
-                    Text("Submit Evaluations", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                    Text("Submit Evaluations",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white)),
                   ],
                 ),
               ),
@@ -200,8 +223,15 @@ class _MarkingScreenState extends State<MarkingScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text("$label: ", style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0F766E))),
-        Expanded(child: Text("$name ($max Marks)")),
+        Text("$label: ",
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, color: AppColors.primary)),
+        Expanded(
+          child: Text(
+            "$name ($max)",
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
       ],
     );
   }
@@ -237,23 +267,27 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
   void initState() {
     super.initState();
     _isAbsent = widget.marksData['absent'];
-    _c1Ctrl.text = widget.marksData['c1'] == 0.0 ? '' : widget.marksData['c1'].toString();
-    _c2Ctrl.text = widget.marksData['c2'] == 0.0 ? '' : widget.marksData['c2'].toString();
+    _c1Ctrl.text =
+        widget.marksData['c1'] == 0.0 ? '' : widget.marksData['c1'].toString();
+    _c2Ctrl.text =
+        widget.marksData['c2'] == 0.0 ? '' : widget.marksData['c2'].toString();
   }
 
   void _update() {
     double c1 = double.tryParse(_c1Ctrl.text) ?? 0;
     double c2 = double.tryParse(_c2Ctrl.text) ?? 0;
 
-    if (c1 > widget.maxC1) { 
-      c1 = widget.maxC1.toDouble(); 
-      _c1Ctrl.text = c1.toString(); 
-      _c1Ctrl.selection = TextSelection.fromPosition(TextPosition(offset: _c1Ctrl.text.length));
+    if (c1 > widget.maxC1) {
+      c1 = widget.maxC1.toDouble();
+      _c1Ctrl.text = c1.toString();
+      _c1Ctrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _c1Ctrl.text.length));
     }
-    if (c2 > widget.maxC2) { 
-      c2 = widget.maxC2.toDouble(); 
-      _c2Ctrl.text = c2.toString(); 
-      _c2Ctrl.selection = TextSelection.fromPosition(TextPosition(offset: _c2Ctrl.text.length));
+    if (c2 > widget.maxC2) {
+      c2 = widget.maxC2.toDouble();
+      _c2Ctrl.text = c2.toString();
+      _c2Ctrl.selection =
+          TextSelection.fromPosition(TextPosition(offset: _c2Ctrl.text.length));
     }
 
     widget.onChanged({
@@ -262,34 +296,42 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
       'c2': c2,
       'absent': _isAbsent
     });
-    
-    setState(() {}); 
+
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    double total = (double.tryParse(_c1Ctrl.text) ?? 0) + (double.tryParse(_c2Ctrl.text) ?? 0);
+    final theme = Theme.of(context);
+    double total = (double.tryParse(_c1Ctrl.text) ?? 0) +
+        (double.tryParse(_c2Ctrl.text) ?? 0);
     String name = widget.studentData['name'] ?? 'Unknown';
-    String id = widget.studentData['studentId'] ?? widget.studentData['_id'] ?? 'N/A';
+    String id =
+        widget.studentData['studentId'] ?? widget.studentData['_id'] ?? 'N/A';
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.1), blurRadius: 15, offset: const Offset(0, 5))],
+        color: theme.colorScheme.surface,
+        borderRadius: AppRadii.card,
+        boxShadow: AppShadows.level1,
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFE0F2F1), Color(0xFFB2DFDB)], 
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.accentTeal.withOpacity(0.6),
+                  AppColors.accentTeal.withOpacity(0.25),
+                ],
+                begin: Alignment.centerLeft,
+                end: Alignment.centerRight,
               ),
-              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -297,59 +339,78 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16, color: Color(0xFF004D40))),
-                    Text(id, style: const TextStyle(fontSize: 13, color: Color(0xFF00695C))),
+                    Text(name,
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                            color: AppColors.textPrimary)),
+                    Text(id,
+                        style: const TextStyle(
+                            fontSize: 13, color: AppColors.textSecondary)),
                   ],
                 ),
-                Column(
+                Row(
                   children: [
+                    Text(
+                      "Marks as Absent",
+                      style: TextStyle(
+                          fontSize: 11,
+                          color: _isAbsent
+                              ? AppColors.accentCoral
+                              : AppColors.textSecondary),
+                    ),
+                    const SizedBox(width: 6),
                     Switch(
                       value: _isAbsent,
-                      activeColor: Colors.redAccent,
+                      activeColor: AppColors.accentCoral,
                       onChanged: (val) {
                         setState(() => _isAbsent = val);
                         _update();
                       },
                     ),
-                    Text("Absent", style: TextStyle(fontSize: 10, color: _isAbsent ? Colors.red : Colors.grey)),
                   ],
                 )
               ],
             ),
           ),
-
           AnimatedCrossFade(
-            duration: const Duration(milliseconds: 300),
-            crossFadeState: _isAbsent ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-            firstChild: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(24),
-              child: const Center(
-                child: Text("Marked as Absent", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic)),
-              ),
-            ),
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _isAbsent
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: const SizedBox.shrink(),
             secondChild: Padding(
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  Expanded(child: _buildInputBox("Criteria 1", _c1Ctrl)),
+                  Expanded(
+                      child: _buildInputBox("Criteria - 1", _c1Ctrl,
+                          enabled: !_isAbsent)),
                   const SizedBox(width: 12),
-                  Expanded(child: _buildInputBox("Criteria 2", _c2Ctrl)),
+                  Expanded(
+                      child: _buildInputBox("Criteria - 2", _c2Ctrl,
+                          enabled: !_isAbsent)),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Container(
                       height: 56,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F5F9),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey.shade300)
-                      ),
+                          color: theme.colorScheme.surfaceVariant,
+                          borderRadius: AppRadii.input,
+                          border: Border.all(color: theme.colorScheme.outline)),
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Text("Total", style: TextStyle(fontSize: 10, color: Colors.grey)),
-                          Text(total.toStringAsFixed(0), style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Color(0xFF1E293B))),
+                          Text("Total",
+                              style: TextStyle(
+                                  fontSize: 10,
+                                  color: theme.colorScheme.onSurfaceVariant)),
+                          Text(total.toStringAsFixed(0),
+                              style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 18,
+                                  color: theme.colorScheme.onSurface)),
                         ],
                       ),
                     ),
@@ -363,25 +424,34 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     );
   }
 
-  Widget _buildInputBox(String label, TextEditingController ctrl) {
+  Widget _buildInputBox(String label, TextEditingController ctrl,
+      {required bool enabled}) {
     return Container(
       height: 56,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.shade300),
+        color: enabled
+            ? Theme.of(context).colorScheme.surface
+            : Theme.of(context).colorScheme.surfaceVariant,
+        borderRadius: AppRadii.input,
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: TextField(
         controller: ctrl,
         keyboardType: TextInputType.number,
         textAlign: TextAlign.center,
+        enabled: enabled,
         onChanged: (_) => _update(),
         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
         decoration: InputDecoration(
           labelText: label,
+          labelStyle: TextStyle(
+            fontSize: 11,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          ),
           floatingLabelBehavior: FloatingLabelBehavior.auto,
           border: InputBorder.none,
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         ),
       ),
     );

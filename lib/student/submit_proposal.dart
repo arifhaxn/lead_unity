@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../auth_provider.dart';
 import '../api services/api_services.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -10,7 +11,8 @@ class SubmitProposalScreen extends StatefulWidget {
   State<SubmitProposalScreen> createState() => _SubmitProposalScreenState();
 }
 
-class _SubmitProposalScreenState extends State<SubmitProposalScreen> with TickerProviderStateMixin {
+class _SubmitProposalScreenState extends State<SubmitProposalScreen>
+    with TickerProviderStateMixin {
   List<dynamic> _courses = [];
   List<dynamic> _supervisors = [];
   bool _isLoadingData = true;
@@ -39,14 +41,16 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> with Ticker
           _courses = results[0];
           _supervisors = results[1];
           _isLoadingData = false;
-          _tabController = TabController(length: _courses.isEmpty ? 1 : _courses.length, vsync: this);
+          _tabController = TabController(
+              length: _courses.isEmpty ? 1 : _courses.length, vsync: this);
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingData = false;
-          _errorMessage = "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
+          _errorMessage =
+              "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
           _tabController = TabController(length: 1, vsync: this);
         });
       }
@@ -61,37 +65,87 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> with Ticker
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     if (_isLoadingData) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
     if (_errorMessage != null) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Error'), backgroundColor: Colors.teal),
-        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
+        appBar: AppBar(
+          title: const Text('Error'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                themeProvider.isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              onPressed: themeProvider.toggleTheme,
+              tooltip: themeProvider.isDarkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+            )
+          ],
+        ),
+        body: Center(
+            child: Text(_errorMessage!,
+                style: const TextStyle(color: Colors.red))),
       );
     }
 
     if (_courses.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('Submit Proposal'), backgroundColor: Colors.teal),
+        appBar: AppBar(
+          title: const Text('Submit Proposal'),
+          actions: [
+            IconButton(
+              icon: Icon(
+                themeProvider.isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
+              ),
+              onPressed: themeProvider.toggleTheme,
+              tooltip: themeProvider.isDarkMode
+                  ? 'Switch to light mode'
+                  : 'Switch to dark mode',
+            )
+          ],
+        ),
         body: const Center(child: Text("No courses available.")),
       );
     }
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text('Submit Proposal', style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.teal,
-        iconTheme: const IconThemeData(color: Colors.white),
+        title: const Text('Submit Proposal'),
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: Colors.white,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          )
+        ],
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
           labelColor: Colors.white,
-          indicatorColor: Colors.amber,
+          indicatorColor: AppColors.accentLime,
           unselectedLabelColor: Colors.white70,
-          tabs: _courses.map<Widget>((course) => Tab(text: course['courseCode'])).toList(),
+          tabs: _courses
+              .map<Widget>((course) => Tab(text: course['courseCode']))
+              .toList(),
         ),
       ),
       body: TabBarView(
@@ -132,15 +186,16 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   final TextEditingController _linkController = TextEditingController();
 
   // 🟢 Fixed: Using simple maps for member data, matching your friend's "Map<String, String>" logic
-  final List<Map<String, TextEditingController>> _memberControllers = List.generate(
-      4,
-      (index) => {
-            'name': TextEditingController(),
-            'id': TextEditingController(),
-            'cgpa': TextEditingController(),
-            'email': TextEditingController(),
-            'mobile': TextEditingController(),
-          });
+  final List<Map<String, TextEditingController>> _memberControllers =
+      List.generate(
+          4,
+          (index) => {
+                'name': TextEditingController(),
+                'id': TextEditingController(),
+                'cgpa': TextEditingController(),
+                'email': TextEditingController(),
+                'mobile': TextEditingController(),
+              });
 
   bool _isSubmitting = false;
   bool _hasFourthMember = false;
@@ -159,10 +214,10 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
-    
-    // 🟢 Logic Check: Ensure at least one supervisor is selected
-    if (_sup1 == null) {
-      _showError('Please select at least Supervisor 1.');
+
+    // Ensure all 3 supervisor preferences are selected
+    if (_sup1 == null || _sup2 == null || _sup3 == null) {
+      _showError('Please select all 3 supervisor preferences.');
       return;
     }
 
@@ -174,30 +229,49 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     if (_sup2 != null) supervisorIds.add(_sup2!);
     if (_sup3 != null) supervisorIds.add(_sup3!);
 
-    // 🟢 2. Collect Member Data
-    List<Map<String, String>> members = [];
+    // 🟢 2. Collect Member Data (require all fields)
+    List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     int count = _hasFourthMember ? 4 : 3;
 
     for (int i = 0; i < count; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
-      
-      if (id.isNotEmpty && name.isNotEmpty) {
-        if (uniqueIds.contains(id)) {
-           setState(() => _isSubmitting = false);
-           _showError('Duplicate Student ID: $id');
-           return;
-        }
-        uniqueIds.add(id);
-        members.add({
-          'name': name,
-          'studentId': id,
-          'cgpa': _memberControllers[i]['cgpa']!.text.trim(),
-          'email': _memberControllers[i]['email']!.text.trim(),
-          'mobile': _memberControllers[i]['mobile']!.text.trim(),
-        });
+      String cgpaRaw = _memberControllers[i]['cgpa']!.text.trim();
+      String email = _memberControllers[i]['email']!.text.trim();
+      String mobile = _memberControllers[i]['mobile']!.text.trim();
+
+      if (id.isEmpty ||
+          name.isEmpty ||
+          cgpaRaw.isEmpty ||
+          email.isEmpty ||
+          mobile.isEmpty) {
+        setState(() => _isSubmitting = false);
+        _showError('Please complete all fields for Member ${i + 1}.');
+        return;
       }
+
+      if (uniqueIds.contains(id)) {
+        setState(() => _isSubmitting = false);
+        _showError('Duplicate Student ID: $id');
+        return;
+      }
+
+      final cgpa = double.tryParse(cgpaRaw);
+      if (cgpa == null) {
+        setState(() => _isSubmitting = false);
+        _showError('Invalid CGPA for Member ${i + 1}.');
+        return;
+      }
+
+      uniqueIds.add(id);
+      members.add({
+        'name': name,
+        'studentId': id,
+        'cgpa': cgpaRaw,
+        'email': email,
+        'mobile': mobile,
+      });
     }
 
     try {
@@ -211,7 +285,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       });
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Proposal Submitted Successfully!'), backgroundColor: Colors.green));
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Proposal Submitted Successfully!'),
+            backgroundColor: Colors.green));
         Navigator.pop(context); // Go back to Dashboard
       }
     } catch (e) {
@@ -222,7 +298,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
@@ -236,16 +313,21 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           children: <Widget>[
             TextFormField(
                 controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Project Title', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                decoration: const InputDecoration(labelText: 'Project Title'),
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 16),
             TextFormField(
                 controller: _linkController,
-                decoration: const InputDecoration(labelText: 'Google Drive Link', border: OutlineInputBorder(), filled: true, fillColor: Colors.white),
+                decoration:
+                    const InputDecoration(labelText: 'Google Drive Link'),
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
-            
-            const Text('Select Supervisors', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal)),
+
+            const Text('Select Supervisors',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary)),
             const SizedBox(height: 10),
             Row(children: [
               _buildSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
@@ -254,25 +336,31 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               const SizedBox(width: 8),
               _buildSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
             ]),
-            
+
             const SizedBox(height: 30),
-            const Text('Team Members', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.teal)),
+            const Text('Team Members',
+                style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.primary)),
             const SizedBox(height: 10),
-            
-            ...List.generate(_hasFourthMember ? 4 : 3, (index) => _buildMemberCard(index)),
+
+            ...List.generate(
+                _hasFourthMember ? 4 : 3, (index) => _buildMemberCard(index)),
 
             if (!_hasFourthMember)
               TextButton.icon(
                 onPressed: () => setState(() => _hasFourthMember = true),
-                icon: const Icon(Icons.add, color: Colors.teal),
-                label: const Text('Add 4th Member', style: TextStyle(color: Colors.teal)),
+                icon: const Icon(Icons.add),
+                label: const Text('Add 4th Member'),
               ),
-            
+
             if (_hasFourthMember)
-               TextButton.icon(
+              TextButton.icon(
                 onPressed: () => setState(() => _hasFourthMember = false),
-                icon: const Icon(Icons.remove, color: Colors.red),
-                label: const Text('Remove 4th Member', style: TextStyle(color: Colors.red)),
+                icon: const Icon(Icons.remove, color: AppColors.accentCoral),
+                label: const Text('Remove 4th Member',
+                    style: TextStyle(color: AppColors.accentCoral)),
               ),
 
             const SizedBox(height: 30),
@@ -280,10 +368,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               height: 50,
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitProposal,
-                style: ElevatedButton.styleFrom(backgroundColor: Colors.teal),
-                child: _isSubmitting 
-                  ? const CircularProgressIndicator(color: Colors.white) 
-                  : const Text('Submit Proposal', style: TextStyle(fontSize: 18, color: Colors.white)),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary),
+                child: _isSubmitting
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : const Text('Submit Proposal',
+                        style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
             const SizedBox(height: 50), // Bottom padding
@@ -293,22 +383,25 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-  Widget _buildSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
+  Widget _buildSupDropdown(
+      int index, String? value, ValueChanged<String?> onChanged) {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
         decoration: InputDecoration(
           labelText: 'Sup $index',
-          border: const OutlineInputBorder(),
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-          filled: true,
-          fillColor: Colors.white
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
         items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
-           // Helper to get first name only for small dropdown
-           String name = s['name'].toString().split(' ')[0]; 
-           return DropdownMenuItem(value: s['_id'], child: Text(name, overflow: TextOverflow.ellipsis, style: const TextStyle(fontSize: 13)));
+          // Helper to get first name only for small dropdown
+          String name = s['name'].toString().split(' ')[0];
+          return DropdownMenuItem(
+              value: s['_id'],
+              child: Text(name,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(fontSize: 13)));
         }).toList(),
         onChanged: onChanged,
       ),
@@ -321,43 +414,58 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: isLeader ? Colors.teal.withOpacity(0.5) : Colors.grey.shade300),
-        boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.05), blurRadius: 5, offset: const Offset(0, 2))]
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: AppRadii.card,
+        border: Border.all(
+            color: isLeader
+                ? AppColors.primary.withOpacity(0.5)
+                : Theme.of(context).colorScheme.outline),
+        boxShadow: AppShadows.level1,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(isLeader ? "Member 1 (Leader)" : "Member ${index + 1}", style: TextStyle(fontWeight: FontWeight.bold, color: isLeader ? Colors.teal : Colors.grey[700])),
+          Text(
+            isLeader ? "Member 1 (Leader)" : "Member ${index + 1}",
+            style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: isLeader
+                    ? AppColors.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant),
+          ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            decoration: const InputDecoration(labelText: 'Name', isDense: true, border: OutlineInputBorder()),
+            decoration: const InputDecoration(labelText: 'Name', isDense: true),
             validator: (v) => v!.isEmpty ? 'Required' : null,
           ),
           const SizedBox(height: 8),
           Row(children: [
-             Expanded(child: TextFormField(
-               controller: _memberControllers[index]['id'],
-               decoration: const InputDecoration(labelText: 'ID', isDense: true, border: OutlineInputBorder()),
-               validator: (v) => v!.isEmpty ? 'Required' : null,
-             )),
-             const SizedBox(width: 8),
-             Expanded(child: TextFormField(
-               controller: _memberControllers[index]['cgpa'],
-               decoration: const InputDecoration(labelText: 'CGPA', isDense: true, border: OutlineInputBorder()),
-             )),
+            Expanded(
+                child: TextFormField(
+              controller: _memberControllers[index]['id'],
+              decoration: const InputDecoration(labelText: 'ID', isDense: true),
+              validator: (v) => v!.isEmpty ? 'Required' : null,
+            )),
+            const SizedBox(width: 8),
+            Expanded(
+                child: TextFormField(
+              controller: _memberControllers[index]['cgpa'],
+              decoration:
+                  const InputDecoration(labelText: 'CGPA', isDense: true),
+            )),
           ]),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['email'],
-            decoration: const InputDecoration(labelText: 'Email', isDense: true, border: OutlineInputBorder()),
+            decoration:
+                const InputDecoration(labelText: 'Email', isDense: true),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['mobile'],
-            decoration: const InputDecoration(labelText: 'Mobile', isDense: true, border: OutlineInputBorder()),
+            decoration:
+                const InputDecoration(labelText: 'Mobile', isDense: true),
           ),
         ],
       ),
