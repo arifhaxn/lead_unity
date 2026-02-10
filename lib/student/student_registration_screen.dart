@@ -2,12 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import 'student_dash.dart';
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({Key? key}) : super(key: key);
 
   @override
-  _StudentRegistrationScreenState createState() => _StudentRegistrationScreenState();
+  _StudentRegistrationScreenState createState() =>
+      _StudentRegistrationScreenState();
 }
 
 class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
@@ -19,9 +22,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
       setState(() => _isLoading = true);
-      
+
       try {
-        // 🟢 Logic Merge: Using individual fields to match your AuthProvider's 
+        // 🟢 Logic Merge: Using individual fields to match your AuthProvider's
         // register function while keeping your form structure.
         await Provider.of<AuthProvider>(context, listen: false).register(
           _formData['name'],
@@ -31,9 +34,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           _formData['batch'],
           _formData['section'],
         );
-        
+
         if (!mounted) return;
-        
+
         // Navigate to Dashboard on success
         Navigator.pushAndRemoveUntil(
           context,
@@ -42,12 +45,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         );
       } catch (e) {
         // Cleaning up the error message for the UI
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')), 
-            backgroundColor: Colors.red
-          )
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(e.toString().replaceAll('Exception: ', '')),
+            backgroundColor: Colors.red));
       } finally {
         if (mounted) setState(() => _isLoading = false);
       }
@@ -56,13 +56,29 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      backgroundColor: Colors.white, // 🟢 Keeping your white UI
+      backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
-        title: const Text('Create Account', style: TextStyle(color: Colors.black)),
-        backgroundColor: Colors.white,
+        title: const Text('Create Account'),
+        backgroundColor: theme.colorScheme.surface,
         elevation: 0,
-        iconTheme: const IconThemeData(color: Colors.black),
+        iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          )
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
@@ -74,45 +90,43 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               // 🟢 Your specific headers and typography
               const Text(
                 'Join the Community',
-                style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
                 'Fill in your details to get started with your research journey.',
-                style: TextStyle(fontSize: 14, color: Colors.grey),
+                style: TextStyle(
+                    fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 30),
-              
+
               _buildLabel('Personal Info'),
               TextFormField(
                 decoration: const InputDecoration(
-                  labelText: 'Full Name', 
-                  prefixIcon: Icon(Icons.person_outline), 
-                  border: OutlineInputBorder()
-                ),
+                    labelText: 'Full Name',
+                    prefixIcon: Icon(Icons.person_outline),
+                    border: OutlineInputBorder()),
                 onSaved: (v) => _formData['name'] = v,
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
                 decoration: const InputDecoration(
-                  labelText: 'Email Address', 
-                  prefixIcon: Icon(Icons.email_outlined), 
-                  border: OutlineInputBorder()
-                ),
+                    labelText: 'Email Address',
+                    prefixIcon: Icon(Icons.email_outlined),
+                    border: OutlineInputBorder()),
                 keyboardType: TextInputType.emailAddress,
                 onSaved: (v) => _formData['email'] = v,
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
-              
+
               const SizedBox(height: 24),
               _buildLabel('Academic Info'),
               TextFormField(
                 decoration: const InputDecoration(
-                  labelText: 'Student ID', 
-                  prefixIcon: Icon(Icons.badge_outlined), 
-                  border: OutlineInputBorder()
-                ),
+                    labelText: 'Student ID',
+                    prefixIcon: Icon(Icons.badge_outlined),
+                    border: OutlineInputBorder()),
                 onSaved: (v) => _formData['studentId'] = v,
                 validator: (v) => v!.isEmpty ? 'Required' : null,
               ),
@@ -122,10 +136,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   Expanded(
                     child: TextFormField(
                       decoration: const InputDecoration(
-                        labelText: 'Batch', 
-                        prefixIcon: Icon(Icons.calendar_today_outlined), 
-                        border: OutlineInputBorder()
-                      ),
+                          labelText: 'Batch',
+                          prefixIcon: Icon(Icons.calendar_today_outlined),
+                          border: OutlineInputBorder()),
                       onSaved: (v) => _formData['batch'] = v,
                       validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
@@ -134,10 +147,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   Expanded(
                     child: TextFormField(
                       decoration: const InputDecoration(
-                        labelText: 'Section', 
-                        prefixIcon: Icon(Icons.class_outlined), 
-                        border: OutlineInputBorder()
-                      ),
+                          labelText: 'Section',
+                          prefixIcon: Icon(Icons.class_outlined),
+                          border: OutlineInputBorder()),
                       onSaved: (v) => _formData['section'] = v,
                       validator: (v) => v!.isEmpty ? 'Required' : null,
                     ),
@@ -149,10 +161,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               _buildLabel('Security'),
               TextFormField(
                 decoration: const InputDecoration(
-                  labelText: 'Password', 
-                  prefixIcon: Icon(Icons.lock_outline), 
-                  border: OutlineInputBorder()
-                ),
+                    labelText: 'Password',
+                    prefixIcon: Icon(Icons.lock_outline),
+                    border: OutlineInputBorder()),
                 obscureText: true,
                 onSaved: (v) => _formData['password'] = v,
                 validator: (v) => v!.length < 6 ? 'Min 6 chars' : null,
@@ -165,13 +176,22 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _submit,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueAccent,
+                    backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: const RoundedRectangleBorder(
+                        borderRadius: AppRadii.button),
                   ),
-                  child: _isLoading 
-                    ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                    : const Text('Register', style: TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                  child: _isLoading
+                      ? const SizedBox(
+                          height: 20,
+                          width: 20,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2))
+                      : const Text('Register',
+                          style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                 ),
               ),
               const SizedBox(height: 30),
@@ -185,10 +205,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Widget _buildLabel(String text) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: Text(
-        text, 
-        style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF0F766E))
-      ),
+      child: Text(text,
+          style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: AppColors.primary)),
     );
   }
 }

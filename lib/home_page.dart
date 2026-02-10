@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'login_screen.dart'; // 🟢 Points to the unified LoginScreen we merged earlier
+import 'theme/app_theme.dart';
+import 'theme/theme_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -24,64 +27,100 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
-      backgroundColor: Colors.white, // 🟢 Keeping your clean white background
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(32.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: <Widget>[
-              // --- Your Original Logo & Title ---
-              const Icon(
-                Icons.lightbulb_outline, 
-                size: 80,
-                color: Colors.blueAccent,
+      backgroundColor: theme.colorScheme.surface,
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.surface,
+                  theme.colorScheme.surfaceVariant
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
-              const SizedBox(height: 16),
-              const Text(
-                'LeadUnity',
-                style: TextStyle(
-                  fontSize: 34,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const Text(
-                'The Link Between Students and Supervisors',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.grey,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 60),
+            ),
+            child: Center(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // --- Logo & Title ---
+                    Container(
+                      height: 88,
+                      width: 88,
+                      decoration: BoxDecoration(
+                        gradient: AppGradients.primary,
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: AppShadows.level1,
+                      ),
+                      child: const Icon(Icons.lightbulb_outline,
+                          size: 48, color: Colors.white),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'LeadUnity',
+                      style: theme.textTheme.displaySmall,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'The link between students and supervisors',
+                      style: theme.textTheme.bodyLarge
+                          ?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 56),
 
-              // --- Your Original Student Card ---
-              _buildLoginOptionCard(
-                context: context,
-                title: 'Student',
-                subtitle: 'Register or Log in to manage your project team and proposals.',
-                icon: Icons.school,
-                color: Colors.blueAccent,
-                onTap: () => _navigateToStudentLogin(context),
+                    _buildLoginOptionCard(
+                      context: context,
+                      title: 'Student',
+                      subtitle:
+                          'Register or log in to manage your project team and proposals.',
+                      icon: Icons.school,
+                      color: AppColors.primary,
+                      onTap: () => _navigateToStudentLogin(context),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLoginOptionCard(
+                      context: context,
+                      title: 'Supervisor',
+                      subtitle:
+                          'Log in to view, approve, and assign student projects.',
+                      icon: Icons.security,
+                      color: AppColors.accentTeal,
+                      onTap: () => _navigateToAdminLogin(context),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 30),
-
-              // --- Your Original Supervisor Card ---
-              _buildLoginOptionCard(
-                context: context,
-                title: 'Supervisor',
-                subtitle: 'Log in to view, approve, and assign student projects.',
-                icon: Icons.security,
-                color: Colors.deepOrange,
-                onTap: () => _navigateToAdminLogin(context),
-              ),
-            ],
+            ),
           ),
-        ),
+          Positioned(
+            top: 8,
+            right: 8,
+            child: SafeArea(
+              child: IconButton(
+                icon: Icon(
+                  themeProvider.isDarkMode
+                      ? Icons.light_mode_rounded
+                      : Icons.dark_mode_rounded,
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+                onPressed: themeProvider.toggleTheme,
+                tooltip: themeProvider.isDarkMode
+                    ? 'Switch to light mode'
+                    : 'Switch to dark mode',
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -95,46 +134,49 @@ class HomePage extends StatelessWidget {
     required Color color,
     required VoidCallback onTap,
   }) {
-    return Card(
-      elevation: 8,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+    final theme = Theme.of(context);
+    return Material(
+      color: theme.colorScheme.surface,
+      borderRadius: AppRadii.card,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(15),
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Row(
-            children: <Widget>[
-              Icon(
-                icon,
-                size: 40,
-                color: color,
-              ),
-              const SizedBox(width: 20),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      subtitle,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
+        borderRadius: AppRadii.card,
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: AppRadii.card,
+            boxShadow: AppShadows.level1,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Row(
+              children: <Widget>[
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: color.withOpacity(0.12),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, size: 28, color: color),
                 ),
-              ),
-            ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(title, style: theme.textTheme.titleLarge),
+                      const SizedBox(height: 6),
+                      Text(
+                        subtitle,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: theme.colorScheme.outline),
+              ],
+            ),
           ),
         ),
       ),

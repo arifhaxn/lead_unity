@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'theme/app_theme.dart';
+import 'theme/theme_provider.dart';
 
 class ViewTemplateScreen extends StatelessWidget {
-   ViewTemplateScreen({super.key});
+  ViewTemplateScreen({super.key});
 
-  final String templateDownloadUrl = "https://drive.google.com/file/d/1G9aQGKjf7AGut_6o0YP_pd4E3P0DyMNr/view?usp=drive_link";
+  final String templateDownloadUrl =
+      "https://drive.google.com/file/d/1G9aQGKjf7AGut_6o0YP_pd4E3P0DyMNr/view?usp=drive_link";
 
   final List<String> templateImages = [
     'assets/template/page1.png',
@@ -34,11 +38,27 @@ class ViewTemplateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Proposal Template Preview'),
-        backgroundColor: Colors.teal,
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          )
+        ],
       ),
       // --- Image List ---
       body: ListView.builder(
@@ -48,7 +68,7 @@ class ViewTemplateScreen extends StatelessWidget {
           return Padding(
             padding: const EdgeInsets.only(bottom: 10.0),
             child: Card(
-              elevation: 4,
+              elevation: 0,
               child: Image.asset(
                 templateImages[index],
                 fit: BoxFit.cover,
@@ -56,7 +76,7 @@ class ViewTemplateScreen extends StatelessWidget {
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 200,
-                    color: Colors.grey[200],
+                    color: theme.colorScheme.surfaceVariant,
                     child: const Center(child: Text('Image Page Missing')),
                   );
                 },
@@ -67,9 +87,10 @@ class ViewTemplateScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _launchDownload(context),
-        backgroundColor: Colors.teal,
+        backgroundColor: AppColors.primary,
         icon: const Icon(Icons.download, color: Colors.white),
-        label: const Text('Download Template', style: TextStyle(color: Colors.white)),
+        label: const Text('Download Template',
+            style: TextStyle(color: Colors.white)),
       ),
     );
   }

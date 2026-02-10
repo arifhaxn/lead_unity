@@ -9,28 +9,40 @@ import '../home_page.dart';
 import 'team_list_screen.dart';
 import 'marking_selection_screen.dart';
 import 'sup_list_screen.dart'; // Renamed from supervisor_list_screen based on your file tree
+import '../theme/app_theme.dart';
+import '../theme/theme_provider.dart';
 
 class SupervisorDashboard extends StatelessWidget {
   const SupervisorDashboard({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context);
     // 🟢 Logic: Listen to the provider to get the latest User object
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        title: const Text(
-          'Supervisor Portal',
-          style: TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF1E293B)),
-        ),
+        title: const Text('Supervisor Portal'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.logout_rounded, color: Colors.redAccent),
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          ),
+          IconButton(
+            icon:
+                const Icon(Icons.logout_rounded, color: AppColors.accentCoral),
             tooltip: "Logout",
             onPressed: () {
               // 🟢 Logic: Secure Logout & Navigation Clearing
@@ -48,12 +60,14 @@ class SupervisorDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Welcome back,', style: TextStyle(fontSize: 16, color: Colors.grey[600])),
-            
+            Text('Welcome back,',
+                style: TextStyle(
+                    fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
+
             // 🟢 Data: Display the name dynamically from the User model
             Text(
-              user?.name ?? 'Supervisor', 
-              style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              user?.name ?? 'Supervisor',
+              style: theme.textTheme.displaySmall,
             ),
             const SizedBox(height: 30),
 
@@ -67,28 +81,50 @@ class SupervisorDashboard extends StatelessWidget {
               children: [
                 // 🟢 Navigation: Passing arguments matches his logic (e.g., onlyMyTeams)
                 _buildCard(
-                  context, 
-                  "My Teams", "Assigned Groups", Icons.groups, const Color(0xFF0F766E), 
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeamListScreen(onlyMyTeams: true)))
-                ),
-                
+                    context,
+                    "My Teams",
+                    "Assigned Groups",
+                    Icons.groups,
+                    AppColors.primary,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const TeamListScreen(onlyMyTeams: true)))),
+
                 _buildCard(
-                  context, 
-                  "All Teams", "Global List", Icons.format_list_bulleted, const Color(0xFF3B82F6), 
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const TeamListScreen(onlyMyTeams: false)))
-                ),
-                
+                    context,
+                    "All Teams",
+                    "Global List",
+                    Icons.format_list_bulleted,
+                    AppColors.accentTeal,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const TeamListScreen(onlyMyTeams: false)))),
+
                 _buildCard(
-                  context, 
-                  "Marking", "Evaluation", Icons.verified_user_outlined, const Color(0xFFF59E0B), 
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const MarkingSelectionScreen()))
-                ),
-                
+                    context,
+                    "Marking",
+                    "Evaluation",
+                    Icons.verified_user_outlined,
+                    AppColors.accentLime,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const MarkingSelectionScreen()))),
+
                 _buildCard(
-                  context, 
-                  "Supervisors", "Colleagues", Icons.person_pin_circle_outlined, const Color(0xFF8B5CF6), 
-                  () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SupervisorListScreen()))
-                ),
+                    context,
+                    "Supervisors",
+                    "Colleagues",
+                    Icons.person_pin_circle_outlined,
+                    AppColors.accentCoral,
+                    () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SupervisorListScreen()))),
               ],
             )
           ],
@@ -98,15 +134,25 @@ class SupervisorDashboard extends StatelessWidget {
   }
 
   // 🟢 UI Helper: Kept your teammate's card design as requested, but simplified slightly
-  Widget _buildCard(BuildContext context, String title, String subtitle, IconData icon, Color color, VoidCallback onTap) {
+  Widget _buildCard(BuildContext context, String title, String subtitle,
+      IconData icon, Color color, VoidCallback onTap) {
+    final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(24),
+      borderRadius: AppRadii.card,
       child: Container(
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [BoxShadow(color: Colors.grey.withOpacity(0.08), blurRadius: 20, offset: const Offset(0, 8))],
+          gradient: LinearGradient(
+            colors: [
+              color.withOpacity(0.12),
+              theme.colorScheme.surface,
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: AppRadii.card,
+          boxShadow: AppShadows.level1,
+          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
         ),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
@@ -116,15 +162,21 @@ class SupervisorDashboard extends StatelessWidget {
             children: [
               Container(
                 padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(16)),
+                decoration: BoxDecoration(
+                    color: theme.colorScheme.surface,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: AppShadows.level1),
                 child: Icon(icon, size: 28, color: color),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF1E293B))),
+                  Text(title, style: theme.textTheme.titleLarge),
                   const SizedBox(height: 4),
-                  Text(subtitle, style: TextStyle(fontSize: 12, color: Colors.grey[500])),
+                  Text(subtitle,
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: theme.colorScheme.onSurfaceVariant)),
                 ],
               ),
             ],

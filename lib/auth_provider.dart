@@ -53,24 +53,25 @@ class AuthProvider with ChangeNotifier {
         try {
           final payload = _parseJwt(_token!);
 
-          final userId = payload['_id'] ?? payload['sub'] ?? '';
-          final userRole = payload['role'] ?? 'supervisor';
+          String userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
+          String? userRole = payload['role']?.toString().toLowerCase();
           // Default to email name first (e.g. "lol")
-          String realName = payload['name'] ?? email.split('@')[0];
+          String realName = payload['name']?.toString() ?? email.split('@')[0];
 
-          // 🟢 NAME CORRECTION STEP: Fetch real profile if possible
+          // 🟢 Fetch real profile to fix role/name when missing
           try {
-            if (userRole == 'supervisor') {
-              // We use the existing API method to find ourselves in the list
-              final sups = await _apiService.getSupervisors();
-              final me = sups.firstWhere((s) => s['email'] == email,
-                  orElse: () => null);
-              if (me != null) {
-                realName = me['name']; // Found the real name!
-              }
+            final me = await _apiService.getUserByEmail(email);
+            if (me['_id'] != null && userId.isEmpty) {
+              userId = me['_id'].toString();
+            }
+            if (me['name'] != null) {
+              realName = me['name'].toString();
+            }
+            if (me['role'] != null) {
+              userRole = me['role'].toString().toLowerCase();
             }
           } catch (e) {
-            print("Could not fetch real name: $e");
+            print("Could not fetch real profile: $e");
           }
 
           // Create the user with the corrected name
@@ -78,12 +79,11 @@ class AuthProvider with ChangeNotifier {
             id: userId,
             name: realName,
             email: email,
-            role: userRole,
+            role: userRole ?? 'unknown',
           );
         } catch (e) {
           // Last resort fallback
-          _user = User(
-              id: 'temp', name: 'Supervisor', email: email, role: 'supervisor');
+          _user = User(id: 'temp', name: 'User', email: email, role: 'unknown');
         }
       }
 
