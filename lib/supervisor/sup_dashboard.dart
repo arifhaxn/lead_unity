@@ -5,10 +5,9 @@ import 'package:provider/provider.dart';
 import '../auth_provider.dart';
 import '../home_page.dart';
 
-// 🟢 Screen Imports (Ensure these files exist in lib/supervisor/)
+// 🟢 Screen Imports
 import 'team_list_screen.dart';
-import 'marking_selection_screen.dart';
-import 'sup_list_screen.dart'; // Renamed from supervisor_list_screen based on your file tree
+import 'sup_list_screen.dart'; // Renamed from supervisor_list_screen
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
@@ -19,7 +18,6 @@ class SupervisorDashboard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    // 🟢 Logic: Listen to the provider to get the latest User object
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
@@ -41,11 +39,9 @@ class SupervisorDashboard extends StatelessWidget {
                 : 'Switch to dark mode',
           ),
           IconButton(
-            icon:
-                const Icon(Icons.logout_rounded, color: AppColors.accentCoral),
+            icon: const Icon(Icons.logout_rounded, color: AppColors.accentCoral),
             tooltip: "Logout",
             onPressed: () {
-              // 🟢 Logic: Secure Logout & Navigation Clearing
               Provider.of<AuthProvider>(context, listen: false).logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => const HomePage()),
@@ -64,35 +60,33 @@ class SupervisorDashboard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
 
-            // 🟢 Data: Display the name dynamically from the User model
             Text(
               user?.name ?? 'Supervisor',
               style: theme.textTheme.displaySmall,
             ),
             const SizedBox(height: 30),
 
-            GridView.count(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
-              crossAxisSpacing: 16,
-              mainAxisSpacing: 16,
-              childAspectRatio: 0.85,
-              children: [
-                // 🟢 Navigation: Passing arguments matches his logic (e.g., onlyMyTeams)
-                _buildCard(
-                    context,
-                    "My Teams",
-                    "Assigned Groups",
-                    Icons.groups,
-                    AppColors.primary,
-                    () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) =>
-                                const TeamListScreen(onlyMyTeams: true)))),
+            // 🟢 Row 1: My Teams (Full Width)
+            _buildCard(
+              context,
+              "My Teams",
+              "Assigned Groups",
+              Icons.groups,
+              AppColors.primary,
+              () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TeamListScreen(onlyMyTeams: true))),
+              isFullWidth: true, // Special flag for wide card
+            ),
 
-                _buildCard(
+            const SizedBox(height: 16),
+
+            // 🟢 Row 2: All Teams & Supervisors (Side by Side)
+            Row(
+              children: [
+                Expanded(
+                  child: _buildCard(
                     context,
                     "All Teams",
                     "Global List",
@@ -102,20 +96,12 @@ class SupervisorDashboard extends StatelessWidget {
                         context,
                         MaterialPageRoute(
                             builder: (_) =>
-                                const TeamListScreen(onlyMyTeams: false)))),
-
-                _buildCard(
-                    context,
-                    "Marking",
-                    "Evaluation",
-                    Icons.verified_user_outlined,
-                    AppColors.accentLime,
-                    () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const MarkingSelectionScreen()))),
-
-                _buildCard(
+                                const TeamListScreen(onlyMyTeams: false))),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _buildCard(
                     context,
                     "Supervisors",
                     "Colleagues",
@@ -124,23 +110,28 @@ class SupervisorDashboard extends StatelessWidget {
                     () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const SupervisorListScreen()))),
+                            builder: (_) => const SupervisorListScreen())),
+                  ),
+                ),
               ],
-            )
+            ),
           ],
         ),
       ),
     );
   }
 
-  // 🟢 UI Helper: Kept your teammate's card design as requested, but simplified slightly
+  // 🟢 Helper: Added isFullWidth to adjust height/padding for the top card
   Widget _buildCard(BuildContext context, String title, String subtitle,
-      IconData icon, Color color, VoidCallback onTap) {
+      IconData icon, Color color, VoidCallback onTap,
+      {bool isFullWidth = false}) {
     final theme = Theme.of(context);
     return InkWell(
       onTap: onTap,
       borderRadius: AppRadii.card,
       child: Container(
+        // Adjust height based on layout role (Full width vs Grid item)
+        height: isFullWidth ? 140 : 180, 
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
@@ -156,31 +147,63 @@ class SupervisorDashboard extends StatelessWidget {
         ),
         child: Padding(
           padding: const EdgeInsets.all(20.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                    color: theme.colorScheme.surface,
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: AppShadows.level1),
-                child: Icon(icon, size: 28, color: color),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 4),
-                  Text(subtitle,
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant)),
-                ],
-              ),
-            ],
-          ),
+          child: isFullWidth
+              ? Row( // Horizontal layout for full-width card
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppShadows.level1),
+                      child: Icon(icon, size: 32, color: color),
+                    ),
+                    const SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(title, style: theme.textTheme.headlineSmall), // Bigger text
+                          const SizedBox(height: 4),
+                          Text(subtitle,
+                              style: TextStyle(
+                                  fontSize: 14,
+                                  color: theme.colorScheme.onSurfaceVariant)),
+                        ],
+                      ),
+                    ),
+                    Icon(Icons.arrow_forward_ios_rounded, 
+                         color: theme.colorScheme.onSurfaceVariant.withOpacity(0.5), 
+                         size: 20)
+                  ],
+                )
+              : Column( // Vertical layout for smaller cards
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                          color: theme.colorScheme.surface,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: AppShadows.level1),
+                      child: Icon(icon, size: 28, color: color),
+                    ),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(title, style: theme.textTheme.titleLarge),
+                        const SizedBox(height: 4),
+                        Text(subtitle,
+                            style: TextStyle(
+                                fontSize: 12,
+                                color: theme.colorScheme.onSurfaceVariant)),
+                      ],
+                    ),
+                  ],
+                ),
         ),
       ),
     );

@@ -65,7 +65,7 @@ class AppGradients {
 
 class AppTheme {
   static ThemeData get lightTheme {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
       onPrimary: Colors.white,
@@ -131,27 +131,27 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: const CardTheme(
         color: AppColors.surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: AppRadii.card),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: AppColors.surface,
-        border: const OutlineInputBorder(borderRadius: AppRadii.input),
+        border: OutlineInputBorder(borderRadius: AppRadii.input),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
-          borderSide: const BorderSide(color: AppColors.divider),
+          borderSide: BorderSide(color: AppColors.divider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
-          borderSide: const BorderSide(color: AppColors.primary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        labelStyle: const TextStyle(color: AppColors.textSecondary),
+            EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        labelStyle: TextStyle(color: AppColors.textSecondary),
       ),
       dividerColor: AppColors.divider,
       chipTheme: const ChipThemeData(
@@ -166,7 +166,7 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    final colorScheme = ColorScheme(
+    const  colorScheme = ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.nightPrimary,
       onPrimary: Colors.white,
@@ -232,28 +232,28 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: const CardTheme(
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: AppRadii.card),
       ),
-      inputDecorationTheme: InputDecorationTheme(
+      inputDecorationTheme: const InputDecorationTheme(
         filled: true,
         fillColor: AppColors.nightCard,
-        border: const OutlineInputBorder(borderRadius: AppRadii.input),
+        border: OutlineInputBorder(borderRadius: AppRadii.input),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
-          borderSide: const BorderSide(color: AppColors.nightDivider),
+          borderSide: BorderSide(color: AppColors.nightDivider),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
           borderSide:
-              const BorderSide(color: AppColors.nightPrimary, width: 1.5),
+              BorderSide(color: AppColors.nightPrimary, width: 1.5),
         ),
         contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        labelStyle: const TextStyle(color: AppColors.nightTextSecondary),
+            EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        labelStyle: TextStyle(color: AppColors.nightTextSecondary),
       ),
       dividerColor: AppColors.nightDivider,
       chipTheme: const ChipThemeData(

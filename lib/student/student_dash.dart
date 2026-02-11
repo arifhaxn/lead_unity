@@ -191,7 +191,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         hasTeam ? AppColors.accentTeal : AppColors.accentCoral;
     final String statusText = hasTeam
         ? 'You are part of Team $teamId.'
-        : 'Action required: You are not yet on a team.';
+        : 'You are not yet on a team.';
 
     return Container(
       padding: const EdgeInsets.all(16),
