@@ -84,17 +84,11 @@ class MarkingSelectionScreen extends StatelessWidget {
               final supervisorName =
                   _extractSupervisorName(team['supervisors']);
 
+              final isDark = theme.brightness == Brightness.dark;
               return Container(
                 margin: const EdgeInsets.only(bottom: 16),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      theme.colorScheme.primary.withOpacity(0.12),
-                      theme.colorScheme.surface,
-                    ],
-                    begin: Alignment.centerLeft,
-                    end: Alignment.centerRight,
-                  ),
+                  color: const Color(0xFF10B981),
                   borderRadius: AppRadii.card,
                   boxShadow: AppShadows.level1,
                   border: Border.all(
@@ -122,18 +116,23 @@ class MarkingSelectionScreen extends StatelessWidget {
                                     color: theme.colorScheme.primary)),
                           ),
                           Icon(Icons.more_horiz,
-                              color: theme.colorScheme.onSurfaceVariant)
+                              color: isDark
+                                  ? Colors.white70
+                                  : theme.colorScheme.onSurfaceVariant)
                         ],
                       ),
                       const SizedBox(height: 12),
                       Text(team['title'] ?? 'Untitled',
-                          style: theme.textTheme.titleLarge),
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(color: isDark ? Colors.white : null)),
                       if (supervisorName != null) ...[
                         const SizedBox(height: 6),
                         Text('Supervisor: $supervisorName',
                             style: TextStyle(
                                 fontSize: 12,
-                                color: theme.colorScheme.onSurfaceVariant)),
+                                color: isDark
+                                    ? Colors.white70
+                                    : theme.colorScheme.onSurfaceVariant)),
                       ],
                       const SizedBox(height: 20),
                       SizedBox(
@@ -146,7 +145,7 @@ class MarkingSelectionScreen extends StatelessWidget {
                                     builder: (_) => MarkingScreen(team: team)));
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
+                            backgroundColor: theme.colorScheme.primary,
                             foregroundColor: Colors.white,
                             shape: const RoundedRectangleBorder(
                                 borderRadius: AppRadii.button),

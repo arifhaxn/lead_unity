@@ -2,12 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 // 🟢 No need for Provider to get token anymore
 import '../api services/api_services.dart';
+import '../chatbot_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
-  const MarkingScreen({Key? key, required this.team}) : super(key: key);
+  final bool useMyTeamsCriteria;
+  const MarkingScreen({
+    Key? key,
+    required this.team,
+    this.useMyTeamsCriteria = false,
+  }) : super(key: key);
 
   @override
   _MarkingScreenState createState() => _MarkingScreenState();
@@ -121,12 +127,17 @@ class _MarkingScreenState extends State<MarkingScreen> {
     if (_isLoading)
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
 
-    final c1Name =
-        _settings?['criteria1']['name'] ?? 'Problem Definition, Design & Viva';
-    final c1Max = _settings?['criteria1']['max'] ?? 30;
-    final c2Name =
-        _settings?['criteria2']['name'] ?? 'Presentation, Testing & Report';
-    final c2Max = _settings?['criteria2']['max'] ?? 30;
+    final c1Name = widget.useMyTeamsCriteria
+        ? 'Technical'
+        : _settings?['criteria1']['name'] ??
+            'Problem Definition, Design & Viva';
+    final c1Max =
+        widget.useMyTeamsCriteria ? 20 : _settings?['criteria1']['max'] ?? 30;
+    final c2Name = widget.useMyTeamsCriteria
+        ? 'Teamwork'
+        : _settings?['criteria2']['name'] ?? 'Presentation, Testing & Report';
+    final c2Max =
+        widget.useMyTeamsCriteria ? 20 : _settings?['criteria2']['max'] ?? 30;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -195,7 +206,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
               child: ElevatedButton(
                 onPressed: _submitMarks,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
+                    backgroundColor: const Color(0xFF245E63),
                     shape: const RoundedRectangleBorder(
                         borderRadius: AppRadii.button)),
                 child: Row(
@@ -216,20 +227,32 @@ class _MarkingScreenState extends State<MarkingScreen> {
           ],
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+        backgroundColor: const Color(0xFF245E63),
+        child: const Icon(Icons.message, color: Colors.white),
+        tooltip: 'Chat with Assistant',
+      ),
     );
   }
 
   Widget _buildCriteriaRow(String label, String name, int max) {
+    final theme = Theme.of(context);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("$label: ",
-            style: const TextStyle(
-                fontWeight: FontWeight.bold, color: AppColors.primary)),
+            style: TextStyle(
+                fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
         Expanded(
           child: Text(
             "$name ($max)",
-            style: const TextStyle(fontWeight: FontWeight.w600),
+            style: TextStyle(
+                fontWeight: FontWeight.w600,
+                color: theme.colorScheme.onSurface),
           ),
         ),
       ],
@@ -303,6 +326,7 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     double total = (double.tryParse(_c1Ctrl.text) ?? 0) +
         (double.tryParse(_c2Ctrl.text) ?? 0);
     String name = widget.studentData['name'] ?? 'Unknown';
@@ -321,17 +345,9 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
         children: [
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  AppColors.accentTeal.withOpacity(0.6),
-                  AppColors.accentTeal.withOpacity(0.25),
-                ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
-              ),
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(16)),
+            decoration: const BoxDecoration(
+              color: Color(0xFF245E63),
+              borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -340,13 +356,12 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(name,
-                        style: const TextStyle(
+                        style: TextStyle(
                             fontWeight: FontWeight.w600,
                             fontSize: 16,
-                            color: AppColors.textPrimary)),
+                            color: Colors.white)),
                     Text(id,
-                        style: const TextStyle(
-                            fontSize: 13, color: AppColors.textSecondary)),
+                        style: TextStyle(fontSize: 13, color: Colors.white70)),
                   ],
                 ),
                 Row(
@@ -356,13 +371,18 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                       style: TextStyle(
                           fontSize: 11,
                           color: _isAbsent
-                              ? AppColors.accentCoral
-                              : AppColors.textSecondary),
+                              ? const Color(0xFFFF0000)
+                              : Colors.white70),
                     ),
                     const SizedBox(width: 6),
                     Switch(
                       value: _isAbsent,
-                      activeColor: AppColors.accentCoral,
+                      activeColor: const Color(0xFFFF0000),
+                      activeTrackColor: const Color(0xFFFF6B6B),
+                      inactiveThumbColor:
+                          isDark ? Colors.white : const Color(0xFF245E63),
+                      inactiveTrackColor:
+                          isDark ? Colors.white60 : const Color(0xFFA7F3D0),
                       onChanged: (val) {
                         setState(() => _isAbsent = val);
                         _update();
@@ -404,13 +424,14 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                         children: [
                           Text("Total",
                               style: TextStyle(
-                                  fontSize: 10,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
                                   color: theme.colorScheme.onSurfaceVariant)),
                           Text(total.toStringAsFixed(0),
-                              style: TextStyle(
+                              style: const TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                  color: theme.colorScheme.onSurface)),
+                                  fontSize: 24,
+                                  color: Color(0xFF10B981))),
                         ],
                       ),
                     ),
@@ -426,6 +447,8 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
 
   Widget _buildInputBox(String label, TextEditingController ctrl,
       {required bool enabled}) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
     return Container(
       height: 56,
       decoration: BoxDecoration(
@@ -441,7 +464,10 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
         textAlign: TextAlign.center,
         enabled: enabled,
         onChanged: (_) => _update(),
-        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: isDark ? Colors.white : Colors.black),
         decoration: InputDecoration(
           labelText: label,
           labelStyle: TextStyle(

@@ -88,12 +88,10 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    // Define theme color based on role
-    final themeColor =
-        widget.role == 'student' ? AppColors.primary : AppColors.accentTeal;
+    final themeColor = theme.colorScheme.primary;
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
           backgroundColor: theme.colorScheme.surface,
           elevation: 0,
@@ -219,11 +217,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                              color: AppColors.accentCoral.withOpacity(0.1),
+                              color: theme.colorScheme.error.withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8)),
-                          child: const Text("Registration Closed",
+                          child: Text("Registration Closed",
                               style: TextStyle(
-                                  color: AppColors.accentCoral,
+                                  color: theme.colorScheme.error,
                                   fontWeight: FontWeight.bold)),
                         ),
                 ),

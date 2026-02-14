@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 // 🟢 No need for Provider or AuthProvider here anymore because ApiService handles the token
 import '../api services/api_services.dart';
+import '../chatbot_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import 'package:provider/provider.dart';
@@ -141,6 +142,15 @@ class _SupervisorFirstLoginScreenState
             ],
           ),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        child: const Icon(Icons.message, color: Colors.white),
+        tooltip: 'Chat with Assistant',
       ),
     );
   }

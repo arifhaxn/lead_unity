@@ -61,6 +61,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final accent = theme.colorScheme.primary;
     // 🟢 Logic Fix: Listen to AuthProvider updates to keep name/status fresh
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
@@ -122,9 +123,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   icon: Icons.upload_file_outlined,
                   title: 'Submit Proposal',
                   action: 'Upload your team project proposal',
-                  color: AppColors.accentTeal,
+                  color: AppColors.accentCoral,
                   onTap: _navigateToSubmitProposal,
                   isProminent: true,
+                  darkBgColor: const Color(0xFF1E3A8A),
+                  lightBgColor: const Color(0xFFD6E4FF),
                 ),
 
                 // ROW 2: Team Info & Request Team
@@ -138,9 +141,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           icon: Icons.groups_2_outlined,
                           title: 'Team Info',
                           action: 'View Submitted Info',
-                          color: AppColors.primary,
+                          color: AppColors.accentGreen,
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
+                          darkBgColor: const Color(0xFF6B7280),
+                          lightBgColor: const Color(0xFFE5E7EB),
                         ),
                       ),
                       const SizedBox(width: 16),
@@ -150,9 +155,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           icon: Icons.person_add_alt_1_outlined,
                           title: 'Request Team',
                           action: 'Find a group',
-                          color: AppColors.accentLime,
+                          color: AppColors.accentPink,
                           onTap: _navigateToRequestTeam,
                           isCompact: true,
+                          darkBgColor: const Color(0xFF0E7490),
+                          lightBgColor: const Color(0xFFCFFAFE),
                         ),
                       ),
                     ],
@@ -165,8 +172,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   icon: Icons.download_for_offline_outlined,
                   title: 'Get Template',
                   action: 'Preview and Download',
-                  color: AppColors.accentCoral,
+                  color: AppColors.accentLime,
                   onTap: _downloadTemplate,
+                  darkBgColor: const Color(0xFF4338CA),
+                  lightBgColor: const Color(0xFFDDD6FE),
                 ),
               ],
             ),
@@ -175,7 +184,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openChatbot,
-        backgroundColor: AppColors.primary,
+        backgroundColor: accent,
         child: const Icon(Icons.message, color: Colors.white),
         tooltip: 'Chat with Assistant',
       ),
@@ -184,11 +193,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // --- Status Banner Widget ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
+    final theme = Theme.of(context);
     final Color bannerColor = hasTeam
-        ? AppColors.accentTeal.withOpacity(0.12)
-        : AppColors.accentCoral.withOpacity(0.12);
-    final Color textColor =
-        hasTeam ? AppColors.accentTeal : AppColors.accentCoral;
+        ? theme.colorScheme.primary.withOpacity(0.08)
+        : theme.colorScheme.surfaceVariant;
+    final Color textColor = hasTeam
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
     final String statusText = hasTeam
         ? 'You are part of Team $teamId.'
         : 'You are not yet on a team.';
@@ -227,6 +238,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required VoidCallback onTap,
     bool isProminent = false,
     bool isCompact = false,
+    Color? darkBgColor,
+    Color? lightBgColor,
   }) {
     final theme = Theme.of(context);
     return Padding(
@@ -236,7 +249,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         borderRadius: AppRadii.card,
         child: Container(
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: darkBgColor ?? const Color(0xFF10B981),
             borderRadius: AppRadii.card,
             boxShadow: AppShadows.level1,
           ),
@@ -250,20 +263,20 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     Container(
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, size: 28, color: color),
+                      child: Icon(icon, size: 28, color: Colors.white),
                     ),
                     const SizedBox(height: 16),
                     Text(title,
-                        style:
-                            theme.textTheme.titleLarge?.copyWith(fontSize: 16)),
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontSize: 16, color: Colors.white)),
                     const SizedBox(height: 4),
                     Text(action,
-                        style: TextStyle(
+                        style: const TextStyle(
                             fontSize: 12,
-                            color: theme.colorScheme.onSurfaceVariant,
+                            color: Colors.white70,
                             fontWeight: FontWeight.w500)),
                   ],
                 )
@@ -273,10 +286,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.1),
+                        color: Colors.white.withOpacity(0.15),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, size: 30, color: color),
+                      child: Icon(icon, size: 30, color: Colors.white),
                     ),
                     const SizedBox(width: 20),
                     Expanded(
@@ -287,17 +300,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
                               style: TextStyle(
                                   fontSize: isProminent ? 20 : 18,
                                   fontWeight: FontWeight.bold,
-                                  color: theme.colorScheme.onSurface)),
+                                  color: Colors.white)),
                           const SizedBox(height: 4),
                           Text(action,
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.colorScheme.onSurfaceVariant)),
+                              style: const TextStyle(
+                                  fontSize: 14, color: Colors.white70)),
                         ],
                       ),
                     ),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        size: 16, color: theme.colorScheme.outline),
+                    const Icon(Icons.arrow_forward_ios_rounded,
+                        size: 16, color: Colors.white70),
                   ],
                 ),
         ),

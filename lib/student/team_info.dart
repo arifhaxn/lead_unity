@@ -52,7 +52,10 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(Icons.diversity_3_outlined,
-                      size: 80, color: Colors.grey[300]),
+                      size: 80,
+                      color: theme.brightness == Brightness.dark
+                          ? Colors.white38
+                          : Colors.grey[300]),
                   const SizedBox(height: 16),
                   const Text("No Team Found",
                       style: TextStyle(
@@ -79,10 +82,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // 🟢 Your Card UI for the Project Info
-                Card(
-                  elevation: 0,
-                  shape:
-                      const RoundedRectangleBorder(borderRadius: AppRadii.card),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF245E63),
+                    borderRadius: AppRadii.card,
+                    boxShadow: AppShadows.level1,
+                  ),
                   child: Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
@@ -93,9 +98,9 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           children: [
                             Chip(
                               label: Text(course['courseCode'] ?? 'N/A'),
-                              backgroundColor: theme.colorScheme.surfaceVariant,
-                              labelStyle: TextStyle(
-                                  color: theme.colorScheme.primary,
+                              backgroundColor: Colors.white.withOpacity(0.15),
+                              labelStyle: const TextStyle(
+                                  color: Colors.white,
                                   fontWeight: FontWeight.bold),
                             ),
                             Container(
@@ -117,12 +122,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Text("Project Title",
-                            style: TextStyle(
-                                fontSize: 12,
-                                color: theme.colorScheme.onSurfaceVariant)),
+                        const Text("Project Title",
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white70)),
                         Text(proposal['title'] ?? 'Untitled Project',
-                            style: theme.textTheme.headlineSmall),
+                            style: theme.textTheme.headlineSmall
+                                ?.copyWith(color: Colors.white)),
                         const SizedBox(height: 8),
                         const Divider(),
                         const SizedBox(height: 8),
@@ -139,40 +144,41 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
 
                 // 🟢 Your List-based UI for members
                 ...members
-                    .map((m) => Card(
+                    .map((m) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          shape: const RoundedRectangleBorder(
-                              borderRadius: AppRadii.card),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF245E63),
+                            borderRadius: AppRadii.card,
+                            boxShadow: AppShadows.level1,
+                          ),
                           child: ListTile(
                             leading: CircleAvatar(
-                              backgroundColor: theme.colorScheme.surfaceVariant,
+                              backgroundColor: Colors.white.withOpacity(0.15),
                               child: Text(
                                 (m['name']?[0] ?? 'U').toString().toUpperCase(),
-                                style: TextStyle(
-                                    color: theme.colorScheme.primary,
+                                style: const TextStyle(
+                                    color: Colors.white,
                                     fontWeight: FontWeight.bold),
                               ),
                             ),
                             title: Text(m['name'] ?? 'Unknown',
-                                style: theme.textTheme.titleLarge
-                                    ?.copyWith(fontSize: 16)),
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                    fontSize: 16, color: Colors.white)),
                             subtitle: Text(m['studentId'] ?? 'No ID',
-                                style: TextStyle(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontSize: 13)),
+                                style: const TextStyle(
+                                    color: Colors.white70, fontSize: 13)),
                             trailing: Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.end,
                               children: [
-                                Text("CGPA",
+                                const Text("CGPA",
                                     style: TextStyle(
-                                        fontSize: 10,
-                                        color: theme
-                                            .colorScheme.onSurfaceVariant)),
+                                        fontSize: 10, color: Colors.white70)),
                                 Text(m['cgpa'] ?? 'N/A',
                                     style: const TextStyle(
                                         fontWeight: FontWeight.bold,
-                                        fontSize: 14)),
+                                        fontSize: 14,
+                                        color: Colors.white)),
                               ],
                             ),
                           ),
@@ -191,10 +197,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
-            style:
-                const TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+            style: const TextStyle(fontSize: 12, color: Colors.white70)),
         Text(value,
-            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
+            style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: Colors.white)),
       ],
     );
   }

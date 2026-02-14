@@ -65,6 +65,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     if (_isLoadingData) {
@@ -118,18 +119,18 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
     }
 
     return Scaffold(
-      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Submit Proposal'),
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
         actions: [
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
                   ? Icons.light_mode_rounded
                   : Icons.dark_mode_rounded,
-              color: Colors.white,
+              color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
             tooltip: themeProvider.isDarkMode
@@ -140,9 +141,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
         bottom: TabBar(
           controller: _tabController,
           isScrollable: true,
-          labelColor: Colors.white,
-          indicatorColor: AppColors.accentLime,
-          unselectedLabelColor: Colors.white70,
+          labelColor: theme.colorScheme.primary,
+          indicatorColor: theme.colorScheme.primary,
+          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
           tabs: _courses
               .map<Widget>((course) => Tab(text: course['courseCode']))
               .toList(),
@@ -222,6 +223,20 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     }
 
     setState(() => _isSubmitting = true);
+
+    try {
+      final myProposals = await _apiService.getUserProposals();
+      if (myProposals.isNotEmpty) {
+        _showError(
+            'Your account is already leading a team. Use another student account or remove the existing team first.');
+        if (mounted) setState(() => _isSubmitting = false);
+        return;
+      }
+    } catch (e) {
+      _showError('Could not verify existing teams. Please try again.');
+      if (mounted) setState(() => _isSubmitting = false);
+      return;
+    }
 
     // 🟢 1. Collect Supervisor IDs
     List<String> supervisorIds = [];
@@ -304,6 +319,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Form(
@@ -323,11 +339,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
 
-            const Text('Select Supervisors',
+            Text('Select Supervisors',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary)),
+                    color: theme.colorScheme.primary)),
             const SizedBox(height: 10),
             Row(children: [
               _buildSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
@@ -338,11 +354,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             ]),
 
             const SizedBox(height: 30),
-            const Text('Team Members',
+            Text('Team Members',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.primary)),
+                    color: theme.colorScheme.primary)),
             const SizedBox(height: 10),
 
             ...List.generate(
@@ -351,16 +367,17 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             if (!_hasFourthMember)
               TextButton.icon(
                 onPressed: () => setState(() => _hasFourthMember = true),
-                icon: const Icon(Icons.add),
-                label: const Text('Add 4th Member'),
+                icon: const Icon(Icons.add, color: Color(0xFF245E63)),
+                label: const Text('Add 4th Member',
+                    style: TextStyle(color: Color(0xFF245E63))),
               ),
 
             if (_hasFourthMember)
               TextButton.icon(
                 onPressed: () => setState(() => _hasFourthMember = false),
-                icon: const Icon(Icons.remove, color: AppColors.accentCoral),
-                label: const Text('Remove 4th Member',
-                    style: TextStyle(color: AppColors.accentCoral)),
+                icon: Icon(Icons.remove, color: theme.colorScheme.error),
+                label: Text('Remove 4th Member',
+                    style: TextStyle(color: theme.colorScheme.error)),
               ),
 
             const SizedBox(height: 30),
@@ -369,7 +386,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               child: ElevatedButton(
                 onPressed: _isSubmitting ? null : _submitProposal,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary),
+                    backgroundColor: const Color(0xFF245E63)),
                 child: _isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
                     : const Text('Submit Proposal',
@@ -410,16 +427,17 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
+    final theme = Theme.of(context);
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surface,
+        color: const Color(0xFF245E63),
         borderRadius: AppRadii.card,
         border: Border.all(
             color: isLeader
                 ? AppColors.primary.withOpacity(0.5)
-                : Theme.of(context).colorScheme.outline),
+                : theme.colorScheme.outline),
         boxShadow: AppShadows.level1,
       ),
       child: Column(
@@ -429,9 +447,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             isLeader ? "Member 1 (Leader)" : "Member ${index + 1}",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isLeader
-                    ? AppColors.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant),
+                color: isLeader ? Colors.white : Colors.white70),
           ),
           const SizedBox(height: 10),
           TextFormField(

@@ -29,21 +29,13 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       body: Stack(
         children: [
           Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  theme.colorScheme.surface,
-                  theme.colorScheme.surfaceVariant
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+            color: theme.colorScheme.surface,
             child: Center(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(32.0),
@@ -52,18 +44,7 @@ class HomePage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
                     // --- Logo & Title ---
-                    Container(
-                      height: 88,
-                      width: 88,
-                      decoration: BoxDecoration(
-                        gradient: AppGradients.primary,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: AppShadows.level1,
-                      ),
-                      child: const Icon(Icons.lightbulb_outline,
-                          size: 48, color: Colors.white),
-                    ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 8),
                     Text(
                       'LeadUnity',
                       style: theme.textTheme.displaySmall,
@@ -84,7 +65,7 @@ class HomePage extends StatelessWidget {
                       subtitle:
                           'Register or log in to manage your project team and proposals.',
                       icon: Icons.school,
-                      color: AppColors.primary,
+                      bgColor: const Color(0xFF475569),
                       onTap: () => _navigateToStudentLogin(context),
                     ),
                     const SizedBox(height: 24),
@@ -94,7 +75,7 @@ class HomePage extends StatelessWidget {
                       subtitle:
                           'Log in to view, approve, and assign student projects.',
                       icon: Icons.security,
-                      color: AppColors.accentTeal,
+                      bgColor: const Color(0xFF1E3A8A),
                       onTap: () => _navigateToAdminLogin(context),
                     ),
                   ],
@@ -131,18 +112,19 @@ class HomePage extends StatelessWidget {
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
+    required Color bgColor,
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
     return Material(
-      color: theme.colorScheme.surface,
+      color: Colors.transparent,
       borderRadius: AppRadii.card,
       child: InkWell(
         onTap: onTap,
         borderRadius: AppRadii.card,
         child: Ink(
           decoration: BoxDecoration(
+            color: bgColor,
             borderRadius: AppRadii.card,
             boxShadow: AppShadows.level1,
           ),
@@ -153,28 +135,29 @@ class HomePage extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
+                    color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, size: 28, color: color),
+                  child: Icon(icon, size: 28, color: Colors.white),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: theme.textTheme.titleLarge),
+                      Text(title,
+                          style: theme.textTheme.titleLarge
+                              ?.copyWith(color: Colors.white)),
                       const SizedBox(height: 6),
                       Text(
                         subtitle,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant),
+                        style: const TextStyle(color: Colors.white70),
                       ),
                     ],
                   ),
                 ),
-                Icon(Icons.arrow_forward_ios_rounded,
-                    size: 16, color: theme.colorScheme.outline),
+                const Icon(Icons.arrow_forward_ios_rounded,
+                    size: 16, color: Colors.white70),
               ],
             ),
           ),

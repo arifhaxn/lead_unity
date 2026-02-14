@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
 class ViewTemplateScreen extends StatelessWidget {
@@ -87,7 +86,7 @@ class ViewTemplateScreen extends StatelessWidget {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _launchDownload(context),
-        backgroundColor: AppColors.primary,
+        backgroundColor: theme.colorScheme.primary,
         icon: const Icon(Icons.download, color: Colors.white),
         label: const Text('Download Template',
             style: TextStyle(color: Colors.white)),
