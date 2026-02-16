@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/student/student_registration_screen.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
 
-// 🟢 Correct Imports for your project structure
+// 🟢 Core Imports
 import 'auth_provider.dart';
 import 'api services/api_services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
-// Dashboard Imports
+// 🟢 Screen Imports
 import 'student/student_dash.dart';
+import 'student/student_registration_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String role; // 'student' or 'supervisor'
@@ -27,7 +27,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _api = ApiService();
   bool _isRegOpen = false;
   bool _isLoading = false;
-
+  
   @override
   void initState() {
     super.initState();
@@ -35,7 +35,6 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   _checkRegStatus() async {
-    // 🟢 Uses the new helper method in your ApiService
     bool status = await _api.isRegistrationOpen();
     if (mounted) setState(() => _isRegOpen = status);
   }
@@ -43,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void _handleLogin() async {
     setState(() => _isLoading = true);
 
-    // 🟢 Trim email to prevent space errors
+    // 🟢 Trim email to prevent common whitespace errors
     final email = _emailController.text.trim();
     final password = _passController.text;
 
@@ -53,11 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (!mounted) return;
 
-      // 🟢 Access User Object correctly
       final user = Provider.of<AuthProvider>(context, listen: false).user;
-      final userRole =
-          user?.role.toLowerCase(); // handle 'Student' vs 'student'
+      final userRole = user?.role.toLowerCase();
 
+      // 🟢 Navigation Logic
       if (widget.role == 'student' && userRole == 'student') {
         Navigator.pushAndRemoveUntil(
             context,
@@ -72,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("Role mismatch or invalid credentials"),
             backgroundColor: Colors.red));
-        // Optional: Logout if role mismatch to clean state
+        // Logout to clear the mismatched token
         Provider.of<AuthProvider>(context, listen: false).logout();
       }
     } catch (e) {
@@ -169,7 +167,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-              // --- Supervisor Specific: Activate Account Link ---
+              // --- Supervisor: Activate Account ---
               if (widget.role == 'supervisor')
                 Center(
                   child: Padding(
@@ -188,7 +186,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 20),
 
-              // --- Student Specific: Registration Link ---
+              // --- Student: Registration Link ---
               if (widget.role == 'student')
                 Center(
                   child: _isRegOpen

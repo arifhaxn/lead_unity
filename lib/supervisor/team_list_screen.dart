@@ -1,7 +1,9 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:provider/provider.dart';
+
+// 🟢 Core Imports
 import '../../api services/api_services.dart';
 import '../../auth_provider.dart';
 import '../../chatbot_screen.dart';
@@ -27,6 +29,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   @override
   void initState() {
     super.initState();
+    // 🟢 1. Call API directly (Token auto-handled)
     _teamsFuture = _apiService.getAllProposals();
   }
 
@@ -39,7 +42,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 1. Get Auth Data (ID only, token handled by Service)
+    // 🟢 2. Get User ID for filtering
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final myId = authProvider.user?.id;
     final theme = Theme.of(context);
@@ -49,7 +52,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          widget.onlyMyTeams ? "My Teams" : "All Teams",
+          widget.onlyMyTeams ? "My Assigned Teams" : "All Registered Teams",
           style: theme.textTheme.titleLarge,
         ),
         backgroundColor: theme.colorScheme.surface,
@@ -58,20 +61,14 @@ class _TeamListScreenState extends State<TeamListScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              themeProvider.isDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
+              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
           )
         ],
       ),
       body: FutureBuilder<List<dynamic>>(
-        // 🟢 2. Call API directly (No token argument needed)
         future: _teamsFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -84,38 +81,24 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
           var teams = snapshot.data ?? [];
 
-          teams = teams.where((t) {
-            final status = t['status']?.toString().toUpperCase() ?? '';
-            final assignedId = _getAssignedSupervisorId(t);
-            return status == 'APPROVED' && assignedId != null;
-          }).toList();
-
-          teams.sort((a, b) => _compareByCreatedAt(a, b));
-
-          final stableIndexById = <String, int>{};
-          for (int i = 0; i < teams.length; i++) {
-            final id = _getTeamId(teams[i]);
-            if (id != null) {
-              stableIndexById[id] = i + 1;
-            }
-          }
-
-          // 🟢 3. Filter Logic
+          // 🟢 3. Filter Logic (Merged Logic)
+          // Filter if 'onlyMyTeams' is true
           if (widget.onlyMyTeams && myId != null) {
-            teams = teams
-                .where((t) => _getAssignedSupervisorId(t) == myId)
-                .toList();
-          } else if (!widget.onlyMyTeams && myId != null) {
-            // In All Teams, exclude own teams
-            teams = teams
-                .where((t) => _getAssignedSupervisorId(t) != myId)
-                .toList();
+            teams = teams.where((t) {
+              final sups = t['supervisors'] as List? ?? [];
+              // Robust check for object vs string ID
+              return sups.any((s) {
+                 if (s is Map) return s['_id'] == myId;
+                 return s == myId;
+              });
+            }).toList();
           }
 
           if (teams.isEmpty) {
             return const Center(child: Text("No teams found."));
           }
 
+          // 🟢 4. Your Tab Logic
           final courseTabs = _extractCourseTabs(teams);
 
           return DefaultTabController(
@@ -123,37 +106,26 @@ class _TeamListScreenState extends State<TeamListScreen> {
             child: Column(
               children: [
                 _buildCourseTabs(context, courseTabs),
+                
+                // Search Bar
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) {
                       _searchDebounce?.cancel();
-                      _searchDebounce = Timer(
-                        const Duration(milliseconds: 250),
-                        () => setState(() => _searchQuery = v.trim()),
-                      );
+                      _searchDebounce = Timer(const Duration(milliseconds: 250), () => setState(() => _searchQuery = v.trim()));
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search by supervisor, title, ID or name',
+                      hintText: 'Search by supervisor, title, or ID',
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: theme.colorScheme.surface,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      enabledBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide(
-                            color: theme.colorScheme.outline.withOpacity(0.5)),
-                      ),
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide:
-                            BorderSide(color: theme.colorScheme.primary),
-                      ),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                     ),
                   ),
                 ),
+
                 Expanded(
                   child: TabBarView(
                     children: courseTabs.map((courseCode) {
@@ -162,27 +134,17 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           courseCode: courseCode,
                           query: _searchQuery);
 
-                      if (filtered.isEmpty) {
-                        return const Center(child: Text("No teams found."));
-                      }
+                      if (filtered.isEmpty) return const Center(child: Text("No teams match your filter."));
 
                       return ListView.builder(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                         itemCount: filtered.length,
                         itemBuilder: (context, index) {
                           final team = filtered[index];
-                          final title = team['title'] ?? 'Untitled Team';
-                          final supervisorName =
-                              _getAssignedSupervisorName(team);
-
-                          final indexToShow =
-                              stableIndexById[_getTeamId(team)] ?? index + 1;
-
+                          
                           return _buildTeamCard(
                             context,
-                            index: indexToShow,
-                            title: title,
-                            supervisorName: supervisorName,
+                            index: index + 1,
                             team: team,
                           );
                         },
@@ -196,16 +158,14 @@ class _TeamListScreenState extends State<TeamListScreen> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-        ),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
         backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.message, color: Colors.white),
-        tooltip: 'Chat with Assistant',
       ),
     );
   }
+
+  // --- Helpers ---
 
   List<String> _extractCourseTabs(List<dynamic> teams) {
     final courseCodes = <String>{};
@@ -231,196 +191,94 @@ class _TeamListScreenState extends State<TeamListScreen> {
           borderRadius: BorderRadius.circular(10),
           border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
         ),
-        indicatorPadding:
-            const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
-        tabs: courseTabs
-            .map((c) => Tab(
-                  child: Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(
-                          color: theme.colorScheme.outline.withOpacity(0.45)),
-                    ),
-                    child: Text(
-                      c,
-                      style: const TextStyle(fontWeight: FontWeight.w600),
-                    ),
-                  ),
-                ))
-            .toList(),
+        tabs: courseTabs.map((c) => Tab(child: Text(c, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
       ),
     );
   }
 
-  List<dynamic> _filterTeams({
-    required List<dynamic> teams,
-    required String courseCode,
-    required String query,
-  }) {
+  List<dynamic> _filterTeams({required List<dynamic> teams, required String courseCode, required String query}) {
     final normalizedQuery = query.toLowerCase();
-
     return teams.where((team) {
       if (courseCode != 'All') {
-        final code = (team['course'] is Map)
-            ? team['course']['courseCode']?.toString()
-            : null;
-        if (code == null || code != courseCode) return false;
+        final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
+        if (code != courseCode) return false;
       }
-
       if (normalizedQuery.isEmpty) return true;
-
+      
       final title = (team['title'] ?? '').toString().toLowerCase();
-      final assignedSupervisor =
-          (_getAssignedSupervisorName(team) ?? '').toLowerCase();
-      final supervisorMatch = assignedSupervisor.contains(normalizedQuery);
+      // Robust Supervisor Name Search
+      final supervisors = team['supervisors'] as List? ?? [];
+      final supervisorMatch = supervisors.any((s) {
+         if (s is Map) return (s['name'] ?? '').toLowerCase().contains(normalizedQuery);
+         return false;
+      });
 
       return title.contains(normalizedQuery) || supervisorMatch;
     }).toList();
   }
 
-  Widget _buildTeamCard(
-    BuildContext context, {
-    required int index,
-    required String title,
-    required String? supervisorName,
-    required Map<String, dynamic> team,
-  }) {
+  Widget _buildTeamCard(BuildContext context, {required int index, required Map<String, dynamic> team}) {
     final theme = Theme.of(context);
+    final title = team['title'] ?? 'Untitled Team';
+    final courseCode = (team['course'] is Map) ? team['course']['courseCode'] : 'N/A';
+    final status = team['status']?.toString().toUpperCase() ?? 'PENDING';
+
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: const Color(0xFF245E63),
+        color: Colors.white,
         borderRadius: AppRadii.card,
         boxShadow: AppShadows.level1,
-        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
       ),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        leading: _buildIndexBadge(context, index),
-        title: Text(title,
-            style: theme.textTheme.titleLarge
-                ?.copyWith(fontSize: 16, color: Colors.white)),
-        subtitle: Text(
-          'Supervisor: ${supervisorName ?? 'N/A'}',
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
-        ),
-        trailing: Container(
-          height: 36,
-          width: 36,
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.15),
-            shape: BoxShape.circle,
-            boxShadow: AppShadows.level1,
-          ),
-          child: Icon(
-            _hasMarks(team)
-                ? Icons.check_rounded
-                : Icons.check_box_outline_blank,
-            size: 18,
-            color: Colors.white,
-          ),
-        ),
-        onTap: () async {
-          await Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (_) => MarkingScreen(
-                team: team,
-                useMyTeamsCriteria: widget.onlyMyTeams,
-              ),
+      child: Column(
+        children: [
+          ListTile(
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            leading: CircleAvatar(
+              backgroundColor: const Color(0xFFE0F2F1),
+              child: Text(title.isNotEmpty ? title[0].toUpperCase() : '?', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
             ),
-          );
-          if (!mounted) return;
-          setState(() {
-            _teamsFuture = _apiService.getAllProposals();
-          });
-        },
-      ),
-    );
-  }
-
-  Widget _buildIndexBadge(BuildContext context, int index) {
-    return Container(
-      width: 40,
-      height: 40,
-      decoration: BoxDecoration(
-        color: const Color(0xFF1F6F55),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x33000000),
-            blurRadius: 4,
-            offset: Offset(0, 2),
+            title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            subtitle: Text("$courseCode • $status", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ),
+          const Divider(height: 1),
+          // 🟢 Action Buttons
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                TextButton(
+                  onPressed: () {
+                    // 🟢 Navigates to the Details screen (from his code)
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => SupervisorTeamDetailsScreen(team: team)));
+                  },
+                  child: const Text("Details"),
+                ),
+                const SizedBox(width: 8),
+                ElevatedButton.icon(
+                  onPressed: () async {
+                    await Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => MarkingScreen(team: team)),
+                    );
+                    // Refresh list after marking
+                    setState(() { _teamsFuture = _apiService.getAllProposals(); });
+                  },
+                  icon: const Icon(Icons.edit_note, size: 16),
+                  label: const Text("Evaluate"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                ),
+              ],
+            ),
+          )
         ],
       ),
-      child: Center(
-        child: Text(
-          index.toString(),
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 18,
-            color: Colors.white,
-          ),
-        ),
-      ),
     );
-  }
-
-  String? _getAssignedSupervisorId(Map<String, dynamic> team) {
-    final assigned = team['assignedSupervisor'] ??
-        team['assignedSupervisorId'] ??
-        team['assignedSupervisorID'];
-
-    if (assigned is Map) {
-      return (assigned['_id'] ?? assigned['id'])?.toString();
-    }
-    if (assigned is String) return assigned;
-    return null;
-  }
-
-  String? _getAssignedSupervisorName(Map<String, dynamic> team) {
-    final assigned = team['assignedSupervisor'] ??
-        team['assignedSupervisorId'] ??
-        team['assignedSupervisorID'];
-
-    if (assigned is Map) {
-      final name = assigned['name'] ?? assigned['fullName'];
-      if (name is String && name.trim().isNotEmpty) {
-        return name.trim();
-      }
-    }
-    return null;
-  }
-
-  bool _hasMarks(Map<String, dynamic> team) {
-    final marks = team['marks'] as List?;
-    return marks != null && marks.isNotEmpty;
-  }
-
-  String? _getTeamId(Map<String, dynamic> team) {
-    final id = team['_id'] ?? team['id'];
-    return id?.toString();
-  }
-
-  DateTime? _getCreatedAt(Map<String, dynamic> team) {
-    final raw = team['createdAt'] ?? team['created_at'];
-    if (raw is String) return DateTime.tryParse(raw);
-    if (raw is int) return DateTime.fromMillisecondsSinceEpoch(raw);
-    return null;
-  }
-
-  int _compareByCreatedAt(Map<String, dynamic> a, Map<String, dynamic> b) {
-    final da = _getCreatedAt(a);
-    final db = _getCreatedAt(b);
-    if (da == null && db == null) return 0;
-    if (da == null) return 1;
-    if (db == null) return -1;
-    return da.compareTo(db);
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+
 class AppColors {
   // Primary: Vibrant Green
   static const primary = Color(0xFF10B981);
@@ -147,7 +148,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: const CardTheme(
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -258,7 +259,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(
+      cardTheme: const CardTheme(
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,
