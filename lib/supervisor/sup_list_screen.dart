@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../api services/api_services.dart';
+import '../../chatbot_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
@@ -61,35 +62,61 @@ class SupervisorListScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final s = sups[index];
               final name = s['name'] ?? 'Unknown';
-              final firstLetter = name.isNotEmpty ? name[0] : '?';
 
               return Container(
                 margin: const EdgeInsets.only(bottom: 12),
                 decoration: BoxDecoration(
-                  color: theme.colorScheme.surface,
+                  color: const Color(0xFF245E63),
                   borderRadius: AppRadii.card,
                   boxShadow: AppShadows.level1,
                 ),
                 child: ListTile(
-                  leading: CircleAvatar(
-                    backgroundColor: theme.colorScheme.surfaceVariant,
-                    child: Text(firstLetter.toUpperCase(),
-                        style: TextStyle(
-                            color: theme.colorScheme.primary,
-                            fontWeight: FontWeight.bold)),
+                  leading: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1F6F55),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Center(
+                      child: Text(
+                        (index + 1).toString(),
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
                   ),
                   title: Text(name,
-                      style:
-                          theme.textTheme.titleLarge?.copyWith(fontSize: 16)),
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontSize: 16, color: Colors.white)),
                   subtitle: Text(s['email'] ?? '',
-                      style: TextStyle(
-                          fontSize: 12,
-                          color: theme.colorScheme.onSurfaceVariant)),
+                      style:
+                          const TextStyle(fontSize: 12, color: Colors.white70)),
                 ),
               );
             },
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        child: const Icon(Icons.message, color: Colors.white),
+        tooltip: 'Chat with Assistant',
       ),
     );
   }

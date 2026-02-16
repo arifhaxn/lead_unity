@@ -1,26 +1,37 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppColors {
-  static const primary = Color(0xFF5B3BDB);
-  static const primaryDark = Color(0xFF4622C9);
-  static const accentLime = Color(0xFFA4E96A);
-  static const accentTeal = Color(0xFF49D7B7);
-  static const accentCoral = Color(0xFFFF7A87);
+  // Primary: Vibrant Green
+  static const primary = Color(0xFF10B981);
+  static const primaryDark = Color(0xFF059669);
 
-  static const textPrimary = Color(0xFF1B1B25);
-  static const textSecondary = Color(0xFF6A6A7D);
+  // Accents
+  static const accentBlue = Color(0xFF3B82F6);
+  static const accentLime = Color(0xFF10B981);
+  static const accentTeal = Color(0xFF06B6D4);
+  static const accentCoral = Color(0xFFEF4444);
+  static const accentPink = Color(0xFFF43F5E);
+  static const accentGold = Color(0xFFF59E0B);
+  static const accentGreen = Color(0xFF22C55E);
 
+  // Text Colors
+  static const textPrimary = Color(0xFF0F172A);
+  static const textSecondary = Color(0xFF64748B);
+
+  // Surfaces
   static const surface = Color(0xFFFFFFFF);
-  static const surfaceAlt = Color(0xFFF6F4FB);
-  static const divider = Color(0xFFECE7F7);
+  static const surfaceAlt = Color(0xFFECFDF5);
+  static const divider = Color(0xFFE2E8F0);
 
-  static const nightSurface = Color(0xFF141321);
-  static const nightSurfaceAlt = Color(0xFF1C1B2A);
-  static const nightCard = Color(0xFF222138);
-  static const nightTextPrimary = Color(0xFFEDEBFF);
-  static const nightTextSecondary = Color(0xFFB9B6D3);
-  static const nightDivider = Color(0xFF2A2940);
-  static const nightPrimary = Color(0xFF6C4DFF);
+  // Dark mode
+  static const nightSurface = Color(0xFF0F172A);
+  static const nightSurfaceAlt = Color(0xFF1E293B);
+  static const nightCard = Color(0xFF334155);
+  static const nightTextPrimary = Color(0xFFF1F5F9);
+  static const nightTextSecondary = Color(0xFFCBD5E1);
+  static const nightDivider = Color(0xFF475569);
+  static const nightPrimary = Color(0xFF10B981);
 }
 
 class AppRadii {
@@ -34,30 +45,31 @@ class AppRadii {
 class AppShadows {
   static const level1 = [
     BoxShadow(
-      color: Color(0x14332073),
-      blurRadius: 16,
-      offset: Offset(0, 6),
+      color: Color(0x14000000),
+      blurRadius: 14,
+      offset: Offset(0, 8),
     ),
   ];
 
   static const level2 = [
     BoxShadow(
-      color: Color(0x1F332073),
-      blurRadius: 28,
-      offset: Offset(0, 12),
+      color: Color(0x1A000000),
+      blurRadius: 24,
+      offset: Offset(0, 16),
     ),
   ];
 }
 
 class AppGradients {
+  // Note: These are now solid color references for gradient elimination
   static const primary = LinearGradient(
-    colors: [AppColors.primary, Color(0xFF7B5CFF)],
+    colors: [AppColors.primary, AppColors.primary],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
 
   static const cardHighlight = LinearGradient(
-    colors: [AppColors.primary, AppColors.accentTeal],
+    colors: [AppColors.accentLime, AppColors.accentLime],
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
   );
@@ -65,6 +77,24 @@ class AppGradients {
 
 class AppTheme {
   static ThemeData get lightTheme {
+    final textTheme = GoogleFonts.nunitoTextTheme(
+      const TextTheme(
+        displaySmall:
+            TextStyle(fontSize: 28, fontWeight: FontWeight.w700, height: 1.2),
+        headlineSmall:
+            TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.3),
+        titleLarge:
+            TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
+        bodyLarge: TextStyle(fontSize: 14, height: 1.5),
+        bodyMedium: TextStyle(fontSize: 13, height: 1.5),
+        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    ).apply(
+      bodyColor: AppColors.textPrimary,
+      displayColor: AppColors.textPrimary,
+    );
+
     const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: AppColors.primary,
@@ -87,33 +117,19 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.light,
       colorScheme: colorScheme,
+      textTheme: textTheme,
       scaffoldBackgroundColor: AppColors.surfaceAlt,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: AppColors.surface,
+      appBarTheme: AppBarTheme(
+        backgroundColor: AppColors.surfaceAlt,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
+        titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
         iconTheme: IconThemeData(color: AppColors.textPrimary),
-      ),
-      textTheme: const TextTheme(
-        displaySmall:
-            TextStyle(fontSize: 28, fontWeight: FontWeight.bold, height: 1.2),
-        headlineSmall:
-            TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.3),
-        titleLarge:
-            TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
-        bodyLarge: TextStyle(fontSize: 14, height: 1.5),
-        bodyMedium: TextStyle(fontSize: 13, height: 1.5),
-        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      ).apply(
-        bodyColor: AppColors.textPrimary,
-        displayColor: AppColors.textPrimary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -122,7 +138,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.button),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -131,15 +147,15 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme(
-        color: AppColors.surface,
+      cardTheme: const CardThemeData(
+        color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(borderRadius: AppRadii.card),
       ),
       inputDecorationTheme: const InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: Color(0xFFFFFFFF),
         border: OutlineInputBorder(borderRadius: AppRadii.input),
         enabledBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
@@ -149,11 +165,17 @@ class AppTheme {
           borderRadius: AppRadii.input,
           borderSide: BorderSide(color: AppColors.primary, width: 1.5),
         ),
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         labelStyle: TextStyle(color: AppColors.textSecondary),
       ),
       dividerColor: AppColors.divider,
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.primary,
+        foregroundColor: Colors.white,
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.surfaceAlt,
         selectedColor: AppColors.primary,
@@ -166,7 +188,25 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    const  colorScheme = ColorScheme(
+    final textTheme = GoogleFonts.nunitoTextTheme(
+      const TextTheme(
+        displaySmall:
+            TextStyle(fontSize: 28, fontWeight: FontWeight.w700, height: 1.2),
+        headlineSmall:
+            TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.3),
+        titleLarge:
+            TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
+        bodyLarge: TextStyle(fontSize: 14, height: 1.5),
+        bodyMedium: TextStyle(fontSize: 13, height: 1.5),
+        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+        labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+      ),
+    ).apply(
+      bodyColor: AppColors.nightTextPrimary,
+      displayColor: AppColors.nightTextPrimary,
+    );
+
+    const colorScheme = ColorScheme(
       brightness: Brightness.dark,
       primary: AppColors.nightPrimary,
       onPrimary: Colors.white,
@@ -188,33 +228,19 @@ class AppTheme {
     return ThemeData(
       brightness: Brightness.dark,
       colorScheme: colorScheme,
+      textTheme: textTheme,
       scaffoldBackgroundColor: AppColors.nightSurface,
-      appBarTheme: const AppBarTheme(
+      appBarTheme: AppBarTheme(
         backgroundColor: AppColors.nightSurface,
         foregroundColor: AppColors.nightTextPrimary,
         elevation: 0,
         centerTitle: true,
-        titleTextStyle: TextStyle(
+        titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.nightTextPrimary,
         ),
         iconTheme: IconThemeData(color: AppColors.nightTextPrimary),
-      ),
-      textTheme: const TextTheme(
-        displaySmall:
-            TextStyle(fontSize: 28, fontWeight: FontWeight.bold, height: 1.2),
-        headlineSmall:
-            TextStyle(fontSize: 22, fontWeight: FontWeight.w600, height: 1.3),
-        titleLarge:
-            TextStyle(fontSize: 18, fontWeight: FontWeight.w600, height: 1.3),
-        bodyLarge: TextStyle(fontSize: 14, height: 1.5),
-        bodyMedium: TextStyle(fontSize: 13, height: 1.5),
-        labelLarge: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
-        labelMedium: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-      ).apply(
-        bodyColor: AppColors.nightTextPrimary,
-        displayColor: AppColors.nightTextPrimary,
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -223,7 +249,7 @@ class AppTheme {
           elevation: 0,
           padding: const EdgeInsets.symmetric(vertical: 16),
           shape: const RoundedRectangleBorder(borderRadius: AppRadii.button),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: const TextStyle(fontWeight: FontWeight.w700, fontSize: 16),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -232,7 +258,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -248,14 +274,19 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: AppRadii.input,
-          borderSide:
-              BorderSide(color: AppColors.nightPrimary, width: 1.5),
+          borderSide: BorderSide(color: AppColors.nightPrimary, width: 1.5),
         ),
-        contentPadding:
-            EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         labelStyle: TextStyle(color: AppColors.nightTextSecondary),
       ),
       dividerColor: AppColors.nightDivider,
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: AppColors.nightPrimary,
+        foregroundColor: Colors.white,
+      ),
+      snackBarTheme: const SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+      ),
       chipTheme: const ChipThemeData(
         backgroundColor: AppColors.nightSurfaceAlt,
         selectedColor: AppColors.nightPrimary,

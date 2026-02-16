@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../api services/api_services.dart';
 import '../../auth_provider.dart';
+import '../../chatbot_screen.dart';
 import 'marking_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -48,7 +49,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: Text(
-          widget.onlyMyTeams ? "My Assigned Teams" : "All Registered Teams",
+          widget.onlyMyTeams ? "My Teams" : "All Teams",
           style: theme.textTheme.titleLarge,
         ),
         backgroundColor: theme.colorScheme.surface,
@@ -103,6 +104,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
           if (widget.onlyMyTeams && myId != null) {
             teams = teams
                 .where((t) => _getAssignedSupervisorId(t) == myId)
+                .toList();
+          } else if (!widget.onlyMyTeams && myId != null) {
+            // In All Teams, exclude own teams
+            teams = teams
+                .where((t) => _getAssignedSupervisorId(t) != myId)
                 .toList();
           }
 
@@ -189,6 +195,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
           );
         },
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
+        ),
+        backgroundColor: theme.colorScheme.primary,
+        child: const Icon(Icons.message, color: Colors.white),
+        tooltip: 'Chat with Assistant',
+      ),
     );
   }
 
@@ -211,8 +226,31 @@ class _TeamListScreenState extends State<TeamListScreen> {
         isScrollable: true,
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        indicatorColor: theme.colorScheme.primary,
-        tabs: courseTabs.map((c) => Tab(text: c)).toList(),
+        indicator: BoxDecoration(
+          color: theme.colorScheme.primary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
+        ),
+        indicatorPadding:
+            const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
+        labelPadding: const EdgeInsets.symmetric(horizontal: 4),
+        tabs: courseTabs
+            .map((c) => Tab(
+                  child: Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: theme.colorScheme.outline.withOpacity(0.45)),
+                    ),
+                    child: Text(
+                      c,
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ))
+            .toList(),
       ),
     );
   }
@@ -254,51 +292,47 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.accentTeal.withOpacity(0.18),
-            theme.colorScheme.surface,
-          ],
-          begin: Alignment.centerLeft,
-          end: Alignment.centerRight,
-        ),
+        color: const Color(0xFF245E63),
         borderRadius: AppRadii.card,
         boxShadow: AppShadows.level1,
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
       ),
       child: ListTile(
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         leading: _buildIndexBadge(context, index),
         title: Text(title,
-            style: theme.textTheme.titleLarge?.copyWith(fontSize: 16)),
+            style: theme.textTheme.titleLarge
+                ?.copyWith(fontSize: 16, color: Colors.white)),
         subtitle: Text(
           'Supervisor: ${supervisorName ?? 'N/A'}',
-          style: TextStyle(
-              fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
+          style: const TextStyle(fontSize: 12, color: Colors.white70),
         ),
         trailing: Container(
-          height: 34,
-          width: 34,
+          height: 36,
+          width: 36,
           decoration: BoxDecoration(
-            color: theme.colorScheme.surface,
+            color: Colors.white.withOpacity(0.15),
             shape: BoxShape.circle,
             boxShadow: AppShadows.level1,
           ),
           child: Icon(
             _hasMarks(team)
-                ? Icons.assignment_turned_in_rounded
-                : Icons.assignment_turned_in_outlined,
+                ? Icons.check_rounded
+                : Icons.check_box_outline_blank,
             size: 18,
-            color: _hasMarks(team)
-                ? AppColors.accentTeal
-                : theme.colorScheme.primary,
+            color: Colors.white,
           ),
         ),
         onTap: () async {
           await Navigator.push(
             context,
-            MaterialPageRoute(builder: (_) => MarkingScreen(team: team)),
+            MaterialPageRoute(
+              builder: (_) => MarkingScreen(
+                team: team,
+                useMyTeamsCriteria: widget.onlyMyTeams,
+              ),
+            ),
           );
           if (!mounted) return;
           setState(() {
@@ -310,21 +344,29 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   Widget _buildIndexBadge(BuildContext context, int index) {
-    final theme = Theme.of(context);
     return Container(
-      height: 34,
-      width: 34,
-      alignment: Alignment.center,
+      width: 40,
+      height: 40,
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        shape: BoxShape.circle,
-        boxShadow: AppShadows.level1,
+        color: const Color(0xFF1F6F55),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x33000000),
+            blurRadius: 4,
+            offset: Offset(0, 2),
+          ),
+        ],
       ),
-      child: Text(
-        index.toString(),
-        style: TextStyle(
-          fontWeight: FontWeight.bold,
-          color: theme.colorScheme.primary,
+      child: Center(
+        child: Text(
+          index.toString(),
+          textAlign: TextAlign.center,
+          style: const TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 18,
+            color: Colors.white,
+          ),
         ),
       ),
     );
