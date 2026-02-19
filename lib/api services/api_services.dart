@@ -92,13 +92,11 @@ class ApiService {
     return response.data;
   }
 
-  // 🟢 From His Code: Get all users raw (useful for Admin/general lists)
   Future<List<dynamic>> getUsers() async {
     final response = await _dio.get('/users');
     return response.data;
   }
 
-  // 🟢 From My Code: Filtered list (useful for Dropdowns)
   Future<List<dynamic>> getSupervisors() async {
     final res = await _dio.get('/users');
     return (res.data as List)
@@ -123,7 +121,6 @@ class ApiService {
     try {
       await _dio.post('/proposals', data: data);
     } on DioException catch (e) {
-      // 🟢 Improved Error Handling: extract the specific message if available
       final payload = e.response?.data;
       if (payload is Map && payload['message'] != null) {
         throw payload['message'].toString();
@@ -157,25 +154,34 @@ class ApiService {
   // 📊 EVALUATION
   // ===========================================================================
 
+  // 🟢 NEW: Updated to return 'defense' and 'own' criteria categories
   Future<Map<String, dynamic>> getEvaluationSettings() async {
     try {
       final response = await _dio.get('/settings');
       final data = response.data;
+      
       return {
-        'criteria1': {'name': data['criteria1Name'] ?? 'Criteria 1', 'max': data['criteria1Max'] ?? 30},
-        'criteria2': {'name': data['criteria2Name'] ?? 'Criteria 2', 'max': data['criteria2Max'] ?? 30},
+        'defense': {
+           'c1': {'name': data['criteria1Name'] ?? 'Defense 1', 'max': data['criteria1Max'] ?? 30},
+           'c2': {'name': data['criteria2Name'] ?? 'Defense 2', 'max': data['criteria2Max'] ?? 30},
+        },
+        'own': {
+           'c1': {'name': data['ownTeamCriteria1Name'] ?? 'Own 1', 'max': data['ownTeamCriteria1Max'] ?? 40},
+           'c2': {'name': data['ownTeamCriteria2Name'] ?? 'Own 2', 'max': data['ownTeamCriteria2Max'] ?? 40},
+        }
       };
     } catch (e) {
-      return {
-        'criteria1': {'name': 'Criteria 1', 'max': 30},
-        'criteria2': {'name': 'Criteria 2', 'max': 30},
-      };
+      return {};
     }
   }
 
-  Future<void> saveTeamMarks(String proposalId, List<Map<String, dynamic>> marksData) async {
+  // 🟢 NEW: Added the 'type' string parameter for saving marks
+  Future<void> saveTeamMarks(String proposalId, List<Map<String, dynamic>> marksData, String type) async {
     try {
-      await _dio.post('/proposals/$proposalId/marks', data: marksData);
+      await _dio.post('/proposals/$proposalId/marks', data: {
+        'marks': marksData,
+        'type': type
+      });
     } on DioException catch (e) {
       throw e.response?.data['message'] ?? 'Failed to save marks';
     }

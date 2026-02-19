@@ -4,12 +4,11 @@ import 'package:provider/provider.dart';
 
 // 🟢 Correct Imports
 import '../auth_provider.dart';
-import '../home_page.dart';
 import '../view_template.dart';
 import '../chatbot_screen.dart';
 import 'team_info.dart';
 import '../theme/app_theme.dart';
-import '../theme/theme_provider.dart';
+import '../widgets/app_drawer.dart'; // 🟢 Added Drawer Import
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -41,17 +40,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
         context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
 
-  void _logout() {
-    final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    authProvider.logout();
-
-    // 🟢 Use pushAndRemoveUntil to clear stack so user can't go back
-    Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (context) => const HomePage()),
-        (route) => false);
-  }
-
   void _openChatbot() {
     Navigator.push(context,
         MaterialPageRoute(builder: (context) => const ChatbotScreen()));
@@ -60,41 +48,25 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final accent = theme.colorScheme.primary;
-    // 🟢 Logic Fix: Listen to AuthProvider updates to keep name/status fresh
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    // Safely access properties from your User model
-    final String studentName = user?.name ?? 'Student';
+    // 🟢 Extract First Name Logic
+    final String fullName = user?.name ?? 'Student';
+    final String firstName = fullName.split(' ').first;
+    
     // Logic placeholder: In a real app, you'd check if user.teamId is not null
     final bool hasTeam = false;
     final String? currentTeamId = null;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      // 🟢 Implement the Drawer here
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Student Dashboard'),
-        actions: [
-          IconButton(
-            icon: Icon(
-              themeProvider.isDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
-          ),
-          IconButton(
-            icon: Icon(Icons.logout, color: theme.colorScheme.onSurfaceVariant),
-            onPressed: _logout,
-            tooltip: 'Logout',
-          ),
-        ],
+        // 🟢 Actions removed because the drawer now handles them
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
@@ -103,7 +75,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           children: <Widget>[
             // --- Welcome Section ---
             Text(
-              'Hello, $studentName',
+              'Hello, $firstName', // 🟢 Using firstName here
               style: theme.textTheme.displaySmall,
             ),
             const SizedBox(height: 10),
@@ -111,7 +83,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
             // --- Status Banner ---
             _buildStatusBanner(hasTeam, currentTeamId),
 
-            const SizedBox(height: 30), // Replaced Divider with clean space
+            const SizedBox(height: 30),
 
             // --- Dashboard Cards Layout ---
             Column(

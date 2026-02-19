@@ -29,7 +29,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
   @override
   void initState() {
     super.initState();
-    // 🟢 1. Call API directly (Token auto-handled)
     _teamsFuture = _apiService.getAllProposals();
   }
 
@@ -42,7 +41,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 2. Get User ID for filtering
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final myId = authProvider.user?.id;
     final theme = Theme.of(context);
@@ -81,16 +79,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
           var teams = snapshot.data ?? [];
 
-          // 🟢 3. Filter Logic (Merged Logic)
-          // Filter if 'onlyMyTeams' is true
+          // 🟢 1. Merged Filter Logic: Only filter if viewing 'My Teams'
           if (widget.onlyMyTeams && myId != null) {
             teams = teams.where((t) {
               final sups = t['supervisors'] as List? ?? [];
-              // Robust check for object vs string ID
-              return sups.any((s) {
-                 if (s is Map) return s['_id'] == myId;
-                 return s == myId;
-              });
+              return sups.any((s) => (s is Map ? s['_id'] : s) == myId) || 
+                     (t['assignedSupervisor'] is Map ? t['assignedSupervisor']['_id'] : t['assignedSupervisor']) == myId;
             }).toList();
           }
 
@@ -98,7 +92,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
             return const Center(child: Text("No teams found."));
           }
 
-          // 🟢 4. Your Tab Logic
           final courseTabs = _extractCourseTabs(teams);
 
           return DefaultTabController(
@@ -146,6 +139,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             context,
                             index: index + 1,
                             team: team,
+                            myId: myId, // 🟢 Passed ID to check ownership
                           );
                         },
                       );
@@ -206,7 +200,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
       if (normalizedQuery.isEmpty) return true;
       
       final title = (team['title'] ?? '').toString().toLowerCase();
-      // Robust Supervisor Name Search
       final supervisors = team['supervisors'] as List? ?? [];
       final supervisorMatch = supervisors.any((s) {
          if (s is Map) return (s['name'] ?? '').toLowerCase().contains(normalizedQuery);
@@ -217,11 +210,22 @@ class _TeamListScreenState extends State<TeamListScreen> {
     }).toList();
   }
 
-  Widget _buildTeamCard(BuildContext context, {required int index, required Map<String, dynamic> team}) {
+  Widget _buildTeamCard(BuildContext context, {required int index, required Map<String, dynamic> team, required String? myId}) {
     final theme = Theme.of(context);
     final title = team['title'] ?? 'Untitled Team';
     final courseCode = (team['course'] is Map) ? team['course']['courseCode'] : 'N/A';
     final status = team['status']?.toString().toUpperCase() ?? 'PENDING';
+
+    // 🟢 2. Merged Logic: Check if this is "My Team"
+    final sups = team['supervisors'] as List? ?? [];
+    bool isMyTeam = false;
+    if (myId != null) {
+      isMyTeam = sups.any((s) => (s is Map ? s['_id'] : s) == myId) || 
+                 (team['assignedSupervisor'] is Map ? team['assignedSupervisor']['_id'] : team['assignedSupervisor']) == myId;
+    }
+
+    // 🟢 3. Lock evaluation if in "All Teams" view AND it belongs to you
+    bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -243,7 +247,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
             subtitle: Text("$courseCode • $status", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
           ),
           const Divider(height: 1),
-          // 🟢 Action Buttons
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             child: Row(
@@ -251,27 +254,27 @@ class _TeamListScreenState extends State<TeamListScreen> {
               children: [
                 TextButton(
                   onPressed: () {
-                    // 🟢 Navigates to the Details screen (from his code)
                     Navigator.push(context, MaterialPageRoute(builder: (_) => SupervisorTeamDetailsScreen(team: team)));
                   },
                   child: const Text("Details"),
                 ),
                 const SizedBox(width: 8),
+                // 🟢 4. Updated Button with dynamic styling
                 ElevatedButton.icon(
-                  onPressed: () async {
+                  onPressed: isActionDisabled ? null : () async {
                     await Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => MarkingScreen(team: team)),
                     );
-                    // Refresh list after marking
                     setState(() { _teamsFuture = _apiService.getAllProposals(); });
                   },
-                  icon: const Icon(Icons.edit_note, size: 16),
-                  label: const Text("Evaluate"),
+                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note, size: 16),
+                  label: Text(isActionDisabled ? "Your Team" : "Evaluate"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFF59E0B),
-                    foregroundColor: Colors.white,
+                    backgroundColor: isActionDisabled ? Colors.grey[300] : const Color(0xFFF59E0B),
+                    foregroundColor: isActionDisabled ? Colors.grey[600] : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 12),
+                    elevation: isActionDisabled ? 0 : 2,
                   ),
                 ),
               ],

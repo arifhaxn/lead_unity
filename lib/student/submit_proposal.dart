@@ -11,14 +11,16 @@ class SubmitProposalScreen extends StatefulWidget {
   State<SubmitProposalScreen> createState() => _SubmitProposalScreenState();
 }
 
-class _SubmitProposalScreenState extends State<SubmitProposalScreen>
-    with TickerProviderStateMixin {
+// 🟢 Removed TickerProviderStateMixin since we no longer use tabs
+class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
   List<dynamic> _courses = [];
   List<dynamic> _supervisors = [];
   bool _isLoadingData = true;
   String? _errorMessage;
 
-  late TabController _tabController;
+  // 🟢 Added a state variable to track the selected course from the dropdown
+  String? _selectedCourseId;
+
   final ApiService _apiService = ApiService();
 
   @override
@@ -28,12 +30,10 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
   }
 
   Future<void> _fetchData() async {
-    // 🟢 Fix: Using your friend's logic, the token is auto-injected by Dio.
-    // We don't need to manually pass it.
     try {
       final results = await Future.wait([
         _apiService.getCourses(),
-        _apiService.getSupervisors(), // 🟢 Auto-uses token from storage
+        _apiService.getSupervisors(), 
       ]);
 
       if (mounted) {
@@ -41,26 +41,21 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
           _courses = results[0];
           _supervisors = results[1];
           _isLoadingData = false;
-          _tabController = TabController(
-              length: _courses.isEmpty ? 1 : _courses.length, vsync: this);
+          
+          // 🟢 Auto-select the first course if the list is not empty
+          if (_courses.isNotEmpty) {
+            _selectedCourseId = _courses.first['_id'];
+          }
         });
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoadingData = false;
-          _errorMessage =
-              "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
-          _tabController = TabController(length: 1, vsync: this);
+          _errorMessage = "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
         });
       }
     }
-  }
-
-  @override
-  void dispose() {
-    if (!_isLoadingData) _tabController.dispose();
-    super.dispose();
   }
 
   @override
@@ -84,9 +79,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                     : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
-              tooltip: themeProvider.isDarkMode
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode',
             )
           ],
         ),
@@ -108,15 +100,18 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
                     : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
-              tooltip: themeProvider.isDarkMode
-                  ? 'Switch to light mode'
-                  : 'Switch to dark mode',
             )
           ],
         ),
         body: const Center(child: Text("No courses available.")),
       );
     }
+
+    // 🟢 Find the selected course object to pass its data
+    final selectedCourse = _courses.firstWhere(
+      (c) => c['_id'] == _selectedCourseId, 
+      orElse: () => _courses.first
+    );
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -133,31 +128,73 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen>
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
           )
         ],
-        bottom: TabBar(
-          controller: _tabController,
-          isScrollable: true,
-          labelColor: theme.colorScheme.primary,
-          indicatorColor: theme.colorScheme.primary,
-          unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-          tabs: _courses
-              .map<Widget>((course) => Tab(text: course['courseCode']))
-              .toList(),
-        ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: _courses.map((course) {
-          return SingleProposalForm(
-            courseId: course['_id'],
-            courseCode: course['courseCode'],
-            supervisors: _supervisors,
-          );
-        }).toList(),
+      body: Column(
+        children: [
+          // 🟢 1. Dropdown Header Section
+          Container(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.surface,
+              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2))),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.02),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                )
+              ]
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Select Course", 
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)
+                ),
+                const SizedBox(height: 8),
+                DropdownButtonFormField<String>(
+                  value: _selectedCourseId,
+                  isExpanded: true,
+                  decoration: InputDecoration(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    filled: true,
+                    fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  ),
+                  items: _courses.map<DropdownMenuItem<String>>((course) {
+                    return DropdownMenuItem<String>(
+                      value: course['_id'],
+                      child: Text(
+                        course['courseCode'], 
+                        style: const TextStyle(fontWeight: FontWeight.w600)
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (newValue) {
+                    setState(() {
+                      _selectedCourseId = newValue;
+                    });
+                  },
+                ),
+              ],
+            ),
+          ),
+
+          // 🟢 2. The Form (Expanded to fill remaining space)
+          if (_selectedCourseId != null)
+            Expanded(
+              child: SingleProposalForm(
+                // 🟢 The ValueKey resets the form automatically if they switch courses
+                key: ValueKey(_selectedCourseId), 
+                courseId: selectedCourse['_id'],
+                courseCode: selectedCourse['courseCode'],
+                supervisors: _supervisors,
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -186,7 +223,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
 
-  // 🟢 Fixed: Using simple maps for member data, matching your friend's "Map<String, String>" logic
   final List<Map<String, TextEditingController>> _memberControllers =
       List.generate(
           4,
@@ -216,7 +252,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
 
-    // Ensure all 3 supervisor preferences are selected
     if (_sup1 == null || _sup2 == null || _sup3 == null) {
       _showError('Please select all 3 supervisor preferences.');
       return;
@@ -238,13 +273,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       return;
     }
 
-    // 🟢 1. Collect Supervisor IDs
     List<String> supervisorIds = [];
     if (_sup1 != null) supervisorIds.add(_sup1!);
     if (_sup2 != null) supervisorIds.add(_sup2!);
     if (_sup3 != null) supervisorIds.add(_sup3!);
 
-    // 🟢 2. Collect Member Data (require all fields)
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     int count = _hasFourthMember ? 4 : 3;
@@ -290,7 +323,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     }
 
     try {
-      // 🟢 3. Call API (Token is auto-injected by ApiService)
       await _apiService.submitProposal({
         'title': _titleController.text.trim(),
         'description': _linkController.text.trim(),

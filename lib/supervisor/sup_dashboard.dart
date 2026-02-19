@@ -8,7 +8,7 @@ import '../chatbot_screen.dart';
 
 // 🟢 Screen Imports
 import 'team_list_screen.dart';
-import 'sup_list_screen.dart'; // Renamed from supervisor_list_screen
+import 'sup_list_screen.dart'; 
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
@@ -26,6 +26,9 @@ class SupervisorDashboard extends StatelessWidget {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Supervisor Portal'),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
         actions: [
           IconButton(
             icon: Icon(
@@ -62,13 +65,15 @@ class SupervisorDashboard extends StatelessWidget {
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
             Text(
               user?.name ?? 'Supervisor',
-              style: theme.textTheme.displaySmall,
+              style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
+            
+            // 🟢 Row 1: My Teams (Now acts as the Marking/Evaluation Hub)
             _buildCard(
               context,
               "My Teams",
-              "Assigned Groups",
+              "Evaluate & Manage", // Updated subtitle to reflect its new purpose
               Icons.groups,
               () => Navigator.push(
                   context,
@@ -78,7 +83,10 @@ class SupervisorDashboard extends StatelessWidget {
               height: 120,
               horizontalLayout: true,
             ),
+            
             const SizedBox(height: 16),
+            
+            // 🟢 Row 2: All Teams & Supervisors
             Row(
               children: [
                 Expanded(
@@ -164,13 +172,15 @@ class SupervisorDashboard extends StatelessWidget {
                       children: [
                         Text(title,
                             style: theme.textTheme.titleLarge
-                                ?.copyWith(color: Colors.white)),
+                                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Text(subtitle,
                             style: const TextStyle(
-                                fontSize: 12, color: Colors.white70)),
+                                fontSize: 13, color: Colors.white70)),
                       ],
                     ),
+                    const Spacer(),
+                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.5), size: 18),
                   ],
                 )
               : Column(
@@ -190,7 +200,7 @@ class SupervisorDashboard extends StatelessWidget {
                       children: [
                         Text(title,
                             style: theme.textTheme.titleLarge
-                                ?.copyWith(color: Colors.white)),
+                                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Text(subtitle,
                             style: const TextStyle(

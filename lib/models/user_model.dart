@@ -18,16 +18,16 @@ class User {
   });
 
   // Factory constructor to create a User object from the JSON Map returned by the API
-  factory User.fromJson(Map<String, dynamic> json) {
+factory User.fromJson(Map<String, dynamic> json) {
     return User(
-      // The backend returns the MongoDB ID as '_id'
-      id: json['_id'] as String, 
-      name: json['name'] as String,
-      email: json['email'] as String,
-      role: json['role'] as String,
-      // Safely check for optional fields (These fields must be updated in your backend to be returned)
-      studentId: json['studentId'] as String?, 
-      batch: json['batch'] as String?,
+      id: json['_id']?.toString() ?? '',
+      name: json['name']?.toString() ?? 'Unknown',
+      email: json['email']?.toString() ?? '',
+      role: json['role']?.toString() ?? 'student',
+      // 🟢 BULLETPROOF ID CATCHER: Checks every possible spelling your teammate might use
+      studentId: json['studentId']?.toString() ?? 
+                 json['student_id']?.toString() ?? 
+                 json['studentID']?.toString(), 
     );
   }
   
