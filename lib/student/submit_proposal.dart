@@ -11,15 +11,11 @@ class SubmitProposalScreen extends StatefulWidget {
   State<SubmitProposalScreen> createState() => _SubmitProposalScreenState();
 }
 
-// 🟢 Removed TickerProviderStateMixin since we no longer use tabs
 class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
   List<dynamic> _courses = [];
   List<dynamic> _supervisors = [];
   bool _isLoadingData = true;
   String? _errorMessage;
-
-  // 🟢 Added a state variable to track the selected course from the dropdown
-  String? _selectedCourseId;
 
   final ApiService _apiService = ApiService();
 
@@ -41,11 +37,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           _courses = results[0];
           _supervisors = results[1];
           _isLoadingData = false;
-          
-          // 🟢 Auto-select the first course if the list is not empty
-          if (_courses.isNotEmpty) {
-            _selectedCourseId = _courses.first['_id'];
-          }
         });
       }
     } catch (e) {
@@ -107,12 +98,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       );
     }
 
-    // 🟢 Find the selected course object to pass its data
-    final selectedCourse = _courses.firstWhere(
-      (c) => c['_id'] == _selectedCourseId, 
-      orElse: () => _courses.first
-    );
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -131,84 +116,21 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           )
         ],
       ),
-      body: Column(
-        children: [
-          // 🟢 1. Dropdown Header Section
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-            decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2))),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                )
-              ]
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Select Course", 
-                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  value: _selectedCourseId,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                    filled: true,
-                    fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
-                  ),
-                  items: _courses.map<DropdownMenuItem<String>>((course) {
-                    return DropdownMenuItem<String>(
-                      value: course['_id'],
-                      child: Text(
-                        course['courseCode'], 
-                        style: const TextStyle(fontWeight: FontWeight.w600)
-                      ),
-                    );
-                  }).toList(),
-                  onChanged: (newValue) {
-                    setState(() {
-                      _selectedCourseId = newValue;
-                    });
-                  },
-                ),
-              ],
-            ),
-          ),
-
-          // 🟢 2. The Form (Expanded to fill remaining space)
-          if (_selectedCourseId != null)
-            Expanded(
-              child: SingleProposalForm(
-                // 🟢 The ValueKey resets the form automatically if they switch courses
-                key: ValueKey(_selectedCourseId), 
-                courseId: selectedCourse['_id'],
-                courseCode: selectedCourse['courseCode'],
-                supervisors: _supervisors,
-              ),
-            ),
-        ],
+      body: SingleProposalForm(
+        courses: _courses,
+        supervisors: _supervisors,
       ),
     );
   }
 }
 
 class SingleProposalForm extends StatefulWidget {
-  final String courseId;
-  final String courseCode;
+  final List<dynamic> courses;
   final List<dynamic> supervisors;
 
   const SingleProposalForm({
     super.key,
-    required this.courseId,
-    required this.courseCode,
+    required this.courses,
     required this.supervisors,
   });
 
@@ -219,6 +141,8 @@ class SingleProposalForm extends StatefulWidget {
 class _SingleProposalFormState extends State<SingleProposalForm> {
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
+
+  String? _selectedCourseId;
 
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
@@ -251,6 +175,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
+
+    if (_selectedCourseId == null) {
+      _showError('Please select a course at the top of the form.');
+      return;
+    }
 
     if (_sup1 == null || _sup2 == null || _sup3 == null) {
       _showError('Please select all 3 supervisor preferences.');
@@ -326,7 +255,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       await _apiService.submitProposal({
         'title': _titleController.text.trim(),
         'description': _linkController.text.trim(),
-        'courseId': widget.courseId,
+        'courseId': _selectedCourseId!, 
         'supervisorIds': supervisorIds,
         'teamMembers': members
       });
@@ -359,6 +288,75 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // 🟢 Prominent Course Selection Banner
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: _selectedCourseId == null 
+                      ? theme.colorScheme.primary.withOpacity(0.5) 
+                      : Colors.green.withOpacity(0.5), 
+                  width: 2
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        _selectedCourseId == null ? Icons.school_rounded : Icons.check_circle_rounded, 
+                        color: _selectedCourseId == null ? theme.colorScheme.primary : Colors.green,
+                        size: 22,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Target Course',
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: theme.colorScheme.primary),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: _selectedCourseId,
+                    hint: const Text("Select a course..."),
+                    isExpanded: true,
+                    decoration: InputDecoration(
+                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      filled: true,
+                      fillColor: theme.colorScheme.surface,
+                    ),
+                    validator: (value) => value == null ? 'Required to submit' : null,
+                    items: widget.courses.map<DropdownMenuItem<String>>((course) {
+                      return DropdownMenuItem<String>(
+                        value: course['_id'],
+                        child: Text(
+                          course['courseCode'], 
+                          style: const TextStyle(fontWeight: FontWeight.w600)
+                        ),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        _selectedCourseId = newValue;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 30),
+            
             TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Project Title'),
@@ -444,7 +442,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
         items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
-          // Helper to get first name only for small dropdown
           String name = s['name'].toString().split(' ')[0];
           return DropdownMenuItem(
               value: s['_id'],
