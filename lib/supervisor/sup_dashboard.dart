@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 
 // 🟢 Core Imports
 import '../auth_provider.dart';
-import '../home_page.dart';
 import '../chatbot_screen.dart';
 
 // 🟢 Screen Imports
@@ -11,6 +10,7 @@ import 'team_list_screen.dart';
 import 'sup_list_screen.dart'; 
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../widgets/app_drawer.dart'; // 🟢 Added Drawer Import
 
 class SupervisorDashboard extends StatelessWidget {
   const SupervisorDashboard({Key? key}) : super(key: key);
@@ -22,38 +22,20 @@ class SupervisorDashboard extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
+    // 🟢 Extract First Name Logic
+    final String fullName = user?.name ?? 'Supervisor';
+    final String firstName = fullName.split(' ').first;
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
+      // 🟢 Implement the Drawer here
+      drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Supervisor Portal'),
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: Icon(
-              themeProvider.isDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
-              color: theme.colorScheme.onSurfaceVariant,
-            ),
-            onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
-          ),
-          IconButton(
-            icon: Icon(Icons.logout_rounded, color: theme.colorScheme.error),
-            tooltip: "Logout",
-            onPressed: () {
-              Provider.of<AuthProvider>(context, listen: false).logout();
-              Navigator.of(context).pushAndRemoveUntil(
-                MaterialPageRoute(builder: (context) => const HomePage()),
-                (route) => false,
-              );
-            },
-          )
-        ],
+        // 🟢 Actions removed because the drawer now handles Dark Mode & Logout
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -64,16 +46,16 @@ class SupervisorDashboard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
             Text(
-              user?.name ?? 'Supervisor',
+              firstName, // 🟢 Greet with First Name only
               style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
             
-            // 🟢 Row 1: My Teams (Now acts as the Marking/Evaluation Hub)
+            // 🟢 Row 1: My Teams (Evaluation Hub)
             _buildCard(
               context,
               "My Teams",
-              "Evaluate & Manage", // Updated subtitle to reflect its new purpose
+              "Evaluate & Manage", 
               Icons.groups,
               () => Navigator.push(
                   context,

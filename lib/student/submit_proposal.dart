@@ -29,7 +29,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     try {
       final results = await Future.wait([
         _apiService.getCourses(),
-        _apiService.getSupervisors(), 
+        _apiService.getSupervisors(),
       ]);
 
       if (mounted) {
@@ -43,7 +43,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       if (mounted) {
         setState(() {
           _isLoadingData = false;
-          _errorMessage = "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
+          _errorMessage =
+              "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
         });
       }
     }
@@ -255,7 +256,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       await _apiService.submitProposal({
         'title': _titleController.text.trim(),
         'description': _linkController.text.trim(),
-        'courseId': _selectedCourseId!, 
+        'courseId': _selectedCourseId!,
         'supervisorIds': supervisorIds,
         'teamMembers': members
       });
@@ -295,11 +296,10 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 color: theme.colorScheme.primary.withOpacity(0.05),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: _selectedCourseId == null 
-                      ? theme.colorScheme.primary.withOpacity(0.5) 
-                      : Colors.green.withOpacity(0.5), 
-                  width: 2
-                ),
+                    color: _selectedCourseId == null
+                        ? theme.colorScheme.primary.withOpacity(0.5)
+                        : Colors.green.withOpacity(0.5),
+                    width: 2),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -307,8 +307,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                   Row(
                     children: [
                       Icon(
-                        _selectedCourseId == null ? Icons.school_rounded : Icons.check_circle_rounded, 
-                        color: _selectedCourseId == null ? theme.colorScheme.primary : Colors.green,
+                        _selectedCourseId == null
+                            ? Icons.school_rounded
+                            : Icons.check_circle_rounded,
+                        color: _selectedCourseId == null
+                            ? theme.colorScheme.primary
+                            : Colors.green,
                         size: 22,
                       ),
                       const SizedBox(width: 8),
@@ -327,7 +331,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                     hint: const Text("Select a course..."),
                     isExpanded: true,
                     decoration: InputDecoration(
-                      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
                         borderSide: BorderSide.none,
@@ -335,14 +340,15 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) => value == null ? 'Required to submit' : null,
-                    items: widget.courses.map<DropdownMenuItem<String>>((course) {
+                    validator: (value) =>
+                        value == null ? 'Required to submit' : null,
+                    items:
+                        widget.courses.map<DropdownMenuItem<String>>((course) {
                       return DropdownMenuItem<String>(
                         value: course['_id'],
-                        child: Text(
-                          course['courseCode'], 
-                          style: const TextStyle(fontWeight: FontWeight.w600)
-                        ),
+                        child: Text(course['courseCode'],
+                            style:
+                                const TextStyle(fontWeight: FontWeight.w600)),
                       );
                     }).toList(),
                     onChanged: (newValue) {
@@ -354,9 +360,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 ],
               ),
             ),
-            
+
             const SizedBox(height: 30),
-            
+
             TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Project Title'),

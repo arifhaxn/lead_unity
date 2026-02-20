@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:path_provider/path_provider.dart';
 
 import '../auth_provider.dart';
 import '../home_page.dart';
@@ -26,7 +27,6 @@ class _AppDrawerState extends State<AppDrawer> {
     _loadProfileImage();
   }
 
-  // 🟢 Load the saved image path from storage when the drawer opens
   Future<void> _loadProfileImage() async {
     String? imagePath = await _storage.read(key: 'profile_image_path');
     if (imagePath != null && File(imagePath).existsSync()) {
@@ -36,17 +36,23 @@ class _AppDrawerState extends State<AppDrawer> {
     }
   }
 
-  // 🟢 Open the gallery and save the selected image path
   Future<void> _pickImage() async {
-    final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-    
-    if (pickedFile != null) {
-      setState(() {
-        _profileImage = File(pickedFile.path);
-      });
-      // Save the path so it remembers the picture next time you open the app
-      await _storage.write(key: 'profile_image_path', value: pickedFile.path);
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (pickedFile != null) {
+        final directory = await getApplicationDocumentsDirectory();
+        final permanentPath = '${directory.path}/profile_picture.png';
+        final savedImage = await File(pickedFile.path).copy(permanentPath);
+
+        setState(() {
+          _profileImage = savedImage;
+        });
+        await _storage.write(key: 'profile_image_path', value: permanentPath);
+      }
+    } catch (e) {
+      debugPrint("Error picking image: $e");
     }
   }
 
@@ -57,7 +63,6 @@ class _AppDrawerState extends State<AppDrawer> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    // Safely extract user details
     final name = user?.name ?? 'Unknown User';
     final email = user?.email ?? 'No email provided';
     final studentId = user?.studentId ?? 'N/A';
@@ -65,71 +70,113 @@ class _AppDrawerState extends State<AppDrawer> {
 
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.horizontal(right: Radius.circular(20)),
+      ),
       child: Column(
         children: [
           // --- 1. Top User Info Section ---
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.only(top: 60, bottom: 20, left: 20, right: 20),
+            padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface,
-              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.2))),
+              gradient: LinearGradient(
+                colors: [
+                  theme.colorScheme.primary.withOpacity(0.15),
+                  theme.colorScheme.surface,
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.1))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🟢 Profile Picture Area
-                Stack(
-                  alignment: Alignment.bottomRight,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    CircleAvatar(
-                      radius: 40,
-                      backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-                      // If we have an image, show it. Otherwise, stay blank so the text shows.
-                      backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-                      child: _profileImage == null
-                          ? Text(
-                              firstLetter,
-                              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
-                            )
-                          : null, // Hide the text if there is an image
+                    Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3), width: 3),
+                            boxShadow: [
+                              BoxShadow(
+                                color: theme.colorScheme.primary.withOpacity(0.2),
+                                blurRadius: 15,
+                                offset: const Offset(0, 5),
+                              )
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 42,
+                            backgroundColor: theme.colorScheme.surface,
+                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
+                            child: _profileImage == null
+                                ? Text(
+                                    firstLetter,
+                                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                  )
+                                : null,
+                          ),
+                        ),
+                        InkWell(
+                          onTap: _pickImage,
+                          customBorder: const CircleBorder(),
+                          child: Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                          ),
+                        ),
+                      ],
                     ),
-                    InkWell(
-                      onTap: _pickImage, // 🟢 Triggers the gallery popup
-                      child: CircleAvatar(
-                        radius: 14,
-                        backgroundColor: theme.colorScheme.primary,
-                        child: const Icon(Icons.camera_alt, size: 16, color: Colors.white),
+                    
+                    if (user?.role == 'student')
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.badge_rounded, size: 14, color: theme.colorScheme.primary),
+                            const SizedBox(width: 4),
+                            Text(
+                              studentId,
+                              style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 
-                // User Details
                 Text(
                   name,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   email,
                   style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (user?.role == 'student') ...[
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: Text(
-                      "ID: $studentId",
-                      style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                ]
               ],
             ),
           ),
@@ -137,58 +184,133 @@ class _AppDrawerState extends State<AppDrawer> {
           // --- 2. Middle Actions Section ---
           Expanded(
             child: ListView(
-              padding: const EdgeInsets.symmetric(vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
-                // Theme Toggle
-                SwitchListTile(
-                  secondary: Icon(
-                    themeProvider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
-                    color: theme.colorScheme.onSurface,
+                // Dark Mode Toggle
+                _buildDrawerItem(
+                  context: context,
+                  icon: themeProvider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  title: "Dark Mode",
+                  trailing: Switch(
+                    value: themeProvider.isDarkMode,
+                    activeColor: theme.colorScheme.primary,
+                    onChanged: (value) => themeProvider.toggleTheme(),
                   ),
-                  title: const Text("Dark Mode", style: TextStyle(fontWeight: FontWeight.w500)),
-                  value: themeProvider.isDarkMode,
-                  activeColor: theme.colorScheme.primary,
-                  onChanged: (value) {
-                    themeProvider.toggleTheme();
-                  },
+                  onTap: () => themeProvider.toggleTheme(),
                 ),
                 
-                const Divider(),
+                const SizedBox(height: 24),
 
-                // Logout Button
-                ListTile(
-                  leading: const Icon(Icons.logout_rounded, color: Colors.redAccent),
-                  title: const Text("Logout", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
-                  onTap: () async {
-                    Navigator.pop(context);
-                    
-                    // Optional: Clear the profile picture when logging out
-                    // await _storage.delete(key: 'profile_image_path');
-                    
-                    Provider.of<AuthProvider>(context, listen: false).logout();
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const HomePage()),
-                      (route) => false,
-                    );
+                // 🟢 Prominent "About App" Banner Card
+                InkWell(
+                  onTap: () {
+                    Navigator.pop(context); 
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutAppScreen()));
                   },
+                  borderRadius: BorderRadius.circular(16),
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          theme.colorScheme.primary,
+                          theme.colorScheme.primary.withOpacity(0.7),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.colorScheme.primary.withOpacity(0.3),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: const [
+                              Text(
+                                "About App", 
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                "LeadUnity • v1.0.0", 
+                                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
+                              ),
+                            ],
+                          ),
+                        ),
+                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                      ],
+                    ),
+                  ),
                 ),
               ],
             ),
           ),
 
-          // --- 3. Bottom Info Section ---
-          const Divider(height: 1),
-          ListTile(
-            leading: Icon(Icons.info_outline_rounded, color: theme.colorScheme.onSurfaceVariant),
-            title: Text("About App", style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontWeight: FontWeight.w500)),
-            onTap: () {
-              Navigator.pop(context); 
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutAppScreen()));
-            },
+          // --- 3. Bottom Logout Section ---
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildDrawerItem(
+              context: context,
+              icon: Icons.logout_rounded,
+              title: "Logout",
+              isDestructive: true,
+              onTap: () async {
+                Navigator.pop(context);
+                Provider.of<AuthProvider>(context, listen: false).logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => const HomePage()),
+                  (route) => false,
+                );
+              },
+            ),
           ),
-          const SizedBox(height: 20), 
+          const SizedBox(height: 10), 
         ],
       ),
+    );
+  }
+
+  Widget _buildDrawerItem({
+    required BuildContext context,
+    required IconData icon,
+    required String title,
+    required VoidCallback onTap,
+    Widget? trailing,
+    bool isDestructive = false,
+  }) {
+    final theme = Theme.of(context);
+    final color = isDestructive ? Colors.redAccent : theme.colorScheme.onSurface;
+    final bgColor = isDestructive ? Colors.redAccent.withOpacity(0.1) : Colors.transparent;
+
+    return ListTile(
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      tileColor: bgColor,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      leading: Icon(icon, color: color),
+      title: Text(
+        title,
+        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 15),
+      ),
+      trailing: trailing,
     );
   }
 }

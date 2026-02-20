@@ -1,11 +1,60 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({Key? key}) : super(key: key);
 
+  // 🟢 Helper function to open websites
+  Future<void> _launchUrl(String urlString) async {
+    final Uri url = Uri.parse(urlString);
+    if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
+      debugPrint('Could not launch $url');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+
+    // ==========================================
+    // 🟢 ENTER YOUR DEVELOPER DETAILS HERE
+    // ==========================================
+    final List<Map<String, dynamic>> developers = [
+      {
+        "name": "Developer One",
+        "role": "Lead Flutter Developer",
+        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+        "fb": "https://facebook.com",
+        "ig": "https://instagram.com",
+        "linkedin": "https://linkedin.com",
+      },
+      {
+        "name": "Developer Two",
+        "role": "Backend NestJS Developer",
+        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+        "fb": "https://facebook.com",
+        "ig": "https://instagram.com",
+        "linkedin": "https://linkedin.com",
+      },
+      {
+        "name": "Developer Three",
+        "role": "UI/UX & Frontend Developer",
+        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+        "fb": "https://facebook.com",
+        "ig": "https://instagram.com",
+        "linkedin": "https://linkedin.com",
+      },
+    ];
+
+    // ==========================================
+    // 🟢 ENTER YOUR SUPERVISOR DETAILS HERE
+    // ==========================================
+    final Map<String, String> supervisor = {
+      "name": "Dr. Example Supervisor",
+      "designation": "Professor, Dept. of Computer Science",
+      "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+    };
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -16,82 +65,187 @@ class AboutAppScreen extends StatelessWidget {
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            const SizedBox(height: 20),
-            // App Logo Placeholder
+            // --- 1. App Logo & Summary ---
             Container(
-              height: 100,
-              width: 100,
+              height: 90,
+              width: 90,
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(20),
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(Icons.school_rounded, size: 50, color: theme.colorScheme.primary),
+              child: Icon(Icons.school_rounded, size: 45, color: theme.colorScheme.primary),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
             Text(
               "Link Unity",
               style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 8),
-            Text(
-              "Version 1.0.0",
-              style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-            ),
-            const SizedBox(height: 40),
+            const SizedBox(height: 4),
+            Text("Version 1.0.0", style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+            const SizedBox(height: 24),
             
-            // Description
             const Text(
               "Link Unity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 16, height: 1.5),
+              style: TextStyle(fontSize: 15, height: 1.6),
             ),
             const SizedBox(height: 40),
 
-            // Creator Info
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+            // --- 2. Developers Section ---
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Meet the Developers",
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text("Created By", style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                  const Divider(),
-                  const SizedBox(height: 10),
-                  _buildCreatorRow(Icons.person, "Your Name", "Lead Developer"),
-                  const SizedBox(height: 10),
-                  _buildCreatorRow(Icons.person, "Teammate Name", "Backend Developer"),
-                  // Add more rows as needed
-                ],
+            ),
+            const SizedBox(height: 16),
+            
+            // Loop through the 3 developers and build cards
+            ...developers.map((dev) => _buildDeveloperCard(theme, dev)).toList(),
+
+            const SizedBox(height: 30),
+
+            // --- 3. Supervisor Section ---
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                "Supervised By",
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
               ),
-            )
+            ),
+            const SizedBox(height: 16),
+            _buildSupervisorCard(theme, supervisor),
+
+            const SizedBox(height: 40), // Bottom padding
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCreatorRow(IconData icon, String name, String role) {
-    return Row(
-      children: [
-        Icon(icon, size: 20, color: Colors.grey),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(name, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
-            Text(role, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+  // 🟢 Developer Card UI
+  Widget _buildDeveloperCard(ThemeData theme, Map<String, dynamic> dev) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+      ),
+      child: Column(
+        children: [
+          // Developer Picture
+          CircleAvatar(
+            radius: 45,
+            backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+            backgroundImage: NetworkImage(dev["image"]),
+          ),
+          const SizedBox(height: 16),
+          
+          // Name and Role
+          Text(
+            dev["name"],
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            dev["role"],
+            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w500, fontSize: 13),
+          ),
+          
+          const SizedBox(height: 16),
+          const Divider(),
+          
+          // Social Icons Row
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              IconButton(
+                onPressed: () => _launchUrl(dev["fb"]),
+                icon: const Icon(FontAwesomeIcons.facebook, color: Color(0xFF1877F2)),
+                tooltip: "Facebook",
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                onPressed: () => _launchUrl(dev["ig"]),
+                icon: const Icon(FontAwesomeIcons.instagram, color: Color(0xFFE4405F)),
+                tooltip: "Instagram",
+              ),
+              const SizedBox(width: 16),
+              IconButton(
+                onPressed: () => _launchUrl(dev["linkedin"]),
+                icon: const Icon(FontAwesomeIcons.linkedin, color: Color(0xFF0A66C2)),
+                tooltip: "LinkedIn",
+              ),
+            ],
+          )
+        ],
+      ),
+    );
+  }
+
+  // 🟢 Supervisor Card UI
+  Widget _buildSupervisorCard(ThemeData theme, Map<String, String> supervisor) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            theme.colorScheme.primary.withOpacity(0.8),
+            theme.colorScheme.primary,
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-      ],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
+          )
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
+            child: CircleAvatar(
+              radius: 50,
+              backgroundImage: NetworkImage(supervisor["image"]!),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            supervisor["name"]!,
+            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            supervisor["designation"]!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+          ),
+        ],
+      ),
     );
   }
 }
