@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String _baseUrl = 'http://localhost:5000/api';
+  static const String _baseUrl = 'https://leading-unity-nest-backend.vercel.app/api';
   
   final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
   final _storage = const FlutterSecureStorage();
