@@ -35,46 +35,37 @@ class AuthProvider with ChangeNotifier {
   }
 
   // --- Login with Name Correction & ID Support ---
-  // 🟢 Updated to accept generic identifier and optional role
   Future<void> login(String identifier, String password, {String? role}) async {
     _setLoading(true);
     try {
-      // 🟢 Pass identifier to API
       final data = await _apiService.login(identifier, password);
 
       _token = data['token'];
-      // 🟢 Save token immediately so API calls work
       await _storage.write(key: 'jwt_token', value: _token);
 
       if (data['user'] != null) {
-        // Plan A: Server sent everything correctly
         _user = User.fromJson(data['user']);
       } else {
-        // Plan B: Server sent null or flat structure. Use "Rescue Mode".
         print("⚠️ Missing user object structure. attempting manual construction...");
         
-        // Sometimes backend returns flat fields like {name: '...', email: '...'} at root level
         if (data['name'] != null) {
            _user = User(
-             id: data['_id'] ?? '',
-             name: data['name'],
-             email: data['email'] ?? '',
-             role: data['role'] ?? 'student', // Fallback role
+             id: data['_id']?.toString() ?? '',
+             name: data['name']?.toString() ?? 'User',
+             email: data['email']?.toString() ?? '',
+             role: data['role']?.toString() ?? 'student',
+             studentId: data['studentId']?.toString(), // 🟢 Catch ID here too
            );
         } else {
-          // Plan C: Decode Token
           try {
             final payload = _parseJwt(_token!);
 
             String userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
             String? userRole = payload['role']?.toString().toLowerCase();
-            // Default to identifier if name missing
             String realName = payload['name']?.toString() ?? identifier;
+            String? extractedStudentId = payload['studentId']?.toString(); // 🟢 Extract ID
 
-            // 🟢 Fetch real profile to fix role/name when missing
             try {
-              // We assume getUserByEmail can basically find "me" regardless of input
-              // Or you might need to implement a dedicated /auth/me endpoint
               final me = await _apiService.getUserByEmail(identifier); 
               if (me['_id'] != null && userId.isEmpty) {
                 userId = me['_id'].toString();
@@ -85,31 +76,33 @@ class AuthProvider with ChangeNotifier {
               if (me['role'] != null) {
                 userRole = me['role'].toString().toLowerCase();
               }
+              if (me['studentId'] != null) {
+                extractedStudentId = me['studentId'].toString(); // 🟢 Extract ID from API
+              }
             } catch (e) {
               print("Could not fetch real profile: $e");
             }
 
-            // Create the user with the corrected name
             _user = User(
               id: userId,
               name: realName,
-              email: identifier.contains('@') ? identifier : '', // Only set email if it looks like one
+              email: identifier.contains('@') ? identifier : '', 
               role: userRole ?? 'unknown',
+              studentId: extractedStudentId, // 🟢 Add to user
             );
           } catch (e) {
-            // Last resort fallback
             _user = User(id: 'temp', name: 'User', email: identifier, role: 'unknown');
           }
         }
       }
 
-      // Save the corrected user data
       if (_user != null) {
         final userMap = {
           '_id': _user!.id,
           'name': _user!.name,
           'email': _user!.email,
-          'role': _user!.role
+          'role': _user!.role,
+          'studentId': _user!.studentId, // 🟢 Make sure to save it!
         };
         await _storage.write(key: 'user_data', value: json.encode(userMap));
       }
@@ -121,9 +114,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // Update signature to accept 'otp'
+  // --- Registration Logic (Merged OTP + Frontend Override) ---
   Future<void> register(String name, String email, String password, String sid,
-      String batch, String section, String otp) async { // <--- Added otp
+      String batch, String section, String otp) async {
     _setLoading(true);
     try {
       final registrationData = {
@@ -133,13 +126,52 @@ class AuthProvider with ChangeNotifier {
         'studentId': sid,
         'batch': batch,
         'section': section,
-        'otp': otp, // <--- Send OTP to backend
+        'otp': otp, 
       };
 
-      await _apiService.registerStudent(registrationData);
+      // 1. Send data to backend
+      final data = await _apiService.registerStudent(registrationData);
+
+      // 2. Save the token immediately
+      _token = data['token'];
+      await _storage.write(key: 'jwt_token', value: _token);
+
+      // 3. Extract IDs if the backend provided them
+      String userId = '';
+      String userRole = 'student';
+
+      if (data['user'] != null) {
+        userId = data['user']['_id']?.toString() ?? '';
+        userRole = data['user']['role']?.toString() ?? 'student';
+      } else if (_token != null) {
+        try {
+          final payload = _parseJwt(_token!);
+          userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
+        } catch (e) {
+          debugPrint("Could not parse token during registration.");
+        }
+      }
+
+      // 4. 🟢 THE FIX: Build the user profile strictly from the frontend inputs!
+      _user = User(
+        id: userId.isNotEmpty ? userId : 'temp_id',
+        name: name,         
+        email: email,       
+        role: userRole,
+        studentId: sid,     
+      );
+
+      // 5. 🟢 CRITICAL: Save this newly built profile to the phone's permanent storage
+      final userMap = {
+        '_id': _user!.id,
+        'name': _user!.name,
+        'email': _user!.email,
+        'role': _user!.role,
+        'studentId': _user!.studentId,
+      };
+      await _storage.write(key: 'user_data', value: json.encode(userMap));
       
-      // ... rest of logic (token saving, user saving)
-      
+      notifyListeners();
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
@@ -147,11 +179,12 @@ class AuthProvider with ChangeNotifier {
     }
   }
   
-  // Add this wrapper for the UI to call easily
+  // --- OTP Helper ---
   Future<void> sendOtp(String email) async {
     await _apiService.sendOtp(email);
   }
 
+  // --- Logout ---
   Future<void> logout() async {
     await _apiService.logout();
     await _storage.delete(key: 'user_data');
@@ -160,14 +193,12 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  
-
   void _setLoading(bool value) {
     _isLoading = value;
     notifyListeners();
   }
 
-  // Helper to Decode Token
+  // --- Token Decoders ---
   Map<String, dynamic> _parseJwt(String token) {
     final parts = token.split('.');
     if (parts.length != 3) throw Exception('Invalid token');

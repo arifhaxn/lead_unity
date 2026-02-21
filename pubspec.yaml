@@ -78,6 +78,10 @@ flutter:
     - assets/template/page6.png
     - assets/template/page7.png
     - assets/template/page8.png
+    - assets/template/crew/sir.jpeg
+    - assets/template/crew/arif.jpg
+    - assets/template/crew/omio.jpeg
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -22,15 +22,19 @@ class AboutAppScreen extends StatelessWidget {
     // ==========================================
     final List<Map<String, dynamic>> developers = [
       {
-        "name": "Developer One",
+        "name": "Arif Hasan",
+        "batch": "61th Batch",
+        "department": "Dept. of CSE",
         "role": "Lead Flutter Developer",
-        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-        "fb": "https://facebook.com",
-        "ig": "https://instagram.com",
-        "linkedin": "https://linkedin.com",
+        "image": "assets/template/crew/arif.jpg",
+        "fb": "https://www.facebook.com/arifhaxnn",
+        "ig": "https://www.instagram.com/arifhaxn",
+        "linkedin": "https://www.linkedin.com/in/arif-hasan-672249358",
       },
       {
-        "name": "Developer Two",
+        "name": "Shoumo Shahriar Araf",
+        "batch": "61th Batch",
+        "department": "Dept. of CSE",
         "role": "Backend NestJS Developer",
         "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
         "fb": "https://facebook.com",
@@ -38,9 +42,11 @@ class AboutAppScreen extends StatelessWidget {
         "linkedin": "https://linkedin.com",
       },
       {
-        "name": "Developer Three",
-        "role": "UI/UX & Frontend Developer",
-        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+        "name": "Omio Mahim",
+        "batch": "61th Batch",
+        "department": "Dept. of CSE",
+        "role": "Frontend & AI Integrator",
+        "image": "assets/template/crew/omio.jpeg",
         "fb": "https://facebook.com",
         "ig": "https://instagram.com",
         "linkedin": "https://linkedin.com",
@@ -51,9 +57,11 @@ class AboutAppScreen extends StatelessWidget {
     // 🟢 ENTER YOUR SUPERVISOR DETAILS HERE
     // ==========================================
     final Map<String, String> supervisor = {
-      "name": "Dr. Example Supervisor",
-      "designation": "Professor, Dept. of Computer Science",
-      "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+      "name": "Md. Ebrahim Hossain",
+      "designation": "Associate Professor",
+      "department": "Dept. of Computer Science and Engineering",
+      "university": "Leading University",
+      "image": "assets/template/crew/sir.jpeg", // 🟢 Local asset
     };
 
     return Scaffold(
@@ -81,7 +89,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             Text(
-              "Link Unity",
+              "LeadUnity",
               style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
@@ -89,7 +97,7 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 24),
             
             const Text(
-              "Link Unity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
+              "LeadUnity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 15, height: 1.6),
             ),
@@ -106,7 +114,7 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 16),
             
             // Loop through the 3 developers and build cards
-            ...developers.map((dev) => _buildDeveloperCard(theme, dev)).toList(),
+            ...developers.map((dev) => _buildDeveloperCard(theme, dev)),
 
             const SizedBox(height: 30),
 
@@ -151,19 +159,34 @@ class AboutAppScreen extends StatelessWidget {
           CircleAvatar(
             radius: 45,
             backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-            backgroundImage: NetworkImage(dev["image"]),
+            // 🟢 Smart check for local vs network image
+            backgroundImage: dev["image"].startsWith('http')
+                ? NetworkImage(dev["image"]) as ImageProvider
+                : AssetImage(dev["image"]),
           ),
           const SizedBox(height: 16),
           
-          // Name and Role
+          // Name 
           Text(
             dev["name"],
+            textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 4),
+          
+          // 🟢 Batch & Department
+          Text(
+            "${dev["batch"]} • ${dev["department"]}",
+            textAlign: TextAlign.center,
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+
+          // Role
           Text(
             dev["role"],
-            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.w500, fontSize: 13),
+            textAlign: TextAlign.center,
+            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
           ),
           
           const SizedBox(height: 16),
@@ -230,19 +253,43 @@ class AboutAppScreen extends StatelessWidget {
             ),
             child: CircleAvatar(
               radius: 50,
-              backgroundImage: NetworkImage(supervisor["image"]!),
+              // 🟢 Smart check for local vs network image
+              backgroundImage: supervisor["image"]!.startsWith('http')
+                  ? NetworkImage(supervisor["image"]!) as ImageProvider
+                  : AssetImage(supervisor["image"]!),
             ),
           ),
           const SizedBox(height: 16),
+          
+          // Name
           Text(
             supervisor["name"]!,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
           ),
           const SizedBox(height: 6),
+          
+          // Designation
           Text(
             supervisor["designation"]!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 14, fontWeight: FontWeight.w500),
+            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 4),
+
+          // Department
+          Text(
+            supervisor["department"]!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+          ),
+          const SizedBox(height: 4),
+
+          // University
+          Text(
+            supervisor["university"]!,
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
           ),
         ],
       ),

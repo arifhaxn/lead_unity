@@ -7,9 +7,8 @@ import '../chatbot_screen.dart';
 
 // 🟢 Screen Imports
 import 'team_list_screen.dart';
-import 'sup_list_screen.dart'; 
+import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
-import '../theme/theme_provider.dart';
 import '../widgets/app_drawer.dart'; // 🟢 Added Drawer Import
 
 class SupervisorDashboard extends StatelessWidget {
@@ -18,7 +17,6 @@ class SupervisorDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
@@ -47,15 +45,16 @@ class SupervisorDashboard extends StatelessWidget {
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
             Text(
               firstName, // 🟢 Greet with First Name only
-              style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.displaySmall
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 30),
-            
+
             // 🟢 Row 1: My Teams (Evaluation Hub)
             _buildCard(
               context,
               "My Teams",
-              "Evaluate & Manage", 
+              "Evaluate & Manage",
               Icons.groups,
               () => Navigator.push(
                   context,
@@ -65,9 +64,9 @@ class SupervisorDashboard extends StatelessWidget {
               height: 120,
               horizontalLayout: true,
             ),
-            
+
             const SizedBox(height: 16),
-            
+
             // 🟢 Row 2: All Teams & Supervisors
             Row(
               children: [
@@ -153,8 +152,9 @@ class SupervisorDashboard extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(title,
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Text(subtitle,
                             style: const TextStyle(
@@ -162,7 +162,8 @@ class SupervisorDashboard extends StatelessWidget {
                       ],
                     ),
                     const Spacer(),
-                    Icon(Icons.arrow_forward_ios_rounded, color: Colors.white.withOpacity(0.5), size: 18),
+                    Icon(Icons.arrow_forward_ios_rounded,
+                        color: Colors.white.withOpacity(0.5), size: 18),
                   ],
                 )
               : Column(
@@ -181,8 +182,9 @@ class SupervisorDashboard extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(title,
-                            style: theme.textTheme.titleLarge
-                                ?.copyWith(color: Colors.white, fontWeight: FontWeight.bold)),
+                            style: theme.textTheme.titleLarge?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
                         const SizedBox(height: 4),
                         Text(subtitle,
                             style: const TextStyle(
