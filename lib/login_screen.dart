@@ -22,7 +22,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final _emailController = TextEditingController();
+  // Controller for ID or Abbreviation
+  final _identifierController = TextEditingController();
   final _passController = TextEditingController();
   final _api = ApiService();
   bool _isRegOpen = false;
@@ -40,15 +41,22 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   void _handleLogin() async {
-    setState(() => _isLoading = true);
-
-    // 🟢 Trim email to prevent common whitespace errors
-    final email = _emailController.text.trim();
+    final identifier = _identifierController.text.trim();
     final password = _passController.text;
 
+    if (identifier.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text("Please enter both ID/Abbreviation and Password"),
+          backgroundColor: Colors.orange));
+      return;
+    }
+
+    setState(() => _isLoading = true);
     try {
+      // 🟢 Calls auth provider. Backend handles:
+      // if identifier has no '@', it checks Student ID OR Supervisor Abbreviation
       await Provider.of<AuthProvider>(context, listen: false)
-          .login(email, password);
+          .login(identifier, password, role: widget.role); 
 
       if (!mounted) return;
 
@@ -87,6 +95,15 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeColor = theme.colorScheme.primary;
+    
+    // 🟢 Dynamic Logic for Labels/Inputs
+    final isStudent = widget.role == 'student';
+    
+    // Student -> "Student ID", Number Keyboard
+    // Supervisor -> "Abbreviation", Text Keyboard
+    final labelText = isStudent ? 'Student ID' : 'Abbreviation';
+    final prefixIcon = isStudent ? Icons.badge_outlined : Icons.short_text;
+    final keyboardType = isStudent ? TextInputType.number : TextInputType.text;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -114,27 +131,30 @@ class _LoginScreenState extends State<LoginScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Let\'s Sign You In.',
-                style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+              Text(
+                isStudent ? 'Student Login' : 'Supervisor Login',
+                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
               Text(
-                'Welcome back! You\'ve been missed.',
+                'Welcome back! Please sign in to continue.',
                 style: TextStyle(
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
               ),
               const SizedBox(height: 40),
 
+              // 🟢 Dynamic Input Field
               TextField(
-                controller: _emailController,
+                controller: _identifierController,
+                keyboardType: keyboardType,
                 decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
+                    labelText: labelText,
+                    prefixIcon: Icon(prefixIcon),
                     focusedBorder: OutlineInputBorder(
                         borderSide: BorderSide(color: themeColor))),
               ),
               const SizedBox(height: 20),
+              
               TextField(
                 controller: _passController,
                 obscureText: true,

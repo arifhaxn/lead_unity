@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://leading-unity-nest-backend.vercel.app/api';
+  static const String _baseUrl = 'http://localhost:5000/api';
   
   final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
   final _storage = const FlutterSecureStorage();
@@ -23,13 +23,13 @@ class ApiService {
   // 🔐 AUTH & REGISTRATION
   // ===========================================================================
 
-  Future<Map<String, dynamic>> login(String email, String password) async {
+    // --- AUTH ---
+  Future<dynamic> login(String identifier, String password) async {
     try {
       final response = await _dio.post('/auth/login', data: {
-        'email': email,
+        'identifier': identifier, // ⚠️ KEY MUST BE 'identifier' (not 'email')
         'password': password,
       });
-      // Save token immediately
       await _storage.write(key: 'jwt_token', value: response.data['token']);
       return response.data;
     } on DioException catch (e) {
@@ -184,6 +184,14 @@ class ApiService {
       });
     } on DioException catch (e) {
       throw e.response?.data['message'] ?? 'Failed to save marks';
+    }
+  }
+
+  Future<void> sendOtp(String email) async {
+    try {
+      await _dio.post('/auth/send-otp', data: {'email': email});
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Failed to send OTP';
     }
   }
 }

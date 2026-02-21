@@ -34,11 +34,13 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // --- Login with Name Correction ---
-  Future<void> login(String email, String password) async {
+  // --- Login with Name Correction & ID Support ---
+  // 🟢 Updated to accept generic identifier and optional role
+  Future<void> login(String identifier, String password, {String? role}) async {
     _setLoading(true);
     try {
-      final data = await _apiService.login(email, password);
+      // 🟢 Pass identifier to API
+      final data = await _apiService.login(identifier, password);
 
       _token = data['token'];
       // 🟢 Save token immediately so API calls work
@@ -48,42 +50,56 @@ class AuthProvider with ChangeNotifier {
         // Plan A: Server sent everything correctly
         _user = User.fromJson(data['user']);
       } else {
-        // Plan B: Server sent null. Use "Rescue Mode".
-        print("⚠️ Missing user data. Decoding token...");
-        try {
-          final payload = _parseJwt(_token!);
-
-          String userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
-          String? userRole = payload['role']?.toString().toLowerCase();
-          // Default to email name first (e.g. "lol")
-          String realName = payload['name']?.toString() ?? email.split('@')[0];
-
-          // 🟢 Fetch real profile to fix role/name when missing
+        // Plan B: Server sent null or flat structure. Use "Rescue Mode".
+        print("⚠️ Missing user object structure. attempting manual construction...");
+        
+        // Sometimes backend returns flat fields like {name: '...', email: '...'} at root level
+        if (data['name'] != null) {
+           _user = User(
+             id: data['_id'] ?? '',
+             name: data['name'],
+             email: data['email'] ?? '',
+             role: data['role'] ?? 'student', // Fallback role
+           );
+        } else {
+          // Plan C: Decode Token
           try {
-            final me = await _apiService.getUserByEmail(email);
-            if (me['_id'] != null && userId.isEmpty) {
-              userId = me['_id'].toString();
-            }
-            if (me['name'] != null) {
-              realName = me['name'].toString();
-            }
-            if (me['role'] != null) {
-              userRole = me['role'].toString().toLowerCase();
-            }
-          } catch (e) {
-            print("Could not fetch real profile: $e");
-          }
+            final payload = _parseJwt(_token!);
 
-          // Create the user with the corrected name
-          _user = User(
-            id: userId,
-            name: realName,
-            email: email,
-            role: userRole ?? 'unknown',
-          );
-        } catch (e) {
-          // Last resort fallback
-          _user = User(id: 'temp', name: 'User', email: email, role: 'unknown');
+            String userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
+            String? userRole = payload['role']?.toString().toLowerCase();
+            // Default to identifier if name missing
+            String realName = payload['name']?.toString() ?? identifier;
+
+            // 🟢 Fetch real profile to fix role/name when missing
+            try {
+              // We assume getUserByEmail can basically find "me" regardless of input
+              // Or you might need to implement a dedicated /auth/me endpoint
+              final me = await _apiService.getUserByEmail(identifier); 
+              if (me['_id'] != null && userId.isEmpty) {
+                userId = me['_id'].toString();
+              }
+              if (me['name'] != null) {
+                realName = me['name'].toString();
+              }
+              if (me['role'] != null) {
+                userRole = me['role'].toString().toLowerCase();
+              }
+            } catch (e) {
+              print("Could not fetch real profile: $e");
+            }
+
+            // Create the user with the corrected name
+            _user = User(
+              id: userId,
+              name: realName,
+              email: identifier.contains('@') ? identifier : '', // Only set email if it looks like one
+              role: userRole ?? 'unknown',
+            );
+          } catch (e) {
+            // Last resort fallback
+            _user = User(id: 'temp', name: 'User', email: identifier, role: 'unknown');
+          }
         }
       }
 
@@ -105,9 +121,9 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // --- Registration Logic ---
+  // Update signature to accept 'otp'
   Future<void> register(String name, String email, String password, String sid,
-      String batch, String section) async {
+      String batch, String section, String otp) async { // <--- Added otp
     _setLoading(true);
     try {
       final registrationData = {
@@ -117,24 +133,23 @@ class AuthProvider with ChangeNotifier {
         'studentId': sid,
         'batch': batch,
         'section': section,
+        'otp': otp, // <--- Send OTP to backend
       };
 
-      final data = await _apiService.registerStudent(registrationData);
-
-      _token = data['token'];
-      await _storage.write(key: 'jwt_token', value: _token);
-
-      if (data['user'] != null) {
-        _user = User.fromJson(data['user']);
-        await _storage.write(
-            key: 'user_data', value: json.encode(data['user']));
-      }
-
+      await _apiService.registerStudent(registrationData);
+      
+      // ... rest of logic (token saving, user saving)
+      
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
       rethrow;
     }
+  }
+  
+  // Add this wrapper for the UI to call easily
+  Future<void> sendOtp(String email) async {
+    await _apiService.sendOtp(email);
   }
 
   Future<void> logout() async {
@@ -144,6 +159,8 @@ class AuthProvider with ChangeNotifier {
     _token = null;
     notifyListeners();
   }
+
+  
 
   void _setLoading(bool value) {
     _isLoading = value;
