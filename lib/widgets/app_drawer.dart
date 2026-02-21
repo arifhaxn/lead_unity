@@ -8,7 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import '../auth_provider.dart';
 import '../home_page.dart';
 import '../theme/theme_provider.dart';
-import 'about_app_screen.dart'; 
+import 'about_app_screen.dart';
 
 class AppDrawer extends StatefulWidget {
   const AppDrawer({Key? key}) : super(key: key);
@@ -40,7 +40,7 @@ class _AppDrawerState extends State<AppDrawer> {
     try {
       final picker = ImagePicker();
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-      
+
       if (pickedFile != null) {
         final directory = await getApplicationDocumentsDirectory();
         final permanentPath = '${directory.path}/profile_picture.png';
@@ -68,6 +68,21 @@ class _AppDrawerState extends State<AppDrawer> {
     final studentId = user?.studentId ?? 'N/A';
     final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
+    // 🟢 Magic Check: Detect if the logged-in user is Ebrahim Sir
+    // This checks if his name matches, OR if he logged in using "EBH" in either field
+    final bool isEbrahimSir = name.contains('Ebrahim Hossain') ||
+        name.contains('Ebrahim Hussain') ||
+        name.contains('MD Ebrahim Hossain') ||
+        name.contains('MD. Ebrahim Hossain') ||
+        name.contains('Md. Ebrahim Hossain') ||
+        email == 'EBH' ||
+        name.toUpperCase() == 'EBH';
+
+    print("----- DRAWER DEBUG -----");
+    print("Name is: '$name'");
+    print("Email is: '$email'");
+    print("isEbrahimSir is: $isEbrahimSir");
+
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(
@@ -88,7 +103,9 @@ class _AppDrawerState extends State<AppDrawer> {
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
               ),
-              border: Border(bottom: BorderSide(color: theme.colorScheme.outline.withOpacity(0.1))),
+              border: Border(
+                  bottom: BorderSide(
+                      color: theme.colorScheme.outline.withOpacity(0.1))),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -103,10 +120,14 @@ class _AppDrawerState extends State<AppDrawer> {
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
-                            border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3), width: 3),
+                            border: Border.all(
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.3),
+                                width: 3),
                             boxShadow: [
                               BoxShadow(
-                                color: theme.colorScheme.primary.withOpacity(0.2),
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.2),
                                 blurRadius: 15,
                                 offset: const Offset(0, 5),
                               )
@@ -115,11 +136,24 @@ class _AppDrawerState extends State<AppDrawer> {
                           child: CircleAvatar(
                             radius: 42,
                             backgroundColor: theme.colorScheme.surface,
-                            backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
-                            child: _profileImage == null
+
+                            // 🟢 Automatically show his asset picture if he is logged in
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                    as ImageProvider // Override if he manually uploads one
+                                : (isEbrahimSir
+                                    ? const AssetImage(
+                                        "assets/template/crew/sir.jpeg")
+                                    : null),
+
+                            // 🟢 Only show the text letter if NO picture exists AND it's not Ebrahim Sir
+                            child: _profileImage == null && !isEbrahimSir
                                 ? Text(
                                     firstLetter,
-                                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold, color: theme.colorScheme.primary),
+                                    style: TextStyle(
+                                        fontSize: 34,
+                                        fontWeight: FontWeight.bold,
+                                        color: theme.colorScheme.primary),
                                   )
                                 : null,
                           ),
@@ -132,30 +166,39 @@ class _AppDrawerState extends State<AppDrawer> {
                             decoration: BoxDecoration(
                               color: theme.colorScheme.primary,
                               shape: BoxShape.circle,
-                              border: Border.all(color: theme.scaffoldBackgroundColor, width: 2),
+                              border: Border.all(
+                                  color: theme.scaffoldBackgroundColor,
+                                  width: 2),
                             ),
-                            child: const Icon(Icons.camera_alt_rounded, size: 16, color: Colors.white),
+                            child: const Icon(Icons.camera_alt_rounded,
+                                size: 16, color: Colors.white),
                           ),
                         ),
                       ],
                     ),
-                    
                     if (user?.role == 'student')
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: theme.colorScheme.primary.withOpacity(0.1),
                           borderRadius: BorderRadius.circular(20),
-                          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                          border: Border.all(
+                              color:
+                                  theme.colorScheme.primary.withOpacity(0.2)),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Icon(Icons.badge_rounded, size: 14, color: theme.colorScheme.primary),
+                            Icon(Icons.badge_rounded,
+                                size: 14, color: theme.colorScheme.primary),
                             const SizedBox(width: 4),
                             Text(
                               studentId,
-                              style: TextStyle(color: theme.colorScheme.primary, fontSize: 12, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold),
                             ),
                           ],
                         ),
@@ -163,17 +206,18 @@ class _AppDrawerState extends State<AppDrawer> {
                   ],
                 ),
                 const SizedBox(height: 20),
-                
                 Text(
                   name,
-                  style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, letterSpacing: -0.5),
+                  style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold, letterSpacing: -0.5),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 4),
                 Text(
                   email,
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                  style: TextStyle(
+                      color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -186,10 +230,11 @@ class _AppDrawerState extends State<AppDrawer> {
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
               children: [
-                // Dark Mode Toggle
                 _buildDrawerItem(
                   context: context,
-                  icon: themeProvider.isDarkMode ? Icons.dark_mode_rounded : Icons.light_mode_rounded,
+                  icon: themeProvider.isDarkMode
+                      ? Icons.dark_mode_rounded
+                      : Icons.light_mode_rounded,
                   title: "Dark Mode",
                   trailing: Switch(
                     value: themeProvider.isDarkMode,
@@ -198,14 +243,14 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                   onTap: () => themeProvider.toggleTheme(),
                 ),
-                
                 const SizedBox(height: 24),
-
-                // 🟢 Prominent "About App" Banner Card
                 InkWell(
                   onTap: () {
-                    Navigator.pop(context); 
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => const AboutAppScreen()));
+                    Navigator.pop(context);
+                    Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const AboutAppScreen()));
                   },
                   borderRadius: BorderRadius.circular(16),
                   child: Container(
@@ -236,26 +281,30 @@ class _AppDrawerState extends State<AppDrawer> {
                             color: Colors.white.withOpacity(0.2),
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.school_rounded, color: Colors.white, size: 28),
+                          child: const Icon(Icons.school_rounded,
+                              color: Colors.white, size: 28),
                         ),
                         const SizedBox(width: 16),
-                        Expanded(
+                        const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text(
-                                "About App", 
-                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)
-                              ),
+                            children: [
+                              Text("About App",
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16)),
                               SizedBox(height: 4),
-                              Text(
-                                "LeadUnity • v1.0.0", 
-                                style: TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.w500)
-                              ),
+                              Text("Link Unity • v1.0.0",
+                                  style: TextStyle(
+                                      color: Colors.white70,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500)),
                             ],
                           ),
                         ),
-                        const Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            color: Colors.white, size: 16),
                       ],
                     ),
                   ),
@@ -282,7 +331,7 @@ class _AppDrawerState extends State<AppDrawer> {
               },
             ),
           ),
-          const SizedBox(height: 10), 
+          const SizedBox(height: 10),
         ],
       ),
     );
@@ -297,8 +346,10 @@ class _AppDrawerState extends State<AppDrawer> {
     bool isDestructive = false,
   }) {
     final theme = Theme.of(context);
-    final color = isDestructive ? Colors.redAccent : theme.colorScheme.onSurface;
-    final bgColor = isDestructive ? Colors.redAccent.withOpacity(0.1) : Colors.transparent;
+    final color =
+        isDestructive ? Colors.redAccent : theme.colorScheme.onSurface;
+    final bgColor =
+        isDestructive ? Colors.redAccent.withOpacity(0.1) : Colors.transparent;
 
     return ListTile(
       onTap: onTap,
@@ -308,7 +359,8 @@ class _AppDrawerState extends State<AppDrawer> {
       leading: Icon(icon, color: color),
       title: Text(
         title,
-        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 15),
+        style:
+            TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 15),
       ),
       trailing: trailing,
     );

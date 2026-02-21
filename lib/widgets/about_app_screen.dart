@@ -23,7 +23,7 @@ class AboutAppScreen extends StatelessWidget {
     final List<Map<String, dynamic>> developers = [
       {
         "name": "Arif Hasan",
-        "batch": "61th Batch",
+        "batch": "61st Batch",
         "department": "Dept. of CSE",
         "role": "Lead Flutter Developer",
         "image": "assets/template/crew/arif.jpg",
@@ -33,23 +33,24 @@ class AboutAppScreen extends StatelessWidget {
       },
       {
         "name": "Shoumo Shahriar Araf",
-        "batch": "61th Batch",
+        "batch": "61st Batch",
         "department": "Dept. of CSE",
         "role": "Backend NestJS Developer",
-        "image": "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
+        "image":
+            "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
         "fb": "https://facebook.com",
         "ig": "https://instagram.com",
         "linkedin": "https://linkedin.com",
       },
       {
         "name": "Omio Mahim",
-        "batch": "61th Batch",
+        "batch": "61st Batch",
         "department": "Dept. of CSE",
         "role": "Frontend & AI Integrator",
         "image": "assets/template/crew/omio.jpeg",
-        "fb": "https://facebook.com",
+        "fb": "https://www.facebook.com/omio.mahim.044",
         "ig": "https://instagram.com",
-        "linkedin": "https://linkedin.com",
+        "linkedin": "https://www.linkedin.com/in/omio-mahim-79a2302a8",
       },
     ];
 
@@ -85,17 +86,20 @@ class AboutAppScreen extends StatelessWidget {
                 color: theme.colorScheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(Icons.school_rounded, size: 45, color: theme.colorScheme.primary),
+              child: Icon(Icons.school_rounded,
+                  size: 45, color: theme.colorScheme.primary),
             ),
             const SizedBox(height: 16),
             Text(
               "LeadUnity",
-              style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.headlineMedium
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 4),
-            Text("Version 1.0.0", style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+            Text("Version 1.0.0",
+                style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
             const SizedBox(height: 24),
-            
+
             const Text(
               "LeadUnity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
               textAlign: TextAlign.center,
@@ -108,11 +112,12 @@ class AboutAppScreen extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 "Meet the Developers",
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 16),
-            
+
             // Loop through the 3 developers and build cards
             ...developers.map((dev) => _buildDeveloperCard(theme, dev)),
 
@@ -123,7 +128,8 @@ class AboutAppScreen extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 "Supervised By",
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.bold),
               ),
             ),
             const SizedBox(height: 16),
@@ -165,20 +171,23 @@ class AboutAppScreen extends StatelessWidget {
                 : AssetImage(dev["image"]),
           ),
           const SizedBox(height: 16),
-          
-          // Name 
+
+          // Name
           Text(
             dev["name"],
             textAlign: TextAlign.center,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
           ),
           const SizedBox(height: 4),
-          
+
           // 🟢 Batch & Department
           Text(
             "${dev["batch"]} • ${dev["department"]}",
             textAlign: TextAlign.center,
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+            style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 13,
+                fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
 
@@ -186,31 +195,37 @@ class AboutAppScreen extends StatelessWidget {
           Text(
             dev["role"],
             textAlign: TextAlign.center,
-            style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
+            style: TextStyle(
+                color: theme.colorScheme.primary,
+                fontWeight: FontWeight.bold,
+                fontSize: 13),
           ),
-          
+
           const SizedBox(height: 16),
           const Divider(),
-          
+
           // Social Icons Row
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               IconButton(
                 onPressed: () => _launchUrl(dev["fb"]),
-                icon: const Icon(FontAwesomeIcons.facebook, color: Color(0xFF1877F2)),
+                icon: const Icon(FontAwesomeIcons.facebook,
+                    color: Color(0xFF1877F2)),
                 tooltip: "Facebook",
               ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: () => _launchUrl(dev["ig"]),
-                icon: const Icon(FontAwesomeIcons.instagram, color: Color(0xFFE4405F)),
+                icon: const Icon(FontAwesomeIcons.instagram,
+                    color: Color(0xFFE4405F)),
                 tooltip: "Instagram",
               ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: () => _launchUrl(dev["linkedin"]),
-                icon: const Icon(FontAwesomeIcons.linkedin, color: Color(0xFF0A66C2)),
+                icon: const Icon(FontAwesomeIcons.linkedin,
+                    color: Color(0xFF0A66C2)),
                 tooltip: "LinkedIn",
               ),
             ],
@@ -260,20 +275,22 @@ class AboutAppScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          
+
           // Name
           Text(
             supervisor["name"]!,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
+            style: const TextStyle(
+                fontWeight: FontWeight.bold, fontSize: 20, color: Colors.white),
           ),
           const SizedBox(height: 6),
-          
+
           // Designation
           Text(
             supervisor["designation"]!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+            style: const TextStyle(
+                color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 4),
 
@@ -281,7 +298,10 @@ class AboutAppScreen extends StatelessWidget {
           Text(
             supervisor["department"]!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w500),
           ),
           const SizedBox(height: 4),
 
@@ -289,7 +309,10 @@ class AboutAppScreen extends StatelessWidget {
           Text(
             supervisor["university"]!,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white70, fontSize: 13, fontWeight: FontWeight.w500),
+            style: const TextStyle(
+                color: Colors.white70,
+                fontSize: 13,
+                fontWeight: FontWeight.w500),
           ),
         ],
       ),
