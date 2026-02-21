@@ -18,39 +18,114 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final Map<String, dynamic> _formData = {};
   bool _isLoading = false;
 
-  void _submit() async {
+  // --- 1. Initiate: Validate Form & Send OTP ---
+  Future<void> _initiateRegistration() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
+      
       setState(() => _isLoading = true);
-
+      
       try {
-        // 🟢 Logic Merge: Using individual fields to match your AuthProvider's
-        // register function while keeping your form structure.
-        await Provider.of<AuthProvider>(context, listen: false).register(
-          _formData['name'],
-          _formData['email'],
-          _formData['password'],
-          _formData['studentId'],
-          _formData['batch'],
-          _formData['section'],
-        );
-
+        // Call Backend to send OTP
+        await Provider.of<AuthProvider>(context, listen: false).sendOtp(_formData['email']);
+        
         if (!mounted) return;
-
-        // Navigate to Dashboard on success
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (_) => const StudentDashboard()),
-          (route) => false,
-        );
+        
+        setState(() => _isLoading = false);
+        _showOTPDialog(); // Only show dialog if API succeeds
+        
       } catch (e) {
-        // Cleaning up the error message for the UI
+        setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             content: Text(e.toString().replaceAll('Exception: ', '')),
             backgroundColor: Colors.red));
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
       }
+    }
+  }
+
+  // --- 2. Show Dialog to Enter Code ---
+  void _showOTPDialog() {
+    final otpController = TextEditingController();
+    bool isVerifying = false;
+    
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => StatefulBuilder( // Use StatefulBuilder to update dialog state
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text("Verify Email"),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("We have sent a verification code to ${_formData['email']}. It expires in 5 minutes."),
+                const SizedBox(height: 20),
+                TextField(
+                  controller: otpController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: "Enter 6-digit Code",
+                    border: OutlineInputBorder()
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              if (!isVerifying)
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text("Cancel"),
+                ),
+              ElevatedButton(
+                onPressed: isVerifying ? null : () {
+                  if (otpController.text.isNotEmpty) {
+                    setDialogState(() => isVerifying = true); // Show loading in dialog
+                    // Call final registration with OTP
+                    _finalizeRegistration(otpController.text, ctx); 
+                  }
+                },
+                child: isVerifying 
+                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
+                  : const Text("Verify & Register"),
+              )
+            ],
+          );
+        }
+      ),
+    );
+  }
+
+  // --- 3. Finalize: Call Register API with OTP ---
+  void _finalizeRegistration(String otp, BuildContext dialogContext) async {
+    try {
+      await Provider.of<AuthProvider>(context, listen: false).register(
+        _formData['name'],
+        _formData['email'],
+        _formData['password'],
+        _formData['studentId'],
+        _formData['batch'],
+        _formData['section'],
+        otp, // <--- Pass OTP here
+      );
+
+      if (!mounted) return;
+
+      // Close dialog
+      Navigator.pop(dialogContext);
+
+      // Go to Dashboard
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const StudentDashboard()),
+        (route) => false,
+      );
+    } catch (e) {
+      // Close dialog so user can try again or see error
+      Navigator.pop(dialogContext); 
+      
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text("Registration Failed: ${e.toString().replaceAll('Exception: ', '')}"),
+          backgroundColor: Colors.red));
     }
   }
 
@@ -58,6 +133,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
@@ -74,9 +150,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
           )
         ],
       ),
@@ -87,7 +160,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // 🟢 Your specific headers and typography
               const Text(
                 'Join the Community',
                 style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
@@ -170,11 +242,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               ),
 
               const SizedBox(height: 40),
-              // 🟢 Your custom-styled button
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
+                  onPressed: _isLoading ? null : _initiateRegistration,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     padding: const EdgeInsets.symmetric(vertical: 16),

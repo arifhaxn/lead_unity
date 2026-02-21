@@ -17,7 +17,9 @@ class SupervisorFirstLoginScreen extends StatefulWidget {
 class _SupervisorFirstLoginScreenState
     extends State<SupervisorFirstLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _emailCtrl = TextEditingController();
+  
+  // 🟢 Renamed controller to match Supervisor Abbreviation
+  final _abbrevCtrl = TextEditingController();
   final _tempPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
 
@@ -30,9 +32,10 @@ class _SupervisorFirstLoginScreenState
       setState(() => _isLoading = true);
 
       try {
-        // 🟢 FIXED: Call API directly. The token is auto-injected by the Service.
+        // 🟢 FIXED: Call API directly.
+        // Backend 'changePassword' logic now checks abbreviation if input has no '@'
         await _apiService.changePasswordFirstLogin(
-            _emailCtrl.text.trim(), // Good practice to trim emails
+            _abbrevCtrl.text.trim(), 
             _tempPassCtrl.text,
             _newPassCtrl.text);
 
@@ -88,19 +91,23 @@ class _SupervisorFirstLoginScreenState
               const Text("Security Update",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
+              // 🟢 Updated Text
               Text(
-                  "Please enter the temporary credentials provided by the admin and set a new secure password.",
+                  "Please enter your Supervisor Abbreviation (e.g. MRA) and the temporary password provided by the admin.",
                   style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
               const SizedBox(height: 30),
+              
+              // 🟢 Abbreviation Input
               TextFormField(
-                  controller: _emailCtrl,
+                  controller: _abbrevCtrl,
                   decoration: const InputDecoration(
-                      labelText: "Email",
-                      prefixIcon: Icon(Icons.email_outlined),
+                      labelText: "Abbreviation",
+                      prefixIcon: Icon(Icons.badge_outlined),
                       border: OutlineInputBorder()),
                   validator: (v) => v!.isEmpty ? "Required" : null),
               const SizedBox(height: 15),
+              
               TextFormField(
                   controller: _tempPassCtrl,
                   decoration: const InputDecoration(
@@ -110,6 +117,7 @@ class _SupervisorFirstLoginScreenState
                   obscureText: true,
                   validator: (v) => v!.isEmpty ? "Required" : null),
               const SizedBox(height: 15),
+              
               TextFormField(
                   controller: _newPassCtrl,
                   decoration: const InputDecoration(
@@ -119,6 +127,7 @@ class _SupervisorFirstLoginScreenState
                   obscureText: true,
                   validator: (v) => v!.length < 6 ? "Min 6 chars" : null),
               const SizedBox(height: 40),
+              
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
