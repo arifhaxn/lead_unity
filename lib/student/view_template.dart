@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'theme/theme_provider.dart';
+import '../theme/theme_provider.dart';
 
 class ViewTemplateScreen extends StatelessWidget {
   ViewTemplateScreen({super.key});
 
   final String templateDownloadUrl =
-      "https://drive.google.com/file/d/1G9aQGKjf7AGut_6o0YP_pd4E3P0DyMNr/view?usp=drive_link";
+      "https://docs.google.com/document/d/1BPCYOcpawc7uii39VChTyUF9Z0H-erCR/edit?usp=sharing&ouid=105632695343912870187&rtpof=true&sd=true";
 
   final List<String> templateImages = [
     'assets/template/page1.png',

@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // 🟢 Calls auth provider. Backend handles:
+      // Calls auth provider. Backend handles:
       // if identifier has no '@', it checks Student ID OR Supervisor Abbreviation
       await Provider.of<AuthProvider>(context, listen: false)
           .login(identifier, password, role: widget.role); 
@@ -63,7 +63,7 @@ class _LoginScreenState extends State<LoginScreen> {
       final user = Provider.of<AuthProvider>(context, listen: false).user;
       final userRole = user?.role.toLowerCase();
 
-      // 🟢 Navigation Logic
+      // Navigation Logic
       if (widget.role == 'student' && userRole == 'student') {
         Navigator.pushAndRemoveUntil(
             context,
@@ -96,7 +96,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeColor = theme.colorScheme.primary;
     
-    // 🟢 Dynamic Logic for Labels/Inputs
+    // Dynamic Logic for Labels/Inputs
     final isStudent = widget.role == 'student';
     
     // Student -> "Student ID", Number Keyboard
@@ -125,127 +125,169 @@ class _LoginScreenState extends State<LoginScreen> {
                   : 'Switch to dark mode',
             )
           ]),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                isStudent ? 'Student Login' : 'Supervisor Login',
-                style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Welcome back! Please sign in to continue.',
-                style: TextStyle(
-                    fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 40),
-
-              // 🟢 Dynamic Input Field
-              TextField(
-                controller: _identifierController,
-                keyboardType: keyboardType,
-                decoration: InputDecoration(
-                    labelText: labelText,
-                    prefixIcon: Icon(prefixIcon),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeColor))),
-              ),
-              const SizedBox(height: 20),
-              
-              TextField(
-                controller: _passController,
-                obscureText: true,
-                decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline_rounded),
-                    focusedBorder: OutlineInputBorder(
-                        borderSide: BorderSide(color: themeColor))),
-              ),
-              const SizedBox(height: 30),
-
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _handleLogin,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: themeColor,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: AppRadii.button),
+      // 🟢 Changed from SingleChildScrollView to CustomScrollView 
+      // so we can dynamically force the hint box to the bottom
+      body: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isStudent ? 'Student Login' : 'Supervisor Login',
+                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
                   ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text('Login',
-                          style: TextStyle(fontSize: 18, color: Colors.white)),
-                ),
-              ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Welcome back! Please sign in to continue.',
+                    style: TextStyle(
+                        fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 40),
 
-              // --- Supervisor: Activate Account ---
-              if (widget.role == 'supervisor')
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 20.0),
-                    child: TextButton(
-                      onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const SupervisorFirstLoginScreen())),
-                      child: const Text("First time login? Activate Account",
-                          style: TextStyle(fontWeight: FontWeight.w600)),
+                  // Dynamic Input Field
+                  TextField(
+                    controller: _identifierController,
+                    keyboardType: keyboardType,
+                    decoration: InputDecoration(
+                        labelText: labelText,
+                        prefixIcon: Icon(prefixIcon),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: themeColor))),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  TextField(
+                    controller: _passController,
+                    obscureText: true,
+                    decoration: InputDecoration(
+                        labelText: 'Password',
+                        prefixIcon: const Icon(Icons.lock_outline_rounded),
+                        focusedBorder: OutlineInputBorder(
+                            borderSide: BorderSide(color: themeColor))),
+                  ),
+                  const SizedBox(height: 30),
+
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: themeColor,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: const RoundedRectangleBorder(
+                            borderRadius: AppRadii.button),
+                      ),
+                      child: _isLoading
+                          ? const SizedBox(
+                              height: 20,
+                              width: 20,
+                              child: CircularProgressIndicator(
+                                  color: Colors.white, strokeWidth: 2))
+                          : const Text('Login',
+                              style: TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                   ),
-                ),
 
-              const SizedBox(height: 20),
-
-              // --- Student: Registration Link ---
-              if (widget.role == 'student')
-                Center(
-                  child: _isRegOpen
-                      ? TextButton(
+                  // --- Supervisor: Activate Account ---
+                  if (widget.role == 'supervisor')
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.only(top: 20.0),
+                        child: TextButton(
                           onPressed: () => Navigator.push(
                               context,
                               MaterialPageRoute(
                                   builder: (_) =>
-                                      const StudentRegistrationScreen())),
-                          child: RichText(
-                            text: TextSpan(
-                              text: 'Don\'t have an account? ',
-                              style: TextStyle(
-                                  color: theme.colorScheme.onSurfaceVariant),
-                              children: [
-                                TextSpan(
-                                    text: 'Register Now',
-                                    style: TextStyle(
-                                        color: themeColor,
-                                        fontWeight: FontWeight.bold)),
-                              ],
+                                      const SupervisorFirstLoginScreen())),
+                          child: const Text("First time login? Activate Account",
+                              style: TextStyle(fontWeight: FontWeight.w600)),
+                        ),
+                      ),
+                    ),
+
+                  const SizedBox(height: 20),
+
+                  // --- Student: Registration Link ---
+                  if (widget.role == 'student')
+                    Center(
+                      child: _isRegOpen
+                          ? TextButton(
+                              onPressed: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                      builder: (_) =>
+                                          const StudentRegistrationScreen())),
+                              child: RichText(
+                                text: TextSpan(
+                                  text: 'Don\'t have an account? ',
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurfaceVariant),
+                                  children: [
+                                    TextSpan(
+                                        text: 'Register Now',
+                                        style: TextStyle(
+                                            color: themeColor,
+                                            fontWeight: FontWeight.bold)),
+                                  ],
+                                ),
+                              ),
+                            )
+                          : Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                  color: theme.colorScheme.error.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8)),
+                              child: Text("Registration Closed",
+                                  style: TextStyle(
+                                      color: theme.colorScheme.error,
+                                      fontWeight: FontWeight.bold)),
+                            ),
+                    ),
+                    
+                  // 🟢 The Spacer dynamically takes up all empty space,
+                  // perfectly pushing the Note Box below it to the absolute bottom!
+                  const Spacer(), 
+
+                  // 🟢 Dynamic Hint Text Box at the Bottom
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(Icons.info_outline_rounded, size: 20, color: theme.colorScheme.primary),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            isStudent 
+                              ? "Note: New registrations can only be processed while the portal is explicitly opened by the department admin. Otherwise, it will show 'Registration Closed'."
+                              : "Note: Use your exact capitalized Abbreviation (e.g., EBH). Your initial temporary password will be provided by the department admin.",
+                            style: TextStyle(
+                              fontSize: 13, 
+                              color: theme.colorScheme.onSurfaceVariant,
+                              height: 1.4,
                             ),
                           ),
-                        )
-                      : Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 8),
-                          decoration: BoxDecoration(
-                              color: theme.colorScheme.error.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(8)),
-                          child: Text("Registration Closed",
-                              style: TextStyle(
-                                  color: theme.colorScheme.error,
-                                  fontWeight: FontWeight.bold)),
                         ),
-                ),
-            ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30), // Safe area bottom padding
+                ],
+              ),
+            ),
           ),
-        ),
+        ],
       ),
     );
   }

@@ -50,6 +50,38 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     }
   }
 
+  // 🟢 Helper to show the Instructions Dialog
+  void _showInstructions() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text("How to Submit"),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Text(
+            "• First, select your Target Course from the top dropdown.\n\n"
+            "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
+            "• Select 3 distinct supervisors in your preferred order.\n\n"
+            "• Fill in the details for all team members (3 or 4). The first member listed will be designated as the Team Leader.\n\n"
+            "• Note: You cannot submit a new proposal if you are already leading an active team.",
+            style: TextStyle(height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Got it!"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -71,7 +103,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                     : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
-            )
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.info_outline_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              onPressed: _showInstructions,
+            ),
           ],
         ),
         body: Center(
@@ -92,7 +131,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                     : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
-            )
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.info_outline_rounded,
+                color: theme.colorScheme.primary,
+              ),
+              onPressed: _showInstructions,
+            ),
           ],
         ),
         body: const Center(child: Text("No courses available.")),
@@ -106,6 +152,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
+          // 🟢 Dark Mode Button First
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -114,7 +161,19 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-          )
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          ),
+          // 🟢 Info Button Second (Far Right)
+          IconButton(
+            icon: Icon(
+              Icons.info_outline_rounded,
+              color: theme.colorScheme.primary,
+            ),
+            onPressed: _showInstructions,
+            tooltip: 'Submission Instructions',
+          ),
         ],
       ),
       body: SingleProposalForm(

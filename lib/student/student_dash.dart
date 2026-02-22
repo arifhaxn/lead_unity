@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 
 // 🟢 Correct Imports
 import '../auth_provider.dart';
-import '../view_template.dart';
+import 'view_template.dart';
 import '../chatbot_screen.dart';
 import 'team_info.dart';
 import '../theme/app_theme.dart';

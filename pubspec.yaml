@@ -81,6 +81,7 @@ flutter:
     - assets/template/crew/sir.jpeg
     - assets/template/crew/arif.jpg
     - assets/template/crew/omio.jpeg
+    - assets/template/crew/araf.jpeg
 
 
   # An image asset can refer to one or more resolution-specific "variants", see

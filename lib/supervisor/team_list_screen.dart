@@ -39,6 +39,37 @@ class _TeamListScreenState extends State<TeamListScreen> {
     super.dispose();
   }
 
+  // 🟢 Helper to show dynamic Instructions Dialog
+  void _showInstructions() {
+    final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
+    final content = widget.onlyMyTeams
+        ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
+        : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            Expanded(child: Text(title, style: const TextStyle(fontSize: 18))),
+          ],
+        ),
+        content: Text(
+          content,
+          style: const TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Got it!"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
@@ -63,6 +94,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.info_outline_rounded,
+              color: theme.colorScheme.primary,
+            ),
+            onPressed: _showInstructions,
+            tooltip: 'Information',
           )
         ],
       ),
@@ -79,7 +119,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
           var teams = snapshot.data ?? [];
 
-          // 🟢 1. Merged Filter Logic: Only filter if viewing 'My Teams'
           if (widget.onlyMyTeams && myId != null) {
             teams = teams.where((t) {
               final sups = t['supervisors'] as List? ?? [];
@@ -97,6 +136,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
           return DefaultTabController(
             length: courseTabs.length,
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCourseTabs(context, courseTabs),
                 
@@ -139,7 +179,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             context,
                             index: index + 1,
                             team: team,
-                            myId: myId, // 🟢 Passed ID to check ownership
+                            myId: myId, 
                           );
                         },
                       );
@@ -175,17 +215,27 @@ class _TeamListScreenState extends State<TeamListScreen> {
   Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
     final theme = Theme.of(context);
     return Container(
+      width: double.infinity,
       color: theme.colorScheme.surface,
       child: TabBar(
         isScrollable: true,
+        dividerColor: Colors.transparent, // 🟢 Removes the ugly default grey line underneath
+        indicatorSize: TabBarIndicatorSize.label, // 🟢 Binds the box closely to the text
+        labelPadding: const EdgeInsets.symmetric(horizontal: 6), // Space between the tabs
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
         indicator: BoxDecoration(
           color: theme.colorScheme.primary.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
+          borderRadius: BorderRadius.circular(12),
           border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
         ),
-        tabs: courseTabs.map((c) => Tab(child: Text(c, style: const TextStyle(fontWeight: FontWeight.w600)))).toList(),
+        tabs: courseTabs.map((c) => Tab(
+          // 🟢 The padding inside here creates the left/right breathing room inside the box
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0), 
+            child: Text(c, style: const TextStyle(fontWeight: FontWeight.w600)),
+          ),
+        )).toList(),
       ),
     );
   }
@@ -216,7 +266,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
     final courseCode = (team['course'] is Map) ? team['course']['courseCode'] : 'N/A';
     final status = team['status']?.toString().toUpperCase() ?? 'PENDING';
 
-    // 🟢 2. Merged Logic: Check if this is "My Team"
     final sups = team['supervisors'] as List? ?? [];
     bool isMyTeam = false;
     if (myId != null) {
@@ -224,13 +273,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
                  (team['assignedSupervisor'] is Map ? team['assignedSupervisor']['_id'] : team['assignedSupervisor']) == myId;
     }
 
-    // 🟢 3. Lock evaluation if in "All Teams" view AND it belongs to you
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: theme.colorScheme.surface,
         borderRadius: AppRadii.card,
         boxShadow: AppShadows.level1,
         border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
@@ -240,11 +288,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
           ListTile(
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
-              backgroundColor: const Color(0xFFE0F2F1),
-              child: Text(title.isNotEmpty ? title[0].toUpperCase() : '?', style: const TextStyle(color: Color(0xFF0F766E), fontWeight: FontWeight.bold)),
+              backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
+              child: Text(title.isNotEmpty ? title[0].toUpperCase() : '?', style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
             title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            subtitle: Text("$courseCode • $status", style: TextStyle(fontSize: 12, color: Colors.grey[600])),
+            subtitle: Text("$courseCode • $status", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
           ),
           const Divider(height: 1),
           Padding(
@@ -259,7 +307,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   child: const Text("Details"),
                 ),
                 const SizedBox(width: 8),
-                // 🟢 4. Updated Button with dynamic styling
                 ElevatedButton.icon(
                   onPressed: isActionDisabled ? null : () async {
                     await Navigator.push(
@@ -273,7 +320,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   style: ElevatedButton.styleFrom(
                     backgroundColor: isActionDisabled ? Colors.grey[300] : const Color(0xFFF59E0B),
                     foregroundColor: isActionDisabled ? Colors.grey[600] : Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
                     elevation: isActionDisabled ? 0 : 2,
                   ),
                 ),

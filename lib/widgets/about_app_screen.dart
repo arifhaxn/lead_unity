@@ -28,8 +28,8 @@ class AboutAppScreen extends StatelessWidget {
         "role": "Lead Flutter Developer",
         "image": "assets/template/crew/arif.jpg",
         "fb": "https://www.facebook.com/arifhaxnn",
-        "ig": "https://www.instagram.com/arifhaxn",
         "linkedin": "https://www.linkedin.com/in/arif-hasan-672249358",
+        "github": "https://github.com/arifhaxn", 
       },
       {
         "name": "Shoumo Shahriar Araf",
@@ -37,20 +37,20 @@ class AboutAppScreen extends StatelessWidget {
         "department": "Dept. of CSE",
         "role": "Backend NestJS Developer",
         "image":
-            "https://cdn.pixabay.com/photo/2015/10/05/22/37/blank-profile-picture-973460_1280.png",
-        "fb": "https://facebook.com",
-        "ig": "https://instagram.com",
-        "linkedin": "https://linkedin.com",
+            "assets/template/crew/araf.jpeg",
+        "fb": "https://www.facebook.com/shahriar.araf.3",
+        "linkedin": "https://www.linkedin.com/in/shoumo-shahriar-araf",
+        "github": "https://github.com/shahriaraf", 
       },
       {
         "name": "Omio Mahim",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
-        "role": "Frontend & AI Integrator",
+        "role": "QA Tester & AI Integrator",
         "image": "assets/template/crew/omio.jpeg",
         "fb": "https://www.facebook.com/omio.mahim.044",
-        "ig": "https://instagram.com",
         "linkedin": "https://www.linkedin.com/in/omio-mahim-79a2302a8",
+        "github": "https://github.com/Omio-Mahim", 
       },
     ];
 
@@ -62,7 +62,7 @@ class AboutAppScreen extends StatelessWidget {
       "designation": "Associate Professor",
       "department": "Dept. of Computer Science and Engineering",
       "university": "Leading University",
-      "image": "assets/template/crew/sir.jpeg", // 🟢 Local asset
+      "image": "assets/template/crew/sir.jpeg", 
     };
 
     return Scaffold(
@@ -135,6 +135,20 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSupervisorCard(theme, supervisor),
 
+            const SizedBox(height: 40), 
+
+            // --- 4. 🟢 Inspiration Credit Section ---
+            const Divider(),
+            const SizedBox(height: 16),
+            Text(
+              "Inspired by the previous \"LU Desertation\" app.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                fontStyle: FontStyle.italic,
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
             const SizedBox(height: 40), // Bottom padding
           ],
         ),
@@ -165,7 +179,7 @@ class AboutAppScreen extends StatelessWidget {
           CircleAvatar(
             radius: 45,
             backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-            // 🟢 Smart check for local vs network image
+            // Smart check for local vs network image
             backgroundImage: dev["image"].startsWith('http')
                 ? NetworkImage(dev["image"]) as ImageProvider
                 : AssetImage(dev["image"]),
@@ -180,7 +194,7 @@ class AboutAppScreen extends StatelessWidget {
           ),
           const SizedBox(height: 4),
 
-          // 🟢 Batch & Department
+          // Batch & Department
           Text(
             "${dev["batch"]} • ${dev["department"]}",
             textAlign: TextAlign.center,
@@ -204,24 +218,29 @@ class AboutAppScreen extends StatelessWidget {
           const SizedBox(height: 16),
           const Divider(),
 
-          // Social Icons Row
+          // Social Icons Row (fb, github, linkedin)
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              if (dev.containsKey("fb") && dev["fb"].toString().isNotEmpty)
+                IconButton(
+                  onPressed: () => _launchUrl(dev["fb"]),
+                  icon: const Icon(FontAwesomeIcons.facebook,
+                      color: Color(0xFF1877F2)),
+                  tooltip: "Facebook",
+                ),
+              if (dev.containsKey("fb") && dev["fb"].toString().isNotEmpty)
+                const SizedBox(width: 16),
+                
               IconButton(
-                onPressed: () => _launchUrl(dev["fb"]),
-                icon: const Icon(FontAwesomeIcons.facebook,
-                    color: Color(0xFF1877F2)),
-                tooltip: "Facebook",
+                onPressed: () => _launchUrl(dev["github"]),
+                // The color changes dynamically based on light/dark mode so it's always readable
+                icon: Icon(FontAwesomeIcons.github,
+                    color: theme.colorScheme.onSurface),
+                tooltip: "GitHub",
               ),
               const SizedBox(width: 16),
-              IconButton(
-                onPressed: () => _launchUrl(dev["ig"]),
-                icon: const Icon(FontAwesomeIcons.instagram,
-                    color: Color(0xFFE4405F)),
-                tooltip: "Instagram",
-              ),
-              const SizedBox(width: 16),
+              
               IconButton(
                 onPressed: () => _launchUrl(dev["linkedin"]),
                 icon: const Icon(FontAwesomeIcons.linkedin,
@@ -268,7 +287,7 @@ class AboutAppScreen extends StatelessWidget {
             ),
             child: CircleAvatar(
               radius: 50,
-              // 🟢 Smart check for local vs network image
+              // Smart check for local vs network image
               backgroundImage: supervisor["image"]!.startsWith('http')
                   ? NetworkImage(supervisor["image"]!) as ImageProvider
                   : AssetImage(supervisor["image"]!),

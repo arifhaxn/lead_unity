@@ -78,11 +78,6 @@ class _AppDrawerState extends State<AppDrawer> {
         email == 'EBH' ||
         name.toUpperCase() == 'EBH';
 
-    print("----- DRAWER DEBUG -----");
-    print("Name is: '$name'");
-    print("Email is: '$email'");
-    print("isEbrahimSir is: $isEbrahimSir");
-
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
       shape: const RoundedRectangleBorder(

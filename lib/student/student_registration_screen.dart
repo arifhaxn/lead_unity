@@ -77,6 +77,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   child: const Text("Cancel"),
                 ),
               ElevatedButton(
+                // 🟢 Added padding so the text doesn't touch the edges of the box
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
                 onPressed: isVerifying ? null : () {
                   if (otpController.text.isNotEmpty) {
                     setDialogState(() => isVerifying = true); // Show loading in dialog
@@ -129,6 +133,36 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
+  // 🟢 Helper to show the Instructions Dialog
+  void _showInstructions() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text("How to Register"),
+          ],
+        ),
+        content: const Text(
+          "• Enter your full name and valid email address.\n\n"
+          "• You MUST input your exact 16-digit Student ID. Double-check for typos!\n\n"
+          "  Example: 0182310012101025\n\n"
+          "• Provide your current Batch and Section.\n\n"
+          "• After clicking Register, an OTP will be sent to your email to verify your identity.",
+          style: TextStyle(height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text("Got it!"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -142,6 +176,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
         actions: [
+          // 🟢 Dark Mode Button First
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -150,7 +185,19 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-          )
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          ),
+          // 🟢 Info Button Second (Far Right)
+          IconButton(
+            icon: Icon(
+              Icons.info_outline_rounded,
+              color: theme.colorScheme.primary,
+            ),
+            onPressed: _showInstructions,
+            tooltip: 'Registration Instructions',
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -196,11 +243,16 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               _buildLabel('Academic Info'),
               TextFormField(
                 decoration: const InputDecoration(
-                    labelText: 'Student ID',
+                    labelText: 'Student ID (16 Digits)',
                     prefixIcon: Icon(Icons.badge_outlined),
                     border: OutlineInputBorder()),
+                keyboardType: TextInputType.number,
                 onSaved: (v) => _formData['studentId'] = v,
-                validator: (v) => v!.isEmpty ? 'Required' : null,
+                validator: (v) {
+                  if (v == null || v.isEmpty) return 'Required';
+                  if (v.length != 16) return 'ID must be exactly 16 digits';
+                  return null;
+                },
               ),
               const SizedBox(height: 16),
               Row(
