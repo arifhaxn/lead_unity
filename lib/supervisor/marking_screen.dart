@@ -119,7 +119,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
     });
 
     try {
-      // 🟢 Logic Update: Send the correct evaluation type
       await _apiService.saveTeamMarks(
           widget.team['_id'], payload, _evaluationType);
 
@@ -144,8 +143,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading)
+    if (_isLoading) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
 
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -157,19 +157,14 @@ class _MarkingScreenState extends State<MarkingScreen> {
     final c2Name = config['c2']?['name'] ?? 'Criteria 2';
     final c2Max = config['c2']?['max'] ?? 30;
 
-    final isOwn = _evaluationType == 'own';
-    final primaryColor = theme.colorScheme.primary;
-    final cardBorderColor = theme.colorScheme.outline.withOpacity(0.15);
-    final cardTopColor = theme.colorScheme.primary.withOpacity(0.20);
-    final cardBottomColor = theme.colorScheme.surface.withOpacity(0.80);
-
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Supervisor Evaluation"),
+        title: const Text("Evaluation Board", style: TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(
@@ -179,124 +174,137 @@ class _MarkingScreenState extends State<MarkingScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
+            tooltip: 'Toggle Theme',
           ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40), 
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              widget.team['title'] ?? 'Untitled Project',
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 16),
+            // 🟢 Sleek Criteria Legend 
             Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.08),
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.35)),
+                color: theme.colorScheme.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  )
+                ]
               ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  _buildCriteriaRow(
-                      theme, "Criteria 1", c1Name, c1Max, primaryColor),
-                  const SizedBox(height: 8),
-                  _buildCriteriaRow(
-                      theme, "Criteria 2", c2Name, c2Max, primaryColor),
+                  _buildCriteriaRow(theme, "1", c1Name, c1Max, theme.colorScheme.primary),
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8.0),
+                    child: Divider(height: 1),
+                  ),
+                  _buildCriteriaRow(theme, "2", c2Name, c2Max, theme.colorScheme.secondary),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 32),
+
+            // 🟢 Students Header
+            Text(
+              "Team Members",
+              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+
+            // 🟢 Render Students
             ..._studentMarks.keys.map((uid) {
               return StudentMarkingCard(
                 studentData: _studentMarks[uid]!['data'],
                 marksData: _studentMarks[uid]!,
                 maxC1: c1Max,
                 maxC2: c2Max,
-                cardTopColor: cardTopColor,
-                cardBottomColor: cardBottomColor,
-                cardBorderColor: cardBorderColor,
                 onChanged: (updatedMarks) {
                   _studentMarks[uid] = updatedMarks;
                 },
               );
             }).toList(),
+            
             const SizedBox(height: 20),
+
+            // 🟢 Submit Button
             SizedBox(
               width: double.infinity,
-              height: 56,
               child: ElevatedButton(
                 onPressed: _submitMarks,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: primaryColor,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(14)),
+                  backgroundColor: theme.colorScheme.primary,
+                  padding: const EdgeInsets.symmetric(vertical: 18),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  elevation: 6,
+                  shadowColor: theme.colorScheme.primary.withOpacity(0.4),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.save_rounded, color: Colors.white),
-                    SizedBox(width: 10),
-                    Text("Submit Evaluations",
-                        style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
-                  ],
+                child: const Text(
+                  "Lock & Submit Scores",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                    letterSpacing: 0.5,
+                  ),
                 ),
               ),
             ),
-            const SizedBox(height: 30),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildCriteriaRow(
-      ThemeData theme, String label, String name, int max, Color accentColor) {
-    final isLightMode = theme.brightness == Brightness.light;
+  Widget _buildCriteriaRow(ThemeData theme, String number, String name, int max, Color accentColor) {
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          "$label:",
-          style: TextStyle(fontWeight: FontWeight.bold, color: accentColor),
-        ),
-        const SizedBox(width: 6),
-        Expanded(
-          child: Text(
-            "$name ($max Marks)",
-            style: TextStyle(
-              color: theme.colorScheme.onSurface
-                  .withOpacity(isLightMode ? 0.96 : 1),
-            ),
+        Container(
+          height: 32,
+          width: 32,
+          decoration: BoxDecoration(
+            color: accentColor.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text("C$number", style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12)),
           ),
         ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            name,
+            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+          ),
+        ),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceVariant,
+            borderRadius: BorderRadius.circular(10)
+          ),
+          child: Text(
+            "Max: $max",
+            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold),
+          ),
+        )
       ],
     );
   }
 }
 
-// --- STUDENT MARKING CARD (Strict UI Preservation + Logic Injection) ---
+// --- STUDENT MARKING CARD ---
 class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;
   final int maxC1;
   final int maxC2;
-  final Color cardTopColor;
-  final Color cardBottomColor;
-  final Color cardBorderColor;
   final Function(Map<String, dynamic>) onChanged;
 
   const StudentMarkingCard({
@@ -305,9 +313,6 @@ class StudentMarkingCard extends StatefulWidget {
     required this.marksData,
     required this.maxC1,
     required this.maxC2,
-    required this.cardTopColor,
-    required this.cardBottomColor,
-    required this.cardBorderColor,
     required this.onChanged,
   }) : super(key: key);
 
@@ -325,14 +330,10 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     super.initState();
     _isAbsent = widget.marksData['absent'] ?? false;
     _c1Controller = TextEditingController(
-      text: widget.marksData['c1'] == 0.0
-          ? ''
-          : widget.marksData['c1'].toString(),
+      text: widget.marksData['c1'] == 0.0 ? '' : widget.marksData['c1'].toString(),
     );
     _c2Controller = TextEditingController(
-      text: widget.marksData['c2'] == 0.0
-          ? ''
-          : widget.marksData['c2'].toString(),
+      text: widget.marksData['c2'] == 0.0 ? '' : widget.marksData['c2'].toString(),
     );
   }
 
@@ -355,16 +356,12 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     if (c1 > widget.maxC1) {
       c1 = widget.maxC1.toDouble();
       _c1Controller.text = c1.toString();
-      _c1Controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _c1Controller.text.length),
-      );
+      _c1Controller.selection = TextSelection.fromPosition(TextPosition(offset: _c1Controller.text.length));
     }
     if (c2 > widget.maxC2) {
       c2 = widget.maxC2.toDouble();
       _c2Controller.text = c2.toString();
-      _c2Controller.selection = TextSelection.fromPosition(
-        TextPosition(offset: _c2Controller.text.length),
-      );
+      _c2Controller.selection = TextSelection.fromPosition(TextPosition(offset: _c2Controller.text.length));
     }
 
     widget.onChanged({
@@ -382,224 +379,164 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     final theme = Theme.of(context);
     final isLightMode = theme.brightness == Brightness.light;
     final studentName = widget.studentData['name'] ?? 'Unknown Student';
-    final studentId = widget.studentData['studentId']?.toString() ??
-        widget.studentData['_id']?.toString() ??
-        '';
+    final studentId = widget.studentData['studentId']?.toString() ?? widget.studentData['_id']?.toString() ?? '';
+    final initials = studentName.isNotEmpty ? studentName[0].toUpperCase() : '?';
 
     final c1Value = double.tryParse(_c1Controller.text) ?? 0;
     final c2Value = double.tryParse(_c2Controller.text) ?? 0;
     final total = c1Value + c2Value;
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 20),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: widget.cardBorderColor),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 6),
+          )
+        ],
+        border: Border.all(color: _isAbsent ? Colors.redAccent.withOpacity(0.3) : theme.colorScheme.outline.withOpacity(0.1)),
       ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(18),
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              decoration: BoxDecoration(color: widget.cardTopColor),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          studentName,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w700,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 2),
-                        Text(
-                          studentId,
-                          style: theme.textTheme.bodyMedium?.copyWith(
-                            color: theme.colorScheme.onSurface
-                                .withOpacity(isLightMode ? 0.88 : 0.75),
-                          ),
-                        ),
-                      ],
+      child: Column(
+        children: [
+          // --- Top Profile Section ---
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 24,
+                  backgroundColor: _isAbsent ? Colors.redAccent.withOpacity(0.1) : theme.colorScheme.primary.withOpacity(0.1),
+                  child: Text(
+                    initials,
+                    style: TextStyle(
+                      color: _isAbsent ? Colors.redAccent : theme.colorScheme.primary, 
+                      fontWeight: FontWeight.bold, 
+                      fontSize: 18
                     ),
                   ),
-                  Column(
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Switch(
-                        value: _isAbsent,
-                        onChanged: (value) {
-                          setState(() {
-                            _isAbsent = value;
-                            _updateMarks();
-                          });
-                        },
-                        activeColor: Colors.redAccent,
-                        activeTrackColor: Colors.redAccent.withOpacity(0.45),
-                      ),
                       Text(
-                        'Absent',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withOpacity(isLightMode ? 0.82 : 0.65),
-                        ),
+                        studentName,
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, decoration: _isAbsent ? TextDecoration.lineThrough : null),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        studentId,
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
-                ],
-              ),
-            ),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-              decoration: BoxDecoration(color: widget.cardBottomColor),
-              child: _isAbsent
-                  ? _absentState(context)
-                  : LayoutBuilder(
-                      builder: (context, constraints) {
-                        const spacing = 8.0;
-                        final rawBoxWidth =
-                            (constraints.maxWidth - (spacing * 2)) / 3;
-                        final boxWidth = rawBoxWidth * 0.97;
-
-                        return Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            SizedBox(
-                              width: boxWidth,
-                              child: _scoreBox(
-                                context,
-                                label: 'Criteria 1',
-                                controller: _c1Controller,
-                                enabled: true,
-                                onChanged: _updateMarks,
+                ),
+                
+                // 🟢 Modern Sliding Segmented Control
+                Container(
+                  height: 34,
+                  width: 140, // Fixed width to contain both options
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.surfaceVariant.withOpacity(isLightMode ? 0.7 : 0.3),
+                    borderRadius: BorderRadius.circular(30),
+                    border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+                  ),
+                  child: Stack(
+                    children: [
+                      // The sliding colored background thumb
+                      AnimatedPositioned(
+                        duration: const Duration(milliseconds: 250),
+                        curve: Curves.easeInOut,
+                        left: _isAbsent ? 70 : 0, // Slides to the right half if absent
+                        right: _isAbsent ? 0 : 70, // Stays on the left half if present
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: _isAbsent ? Colors.redAccent : Colors.green,
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (_isAbsent ? Colors.redAccent : Colors.green).withOpacity(0.3),
+                                blurRadius: 6,
+                                offset: const Offset(0, 2),
+                              )
+                            ]
+                          ),
+                        ),
+                      ),
+                      // The clickable text areas
+                      Row(
+                        children: [
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (_isAbsent) {
+                                  setState(() { _isAbsent = false; _updateMarks(); });
+                                }
+                              },
+                              child: Center(
+                                child: Text("PRESENT", style: TextStyle(
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isAbsent ? theme.colorScheme.onSurfaceVariant : Colors.white,
+                                )),
                               ),
                             ),
-                            SizedBox(
-                              width: boxWidth,
-                              child: _scoreBox(
-                                context,
-                                label: 'Criteria 2',
-                                controller: _c2Controller,
-                                enabled: true,
-                                onChanged: _updateMarks,
+                          ),
+                          Expanded(
+                            child: GestureDetector(
+                              behavior: HitTestBehavior.opaque,
+                              onTap: () {
+                                if (!_isAbsent) {
+                                  setState(() { _isAbsent = true; _updateMarks(); });
+                                }
+                              },
+                              child: Center(
+                                child: Text("ABSENT", style: TextStyle(
+                                  fontSize: 10,
+                                  letterSpacing: 0.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: _isAbsent ? Colors.white : theme.colorScheme.onSurfaceVariant,
+                                )),
                               ),
                             ),
-                            SizedBox(
-                              width: boxWidth,
-                              child:
-                                  _totalBox(context, total.toStringAsFixed(0)),
-                            ),
-                          ],
-                        );
-                      },
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _absentState(BuildContext context) {
-    final theme = Theme.of(context);
-    final isLightMode = theme.brightness == Brightness.light;
-    return Container(
-      width: double.infinity,
-      height: 82,
-      decoration: BoxDecoration(
-        color: isLightMode
-            ? theme.colorScheme.surfaceVariant.withOpacity(0.85)
-            : theme.colorScheme.surface.withOpacity(0.22),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color:
-              theme.colorScheme.outline.withOpacity(isLightMode ? 0.45 : 0.25),
-        ),
-      ),
-      child: Center(
-        child: Text(
-          'Marked as absent',
-          style: theme.textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.w700,
-            color: Colors.redAccent,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _scoreBox(
-    BuildContext context, {
-    required String label,
-    required TextEditingController controller,
-    required bool enabled,
-    required VoidCallback onChanged,
-  }) {
-    final theme = Theme.of(context);
-    final isLightMode = theme.brightness == Brightness.light;
-    return Container(
-      height: 64,
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant
-            .withOpacity(isLightMode ? 0.96 : 0.62),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color:
-              theme.colorScheme.outline.withOpacity(isLightMode ? 0.48 : 0.34),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(left: 6),
-            child: Text(
-              label,
-              style: theme.textTheme.labelSmall?.copyWith(
-                color: theme.colorScheme.onSurface
-                    .withOpacity(isLightMode ? 0.9 : 0.76),
-              ),
+                          ),
+                        ],
+                      )
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 4),
-          Expanded(
-            child: SizedBox(
-              width: double.infinity,
-              child: TextField(
-                controller: controller,
-                enabled: enabled,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                textAlign: TextAlign.center,
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: theme.colorScheme.onSurface
-                      .withOpacity(isLightMode ? 0.98 : 1),
-                ),
-                decoration: const InputDecoration(
-                  filled: false,
-                  fillColor: Colors.transparent,
-                  border: InputBorder.none,
-                  enabledBorder: InputBorder.none,
-                  focusedBorder: InputBorder.none,
-                  disabledBorder: InputBorder.none,
-                  errorBorder: InputBorder.none,
-                  focusedErrorBorder: InputBorder.none,
-                  isDense: true,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                onChanged: (_) => onChanged(),
-              ),
+          
+          const Divider(height: 1),
+
+          // --- Bottom Scoring Section ---
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: _isAbsent ? Colors.redAccent.withOpacity(0.02) : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+            ),
+            child: _isAbsent ? _buildAbsentBadge() : Row(
+              children: [
+                Expanded(child: _buildDigitalInput(context, 'C1', _c1Controller, widget.maxC1)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildDigitalInput(context, 'C2', _c2Controller, widget.maxC2)),
+                const SizedBox(width: 12),
+                Expanded(child: _buildTotalBox(context, total)),
+              ],
             ),
           ),
         ],
@@ -607,38 +544,88 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     );
   }
 
-  Widget _totalBox(BuildContext context, String totalValue) {
-    final theme = Theme.of(context);
-    final isLightMode = theme.brightness == Brightness.light;
+  Widget _buildAbsentBadge() {
     return Container(
-      height: 64,
-      padding: const EdgeInsets.fromLTRB(10, 4, 10, 4),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceVariant
-            .withOpacity(isLightMode ? 0.96 : 0.62),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color:
-              theme.colorScheme.outline.withOpacity(isLightMode ? 0.48 : 0.34),
-        ),
+        color: Colors.redAccent.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.redAccent.withOpacity(0.3))
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.person_off_rounded, color: Colors.redAccent, size: 20),
+          SizedBox(width: 8),
+          Text(
+            "SCORES LOCKED (ABSENT)",
+            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDigitalInput(BuildContext context, String label, TextEditingController controller, int max) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2), 
+          )
+        ]
       ),
       child: Column(
         children: [
-          Text(
-            'Total',
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: theme.colorScheme.onSurface
-                  .withOpacity(isLightMode ? 0.9 : 0.76),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+          TextField(
+            controller: controller,
+            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface),
+            decoration: const InputDecoration(
+              isDense: true,
+              contentPadding: EdgeInsets.symmetric(vertical: 4),
+              border: InputBorder.none,
             ),
+            onChanged: (_) => _updateMarks(),
           ),
-          const SizedBox(height: 6),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTotalBox(BuildContext context, double total) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.primary,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: theme.colorScheme.primary.withOpacity(0.3),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ]
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text("TOTAL", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)),
+          const SizedBox(height: 4),
           Text(
-            totalValue,
-            style: theme.textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w800,
-              color: theme.colorScheme.onSurface
-                  .withOpacity(isLightMode ? 0.98 : 1),
-            ),
+            total.toStringAsFixed(0),
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
           ),
         ],
       ),
