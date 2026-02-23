@@ -20,9 +20,7 @@ class SupervisorDashboard extends StatelessWidget {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
 
-    // 🟢 Extract First Name Logic
     final String fullName = user?.name ?? 'Supervisor';
-    final String firstName = fullName.split(' ').first;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -40,11 +38,11 @@ class SupervisorDashboard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Welcome back,',
+            Text('Welcome Back,',
                 style: TextStyle(
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
             Text(
-              firstName, // 🟢 Greet with First Name only
+              fullName,
               style: theme.textTheme.displaySmall
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),

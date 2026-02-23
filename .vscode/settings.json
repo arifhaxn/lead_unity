@@ -1,0 +1,11 @@
+{
+  "search.exclude": {
+    "Leading-Unity-Nest-Backend-main": true
+  },
+  "files.watcherExclude": {
+    "**/Leading-Unity-Nest-Backend-main/**": true
+  },
+  "dart.analysisExcludedFolders": [
+    "${workspaceFolder}/Leading-Unity-Nest-Backend-main"
+  ]
+}
