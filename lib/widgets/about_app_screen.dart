@@ -35,7 +35,7 @@ class AboutAppScreen extends StatelessWidget {
         "name": "Shoumo Shahriar Araf",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
-        "role": "Backend NestJS Developer",
+        "role": "Full Stack Developer",
         "image":
             "assets/template/crew/araf.jpeg",
         "fb": "https://www.facebook.com/shahriar.araf.3",
