@@ -29,28 +29,27 @@ class AboutAppScreen extends StatelessWidget {
         "image": "assets/template/crew/arif.jpg",
         "fb": "https://www.facebook.com/arifhaxnn",
         "linkedin": "https://www.linkedin.com/in/arif-hasan-672249358",
-        "github": "https://github.com/arifhaxn", 
+        "github": "https://github.com/arifhaxn",
       },
       {
         "name": "Shoumo Shahriar Araf",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
         "role": "Full Stack Developer",
-        "image":
-            "assets/template/crew/araf.jpeg",
+        "image": "assets/template/crew/araf.jpeg",
         "fb": "https://www.facebook.com/shahriar.araf.3",
         "linkedin": "https://www.linkedin.com/in/shoumo-shahriar-araf",
-        "github": "https://github.com/shahriaraf", 
+        "github": "https://github.com/shahriaraf",
       },
       {
         "name": "Omio Mahim",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
-        "role": "QA Tester & AI Integrator",
+        "role": "Frontend and QA Tester",
         "image": "assets/template/crew/omio.jpeg",
         "fb": "https://www.facebook.com/omio.mahim.044",
         "linkedin": "https://www.linkedin.com/in/omio-mahim-79a2302a8",
-        "github": "https://github.com/Omio-Mahim", 
+        "github": "https://github.com/Omio-Mahim",
       },
     ];
 
@@ -62,7 +61,7 @@ class AboutAppScreen extends StatelessWidget {
       "designation": "Associate Professor",
       "department": "Dept. of Computer Science and Engineering",
       "university": "Leading University",
-      "image": "assets/template/crew/sir.jpeg", 
+      "image": "assets/template/crew/sir.jpeg",
     };
 
     return Scaffold(
@@ -135,7 +134,7 @@ class AboutAppScreen extends StatelessWidget {
             const SizedBox(height: 16),
             _buildSupervisorCard(theme, supervisor),
 
-            const SizedBox(height: 40), 
+            const SizedBox(height: 40),
 
             // --- 4. 🟢 Inspiration Credit Section ---
             const Divider(),
@@ -231,7 +230,6 @@ class AboutAppScreen extends StatelessWidget {
                 ),
               if (dev.containsKey("fb") && dev["fb"].toString().isNotEmpty)
                 const SizedBox(width: 16),
-                
               IconButton(
                 onPressed: () => _launchUrl(dev["github"]),
                 // The color changes dynamically based on light/dark mode so it's always readable
@@ -240,7 +238,6 @@ class AboutAppScreen extends StatelessWidget {
                 tooltip: "GitHub",
               ),
               const SizedBox(width: 16),
-              
               IconButton(
                 onPressed: () => _launchUrl(dev["linkedin"]),
                 icon: const Icon(FontAwesomeIcons.linkedin,

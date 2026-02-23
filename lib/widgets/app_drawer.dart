@@ -234,7 +234,7 @@ class _AppDrawerState extends State<AppDrawer> {
                   trailing: Switch(
                     value: themeProvider.isDarkMode,
                     activeColor: theme.colorScheme.primary,
-                    onChanged: (value) => themeProvider.toggleTheme(),
+                    onChanged: (value) => themeProvider.setDarkMode(value),
                   ),
                   onTap: () => themeProvider.toggleTheme(),
                 ),

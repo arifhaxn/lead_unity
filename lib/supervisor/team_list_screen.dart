@@ -127,12 +127,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
           if (widget.onlyMyTeams && myId != null) {
             teams = teams.where((t) {
-              final sups = t['supervisors'] as List? ?? [];
-              return sups.any((s) => (s is Map ? s['_id'] : s) == myId) ||
-                  (t['assignedSupervisor'] is Map
-                          ? t['assignedSupervisor']['_id']
-                          : t['assignedSupervisor']) ==
-                      myId;
+              final assigned = (t['assignedSupervisor'] is Map)
+                  ? t['assignedSupervisor']['_id']
+                  : t['assignedSupervisor'];
+              return assigned == myId;
             }).toList();
           }
 
@@ -145,16 +143,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
               _submissionTime(a as Map<String, dynamic>)
                   .compareTo(_submissionTime(b as Map<String, dynamic>)));
 
-          final serialByTeamKey = <String, int>{
-            for (int i = 0; i < orderedTeams.length; i++)
-              _teamKey(orderedTeams[i] as Map<String, dynamic>): i + 1,
-          };
-
           if (teams.isEmpty) {
             return const Center(child: Text("No approved teams found."));
           }
 
           final courseTabs = _extractCourseTabs(orderedTeams);
+
+          if (courseTabs.isEmpty) {
+            return const Center(child: Text("No course tabs found."));
+          }
 
           return DefaultTabController(
             length: courseTabs.length,
@@ -188,6 +185,18 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 Expanded(
                   child: TabBarView(
                     children: courseTabs.map((courseCode) {
+                      final courseOrdered = _filterTeams(
+                        teams: orderedTeams,
+                        courseCode: courseCode,
+                        query: '',
+                      );
+
+                      final serialByTeamKeyInCourse = <String, int>{
+                        for (int i = 0; i < courseOrdered.length; i++)
+                          _teamKey(courseOrdered[i] as Map<String, dynamic>):
+                              i + 1,
+                      };
+
                       final filtered = _filterTeams(
                           teams: orderedTeams,
                           courseCode: courseCode,
@@ -204,7 +213,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           final team = filtered[index];
                           final teamMap = team as Map<String, dynamic>;
                           final serial =
-                              serialByTeamKey[_teamKey(teamMap)] ?? (index + 1);
+                              serialByTeamKeyInCourse[_teamKey(teamMap)] ??
+                                  (index + 1);
 
                           return _buildTeamCard(
                             context,
@@ -259,7 +269,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       }
     }
     final sorted = courseCodes.toList()..sort();
-    return ['All', ...sorted];
+    return sorted;
   }
 
   Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
@@ -302,12 +312,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
       required String query}) {
     final normalizedQuery = query.toLowerCase();
     return teams.where((team) {
-      if (courseCode != 'All') {
-        final code = (team['course'] is Map)
-            ? team['course']['courseCode']?.toString()
-            : null;
-        if (code != courseCode) return false;
-      }
+      final code = (team['course'] is Map)
+          ? team['course']['courseCode']?.toString()
+          : null;
+      if (code != courseCode) return false;
       if (normalizedQuery.isEmpty) return true;
 
       final title = (team['title'] ?? '').toString().toLowerCase();
@@ -351,11 +359,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
     bool isMyTeam = false;
     if (myId != null) {
-      isMyTeam = sups.any((s) => (s is Map ? s['_id'] : s) == myId) ||
-          (team['assignedSupervisor'] is Map
-                  ? team['assignedSupervisor']['_id']
-                  : team['assignedSupervisor']) ==
-              myId;
+      final assigned = (team['assignedSupervisor'] is Map)
+          ? team['assignedSupervisor']['_id']
+          : team['assignedSupervisor'];
+      isMyTeam = assigned == myId;
     }
 
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
