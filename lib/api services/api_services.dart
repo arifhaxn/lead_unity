@@ -113,6 +113,17 @@ class ApiService {
     }
   }
 
+  // 🟢 NEW: Check Submission Status
+  Future<bool> isSubmissionOpen() async {
+    try {
+      final response = await _dio.get('/settings');
+      // If the field doesn't exist yet, assume OPEN (true) to prevent blocking
+      return response.data['isSubmissionOpen'] ?? true;
+    } catch (e) {
+      return true; // Fail safe to open
+    }
+  }
+
   // ===========================================================================
   // 📝 PROPOSALS & TEAMS
   // ===========================================================================

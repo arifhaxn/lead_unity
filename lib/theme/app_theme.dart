@@ -62,7 +62,6 @@ class AppShadows {
 }
 
 class AppGradients {
-  // Note: These are now solid color references for gradient elimination
   static const primary = LinearGradient(
     colors: [AppColors.primary, AppColors.primary],
     begin: Alignment.topLeft,
@@ -148,7 +147,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(   // ✅ FIXED
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -259,7 +258,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme(
+      cardTheme: const CardThemeData(   // ✅ FIXED
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,
