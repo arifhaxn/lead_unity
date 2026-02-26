@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:provider/provider.dart';
 
-// 🟢 Correct Imports
+import '../../api services/api_services.dart'; // Ensure correct import
 import '../auth_provider.dart';
 import 'view_template.dart';
 import '../chatbot_screen.dart';
 import 'team_info.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_drawer.dart'; // 🟢 Added Drawer Import
+import '../widgets/app_drawer.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -18,31 +18,49 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  // --- Navigation Handlers ---
-  void _navigateToTeamInfo() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+  final ApiService _api = ApiService();
+  bool _isSubmissionOpen = true; // Default to true until checked
+  bool _isLoadingStatus = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkSubmissionStatus();
+  }
+
+  void _checkSubmissionStatus() async {
+    bool status = await _api.isSubmissionOpen();
+    if (mounted) {
+      setState(() {
+        _isSubmissionOpen = status;
+        _isLoadingStatus = false;
+      });
+    }
   }
 
   void _navigateToSubmitProposal() {
+    if (!_isSubmissionOpen) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Project submissions are currently closed.'), backgroundColor: Colors.red),
+      );
+      return;
+    }
     Navigator.push(context,
         MaterialPageRoute(builder: (context) => const SubmitProposalScreen()));
   }
 
+  // ... (other navigation methods same as before) ...
+  void _navigateToTeamInfo() {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+  }
   void _navigateToRequestTeam() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Request Team feature coming soon!')),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request Team feature coming soon!')));
   }
-
   void _downloadTemplate() {
-    Navigator.push(
-        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
-
   void _openChatbot() {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => const ChatbotScreen()));
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatbotScreen()));
   }
 
   @override
@@ -51,68 +69,51 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final accent = theme.colorScheme.primary;
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
-
-    // 🟢 Extract First Name Logic
     final String fullName = user?.name ?? 'Student';
     final String firstName = fullName.split(' ').first;
-    
-    // Logic placeholder: In a real app, you'd check if user.teamId is not null
-    final bool hasTeam = false;
+    final bool hasTeam = false; 
     final String? currentTeamId = null;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // 🟢 Implement the Drawer here
       drawer: const AppDrawer(),
-      appBar: AppBar(
-        title: const Text('Student Dashboard'),
-        // 🟢 Actions removed because the drawer now handles them
-      ),
+      appBar: AppBar(title: const Text('Student Dashboard')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            // --- Welcome Section ---
-            Text(
-              'Hello, $firstName', // 🟢 Using firstName here
-              style: theme.textTheme.displaySmall,
-            ),
+            Text('Hello, $firstName', style: theme.textTheme.displaySmall),
             const SizedBox(height: 10),
-
-            // --- Status Banner ---
             _buildStatusBanner(hasTeam, currentTeamId),
-
             const SizedBox(height: 30),
 
-            // --- Dashboard Cards Layout ---
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                // ROW 1: Submit Proposal
+                // ROW 1: Submit Proposal (With Disabled State)
                 _buildSlickCard(
                   context: context,
-                  icon: Icons.upload_file_outlined,
-                  title: 'Submit Proposal',
-                  action: 'Upload your team project proposal',
-                  color: AppColors.accentCoral,
-                  onTap: _navigateToSubmitProposal,
+                  icon: _isSubmissionOpen ? Icons.upload_file_outlined : Icons.lock_outline,
+                  title: _isSubmissionOpen ? 'Submit Proposal' : 'Submissions Closed',
+                  action: _isSubmissionOpen ? 'Upload your team project proposal' : 'Please contact admin.',
+                  color: _isSubmissionOpen ? AppColors.accentCoral : Colors.grey,
+                  onTap: _isSubmissionOpen ? _navigateToSubmitProposal : () {}, // No-op if closed
                   isProminent: true,
-                  darkBgColor: const Color(0xFF1E3A8A),
-                  lightBgColor: const Color(0xFFD6E4FF),
+                  isDisabled: !_isSubmissionOpen, // Pass flag for visual styling
+                  darkBgColor: _isSubmissionOpen ? const Color(0xFF1E3A8A) : Colors.grey[800],
+                  lightBgColor: _isSubmissionOpen ? const Color(0xFFD6E4FF) : Colors.grey[300],
                 ),
 
-                // ROW 2: Team Info & Request Team
                 IntrinsicHeight(
                   child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       Expanded(
                         child: _buildSlickCard(
                           context: context,
                           icon: Icons.groups_2_outlined,
                           title: 'Team Info',
-                          action: 'View Submitted Info',
+                          action: 'View Info',
                           color: AppColors.accentGreen,
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
@@ -138,7 +139,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   ),
                 ),
 
-                // ROW 3: Get Template
                 _buildSlickCard(
                   context: context,
                   icon: Icons.download_for_offline_outlined,
@@ -158,24 +158,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
         onPressed: _openChatbot,
         backgroundColor: accent,
         child: const Icon(Icons.message, color: Colors.white),
-        tooltip: 'Chat with Assistant',
       ),
     );
   }
 
-  // --- Status Banner Widget ---
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
+    // ... (Keep existing implementation)
     final theme = Theme.of(context);
-    final Color bannerColor = hasTeam
-        ? theme.colorScheme.primary.withOpacity(0.08)
-        : theme.colorScheme.surfaceVariant;
-    final Color textColor = hasTeam
-        ? theme.colorScheme.primary
-        : theme.colorScheme.onSurfaceVariant;
-    final String statusText = hasTeam
-        ? 'You are part of Team $teamId.'
-        : 'You are not yet on a team.';
-
+    final Color bannerColor = hasTeam ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surfaceVariant;
+    final Color textColor = hasTeam ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -185,22 +176,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       child: Row(
         children: [
-          Icon(
-              hasTeam
-                  ? Icons.check_circle_outline
-                  : Icons.warning_amber_outlined,
-              color: textColor),
+          Icon(hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined, color: textColor),
           const SizedBox(width: 12),
-          Expanded(
-              child: Text(statusText,
-                  style: TextStyle(
-                      color: textColor, fontWeight: FontWeight.w600))),
+          Expanded(child: Text(hasTeam ? 'You are part of Team $teamId.' : 'You are not yet on a team.', style: TextStyle(color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
   }
 
-  // --- Slicker Card Widget ---
   Widget _buildSlickCard({
     required BuildContext context,
     required IconData icon,
@@ -210,80 +193,71 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required VoidCallback onTap,
     bool isProminent = false,
     bool isCompact = false,
+    bool isDisabled = false, // New Prop
     Color? darkBgColor,
     Color? lightBgColor,
   }) {
-    final theme = Theme.of(context);
+    // Determine opacity based on disabled state
+    final double opacity = isDisabled ? 0.6 : 1.0;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 16.0),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: AppRadii.card,
-        child: Container(
-          decoration: BoxDecoration(
-            color: darkBgColor ?? const Color(0xFF10B981),
-            borderRadius: AppRadii.card,
-            boxShadow: AppShadows.level1,
+      child: Opacity(
+        opacity: opacity,
+        child: InkWell(
+          onTap: isDisabled ? null : onTap, // Disable tap
+          borderRadius: AppRadii.card,
+          child: Container(
+            decoration: BoxDecoration(
+              color: darkBgColor ?? const Color(0xFF10B981),
+              borderRadius: AppRadii.card,
+              boxShadow: isDisabled ? [] : AppShadows.level1, // Remove shadow if disabled
+            ),
+            padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
+            child: isCompact
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(icon, size: 28, color: Colors.white),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 4),
+                      Text(action, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                    ],
+                  )
+                : Row(
+                    children: <Widget>[
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(icon, size: 30, color: Colors.white),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(title, style: TextStyle(fontSize: isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                            const SizedBox(height: 4),
+                            Text(action, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                          ],
+                        ),
+                      ),
+                      if (!isDisabled) 
+                        const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
+                    ],
+                  ),
           ),
-          padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
-          child: isCompact
-              ? Column(
-                  // Compact Layout (Vertical)
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, size: 28, color: Colors.white),
-                    ),
-                    const SizedBox(height: 16),
-                    Text(title,
-                        style: theme.textTheme.titleLarge
-                            ?.copyWith(fontSize: 16, color: Colors.white)),
-                    const SizedBox(height: 4),
-                    Text(action,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w500)),
-                  ],
-                )
-              : Row(
-                  // Standard/Prominent Layout (Horizontal)
-                  children: <Widget>[
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(icon, size: 30, color: Colors.white),
-                    ),
-                    const SizedBox(width: 20),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(title,
-                              style: TextStyle(
-                                  fontSize: isProminent ? 20 : 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white)),
-                          const SizedBox(height: 4),
-                          Text(action,
-                              style: const TextStyle(
-                                  fontSize: 14, color: Colors.white70)),
-                        ],
-                      ),
-                    ),
-                    const Icon(Icons.arrow_forward_ios_rounded,
-                        size: 16, color: Colors.white70),
-                  ],
-                ),
         ),
       ),
     );
