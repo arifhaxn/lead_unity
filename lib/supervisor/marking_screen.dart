@@ -160,7 +160,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Evaluation Board", style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text("Evaluation Board",
+            style: TextStyle(fontWeight: FontWeight.w700)),
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
@@ -179,33 +180,35 @@ class _MarkingScreenState extends State<MarkingScreen> {
         ],
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40), 
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🟢 Sleek Criteria Legend 
+            // 🟢 Sleek Criteria Legend
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: theme.colorScheme.surface,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  )
-                ]
-              ),
+                  color: theme.colorScheme.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                      color: theme.colorScheme.outline.withOpacity(0.2)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    )
+                  ]),
               child: Column(
                 children: [
-                  _buildCriteriaRow(theme, "1", c1Name, c1Max, theme.colorScheme.primary),
+                  _buildCriteriaRow(
+                      theme, "1", c1Name, c1Max, theme.colorScheme.primary),
                   const Padding(
                     padding: EdgeInsets.symmetric(vertical: 8.0),
                     child: Divider(height: 1),
                   ),
-                  _buildCriteriaRow(theme, "2", c2Name, c2Max, theme.colorScheme.secondary),
+                  _buildCriteriaRow(
+                      theme, "2", c2Name, c2Max, theme.colorScheme.secondary),
                 ],
               ),
             ),
@@ -214,7 +217,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
             // 🟢 Students Header
             Text(
               "Team Members",
-              style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold),
+              style: theme.textTheme.titleLarge
+                  ?.copyWith(fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 16),
 
@@ -230,7 +234,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
                 },
               );
             }).toList(),
-            
+
             const SizedBox(height: 20),
 
             // 🟢 Submit Button
@@ -241,7 +245,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: theme.colorScheme.primary,
                   padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30)),
                   elevation: 6,
                   shadowColor: theme.colorScheme.primary.withOpacity(0.4),
                 ),
@@ -262,7 +267,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
   }
 
-  Widget _buildCriteriaRow(ThemeData theme, String number, String name, int max, Color accentColor) {
+  Widget _buildCriteriaRow(
+      ThemeData theme, String number, String name, int max, Color accentColor) {
     return Row(
       children: [
         Container(
@@ -273,25 +279,32 @@ class _MarkingScreenState extends State<MarkingScreen> {
             shape: BoxShape.circle,
           ),
           child: Center(
-            child: Text("C$number", style: TextStyle(color: accentColor, fontWeight: FontWeight.bold, fontSize: 12)),
+            child: Text("C$number",
+                style: TextStyle(
+                    color: accentColor,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12)),
           ),
         ),
         const SizedBox(width: 12),
         Expanded(
           child: Text(
             name,
-            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(fontWeight: FontWeight.w600),
           ),
         ),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceVariant,
-            borderRadius: BorderRadius.circular(10)
-          ),
+              color: theme.colorScheme.surfaceVariant,
+              borderRadius: BorderRadius.circular(10)),
           child: Text(
             "Max: $max",
-            style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 12, fontWeight: FontWeight.bold),
+            style: TextStyle(
+                color: theme.colorScheme.onSurfaceVariant,
+                fontSize: 12,
+                fontWeight: FontWeight.bold),
           ),
         )
       ],
@@ -330,10 +343,14 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     super.initState();
     _isAbsent = widget.marksData['absent'] ?? false;
     _c1Controller = TextEditingController(
-      text: widget.marksData['c1'] == 0.0 ? '' : widget.marksData['c1'].toString(),
+      text: widget.marksData['c1'] == 0.0
+          ? ''
+          : widget.marksData['c1'].toString(),
     );
     _c2Controller = TextEditingController(
-      text: widget.marksData['c2'] == 0.0 ? '' : widget.marksData['c2'].toString(),
+      text: widget.marksData['c2'] == 0.0
+          ? ''
+          : widget.marksData['c2'].toString(),
     );
   }
 
@@ -356,12 +373,14 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     if (c1 > widget.maxC1) {
       c1 = widget.maxC1.toDouble();
       _c1Controller.text = c1.toString();
-      _c1Controller.selection = TextSelection.fromPosition(TextPosition(offset: _c1Controller.text.length));
+      _c1Controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _c1Controller.text.length));
     }
     if (c2 > widget.maxC2) {
       c2 = widget.maxC2.toDouble();
       _c2Controller.text = c2.toString();
-      _c2Controller.selection = TextSelection.fromPosition(TextPosition(offset: _c2Controller.text.length));
+      _c2Controller.selection = TextSelection.fromPosition(
+          TextPosition(offset: _c2Controller.text.length));
     }
 
     widget.onChanged({
@@ -379,8 +398,11 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     final theme = Theme.of(context);
     final isLightMode = theme.brightness == Brightness.light;
     final studentName = widget.studentData['name'] ?? 'Unknown Student';
-    final studentId = widget.studentData['studentId']?.toString() ?? widget.studentData['_id']?.toString() ?? '';
-    final initials = studentName.isNotEmpty ? studentName[0].toUpperCase() : '?';
+    final studentId = widget.studentData['studentId']?.toString() ??
+        widget.studentData['_id']?.toString() ??
+        '';
+    final initials =
+        studentName.isNotEmpty ? studentName[0].toUpperCase() : '?';
 
     final c1Value = double.tryParse(_c1Controller.text) ?? 0;
     final c2Value = double.tryParse(_c2Controller.text) ?? 0;
@@ -398,7 +420,10 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
             offset: const Offset(0, 6),
           )
         ],
-        border: Border.all(color: _isAbsent ? Colors.redAccent.withOpacity(0.3) : theme.colorScheme.outline.withOpacity(0.1)),
+        border: Border.all(
+            color: _isAbsent
+                ? Colors.redAccent.withOpacity(0.3)
+                : theme.colorScheme.outline.withOpacity(0.1)),
       ),
       child: Column(
         children: [
@@ -409,14 +434,17 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
               children: [
                 CircleAvatar(
                   radius: 24,
-                  backgroundColor: _isAbsent ? Colors.redAccent.withOpacity(0.1) : theme.colorScheme.primary.withOpacity(0.1),
+                  backgroundColor: _isAbsent
+                      ? Colors.redAccent.withOpacity(0.1)
+                      : theme.colorScheme.primary.withOpacity(0.1),
                   child: Text(
                     initials,
                     style: TextStyle(
-                      color: _isAbsent ? Colors.redAccent : theme.colorScheme.primary, 
-                      fontWeight: FontWeight.bold, 
-                      fontSize: 18
-                    ),
+                        color: _isAbsent
+                            ? Colors.redAccent
+                            : theme.colorScheme.primary,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18),
                   ),
                 ),
                 const SizedBox(width: 16),
@@ -426,27 +454,35 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                     children: [
                       Text(
                         studentName,
-                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, decoration: _isAbsent ? TextDecoration.lineThrough : null),
+                        style: theme.textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            decoration:
+                                _isAbsent ? TextDecoration.lineThrough : null),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
                       Text(
                         studentId,
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant, fontSize: 13, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),
                 ),
-                
+
                 // 🟢 Modern Sliding Segmented Control
                 Container(
                   height: 34,
                   width: 140, // Fixed width to contain both options
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant.withOpacity(isLightMode ? 0.7 : 0.3),
+                    color: theme.colorScheme.surfaceVariant
+                        .withOpacity(isLightMode ? 0.7 : 0.3),
                     borderRadius: BorderRadius.circular(30),
-                    border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
+                    border: Border.all(
+                        color: theme.colorScheme.outline.withOpacity(0.1)),
                   ),
                   child: Stack(
                     children: [
@@ -454,22 +490,29 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                       AnimatedPositioned(
                         duration: const Duration(milliseconds: 250),
                         curve: Curves.easeInOut,
-                        left: _isAbsent ? 70 : 0, // Slides to the right half if absent
-                        right: _isAbsent ? 0 : 70, // Stays on the left half if present
+                        left: _isAbsent
+                            ? 70
+                            : 0, // Slides to the right half if absent
+                        right: _isAbsent
+                            ? 0
+                            : 70, // Stays on the left half if present
                         top: 0,
                         bottom: 0,
                         child: Container(
                           decoration: BoxDecoration(
-                            color: _isAbsent ? Colors.redAccent : Colors.green,
-                            borderRadius: BorderRadius.circular(30),
-                            boxShadow: [
-                              BoxShadow(
-                                color: (_isAbsent ? Colors.redAccent : Colors.green).withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
-                              )
-                            ]
-                          ),
+                              color:
+                                  _isAbsent ? Colors.redAccent : Colors.green,
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (_isAbsent
+                                          ? Colors.redAccent
+                                          : Colors.green)
+                                      .withOpacity(0.3),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                )
+                              ]),
                         ),
                       ),
                       // The clickable text areas
@@ -480,16 +523,22 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 if (_isAbsent) {
-                                  setState(() { _isAbsent = false; _updateMarks(); });
+                                  setState(() {
+                                    _isAbsent = false;
+                                    _updateMarks();
+                                  });
                                 }
                               },
                               child: Center(
-                                child: Text("PRESENT", style: TextStyle(
-                                  fontSize: 10,
-                                  letterSpacing: 0.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: _isAbsent ? theme.colorScheme.onSurfaceVariant : Colors.white,
-                                )),
+                                child: Text("PRESENT",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      letterSpacing: 0.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: _isAbsent
+                                          ? theme.colorScheme.onSurfaceVariant
+                                          : Colors.white,
+                                    )),
                               ),
                             ),
                           ),
@@ -498,16 +547,22 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                               behavior: HitTestBehavior.opaque,
                               onTap: () {
                                 if (!_isAbsent) {
-                                  setState(() { _isAbsent = true; _updateMarks(); });
+                                  setState(() {
+                                    _isAbsent = true;
+                                    _updateMarks();
+                                  });
                                 }
                               },
                               child: Center(
-                                child: Text("ABSENT", style: TextStyle(
-                                  fontSize: 10,
-                                  letterSpacing: 0.5,
-                                  fontWeight: FontWeight.bold,
-                                  color: _isAbsent ? Colors.white : theme.colorScheme.onSurfaceVariant,
-                                )),
+                                child: Text("ABSENT",
+                                    style: TextStyle(
+                                      fontSize: 10,
+                                      letterSpacing: 0.5,
+                                      fontWeight: FontWeight.bold,
+                                      color: _isAbsent
+                                          ? Colors.white
+                                          : theme.colorScheme.onSurfaceVariant,
+                                    )),
                               ),
                             ),
                           ),
@@ -519,25 +574,34 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
               ],
             ),
           ),
-          
+
           const Divider(height: 1),
 
           // --- Bottom Scoring Section ---
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: _isAbsent ? Colors.redAccent.withOpacity(0.02) : theme.colorScheme.surfaceVariant.withOpacity(0.3),
-              borderRadius: const BorderRadius.vertical(bottom: Radius.circular(20)),
+              color: _isAbsent
+                  ? Colors.redAccent.withOpacity(0.02)
+                  : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+              borderRadius:
+                  const BorderRadius.vertical(bottom: Radius.circular(20)),
             ),
-            child: _isAbsent ? _buildAbsentBadge() : Row(
-              children: [
-                Expanded(child: _buildDigitalInput(context, 'C1', _c1Controller, widget.maxC1)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildDigitalInput(context, 'C2', _c2Controller, widget.maxC2)),
-                const SizedBox(width: 12),
-                Expanded(child: _buildTotalBox(context, total)),
-              ],
-            ),
+            child: _isAbsent
+                ? _buildAbsentBadge()
+                : Row(
+                    children: [
+                      Expanded(
+                          child: _buildDigitalInput(
+                              context, 'C1', _c1Controller, widget.maxC1)),
+                      const SizedBox(width: 12),
+                      Expanded(
+                          child: _buildDigitalInput(
+                              context, 'C2', _c2Controller, widget.maxC2)),
+                      const SizedBox(width: 12),
+                      Expanded(child: _buildTotalBox(context, total)),
+                    ],
+                  ),
           ),
         ],
       ),
@@ -549,10 +613,9 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
       width: double.infinity,
       padding: const EdgeInsets.symmetric(vertical: 16),
       decoration: BoxDecoration(
-        color: Colors.redAccent.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.redAccent.withOpacity(0.3))
-      ),
+          color: Colors.redAccent.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.redAccent.withOpacity(0.3))),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: const [
@@ -560,37 +623,47 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
           SizedBox(width: 8),
           Text(
             "SCORES LOCKED (ABSENT)",
-            style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold, letterSpacing: 1.2),
+            style: TextStyle(
+                color: Colors.redAccent,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 1.2),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildDigitalInput(BuildContext context, String label, TextEditingController controller, int max) {
+  Widget _buildDigitalInput(BuildContext context, String label,
+      TextEditingController controller, int max) {
     final theme = Theme.of(context);
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 2), 
-          )
-        ]
-      ),
+          color: theme.colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.02),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            )
+          ]),
       child: Column(
         children: [
-          Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: theme.colorScheme.onSurfaceVariant)),
+          Text(label,
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onSurfaceVariant)),
           TextField(
             controller: controller,
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: theme.colorScheme.onSurface),
+            style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: theme.colorScheme.onSurface),
             decoration: const InputDecoration(
               isDense: true,
               contentPadding: EdgeInsets.symmetric(vertical: 4),
@@ -608,24 +681,28 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: theme.colorScheme.primary,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary.withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
-          )
-        ]
-      ),
+          color: theme.colorScheme.primary,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ]),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const Text("TOTAL", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white70)),
+          const Text("TOTAL",
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white70)),
           const SizedBox(height: 4),
           Text(
             total.toStringAsFixed(0),
-            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
+            style: const TextStyle(
+                fontSize: 22, fontWeight: FontWeight.w900, color: Colors.white),
           ),
         ],
       ),

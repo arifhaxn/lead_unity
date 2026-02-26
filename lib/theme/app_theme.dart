@@ -129,7 +129,7 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: AppColors.textPrimary,
         ),
-        iconTheme: IconThemeData(color: AppColors.textPrimary),
+        iconTheme: const IconThemeData(color: AppColors.textPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -147,7 +147,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(   // ✅ FIXED
+      cardTheme: const CardTheme(   // ✅ FIXED
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -240,7 +240,7 @@ class AppTheme {
           fontWeight: FontWeight.w700,
           color: AppColors.nightTextPrimary,
         ),
-        iconTheme: IconThemeData(color: AppColors.nightTextPrimary),
+        iconTheme: const IconThemeData(color: AppColors.nightTextPrimary),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -258,7 +258,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(   // ✅ FIXED
+      cardTheme: const CardTheme(   // ✅ FIXED
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,

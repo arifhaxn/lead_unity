@@ -78,15 +78,17 @@ class AboutAppScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // --- 1. App Logo & Summary ---
+            // 🟢 Transparent Custom Logo
             Container(
-              height: 90,
-              width: 90,
-              decoration: BoxDecoration(
-                color: theme.colorScheme.primary.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(24),
+              height: 100,
+              width: 100,
+              decoration: const BoxDecoration(
+                color: Colors.transparent, // Ensures it stays transparent
               ),
-              child: Icon(Icons.school_rounded,
-                  size: 45, color: theme.colorScheme.primary),
+              child: Image.asset(
+                'assets/logo/logo.png', // Ensure this path matches exactly
+                fit: BoxFit.contain,
+              ),
             ),
             const SizedBox(height: 16),
             Text(
@@ -136,7 +138,7 @@ class AboutAppScreen extends StatelessWidget {
 
             const SizedBox(height: 40),
 
-            // --- 4. 🟢 Inspiration Credit Section ---
+            // --- 4. Inspiration Credit Section ---
             const Divider(),
             const SizedBox(height: 16),
             Text(

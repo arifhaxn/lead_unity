@@ -20,18 +20,26 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   final _storage = const FlutterSecureStorage();
   File? _profileImage;
+  String _savedIdentifier = 'SUP'; // 🟢 Added to store fetched abbreviation
 
   @override
   void initState() {
     super.initState();
-    _loadProfileImage();
+    _loadInitialData(); // 🟢 Now loads both image and abbreviation
   }
 
-  Future<void> _loadProfileImage() async {
+  Future<void> _loadInitialData() async {
     String? imagePath = await _storage.read(key: 'profile_image_path');
-    if (imagePath != null && File(imagePath).existsSync()) {
+    String? ident = await _storage.read(key: 'login_identifier');
+    
+    if (mounted) {
       setState(() {
-        _profileImage = File(imagePath);
+        if (imagePath != null && File(imagePath).existsSync()) {
+          _profileImage = File(imagePath);
+        }
+        if (ident != null && ident.isNotEmpty) {
+          _savedIdentifier = ident.toUpperCase(); // E.g., sets "EBH"
+        }
       });
     }
   }
@@ -64,12 +72,11 @@ class _AppDrawerState extends State<AppDrawer> {
     final user = authProvider.user;
 
     final name = user?.name ?? 'Unknown User';
-    final email = user?.email ?? 'No email provided';
+    final email = user?.email?.trim() ?? '';
     final studentId = user?.studentId ?? 'N/A';
     final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
     // 🟢 Magic Check: Detect if the logged-in user is Ebrahim Sir
-    // This checks if his name matches, OR if he logged in using "EBH" in either field
     final bool isEbrahimSir = name.contains('Ebrahim Hossain') ||
         name.contains('Ebrahim Hussain') ||
         name.contains('MD Ebrahim Hossain') ||
@@ -132,16 +139,14 @@ class _AppDrawerState extends State<AppDrawer> {
                             radius: 42,
                             backgroundColor: theme.colorScheme.surface,
 
-                            // 🟢 Automatically show his asset picture if he is logged in
                             backgroundImage: _profileImage != null
                                 ? FileImage(_profileImage!)
-                                    as ImageProvider // Override if he manually uploads one
+                                    as ImageProvider 
                                 : (isEbrahimSir
                                     ? const AssetImage(
                                         "assets/template/crew/sir.jpeg")
                                     : null),
 
-                            // 🟢 Only show the text letter if NO picture exists AND it's not Ebrahim Sir
                             child: _profileImage == null && !isEbrahimSir
                                 ? Text(
                                     firstLetter,
@@ -171,6 +176,8 @@ class _AppDrawerState extends State<AppDrawer> {
                         ),
                       ],
                     ),
+
+                    // 🟢 Conditional Role Badges
                     if (user?.role == 'student')
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -197,6 +204,33 @@ class _AppDrawerState extends State<AppDrawer> {
                             ),
                           ],
                         ),
+                      )
+                    else if (user?.role == 'supervisor')
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.secondary.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                              color:
+                                  theme.colorScheme.secondary.withOpacity(0.2)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.admin_panel_settings_rounded,
+                                size: 14, color: theme.colorScheme.secondary),
+                            const SizedBox(width: 4),
+                            Text(
+                              _savedIdentifier, 
+                              style: TextStyle(
+                                  color: theme.colorScheme.secondary,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                        ),
                       ),
                   ],
                 ),
@@ -208,14 +242,28 @@ class _AppDrawerState extends State<AppDrawer> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  email,
-                  style: TextStyle(
-                      color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                
+                if (email.isNotEmpty && email.length > 4) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    email,
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ] else if (user?.role == 'supervisor') ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    "Faculty Supervisor",
+                    style: TextStyle(
+                        color: theme.colorScheme.onSurfaceVariant, 
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
               ],
             ),
           ),
@@ -270,16 +318,21 @@ class _AppDrawerState extends State<AppDrawer> {
                     ),
                     child: Row(
                       children: [
+                        // 🟢 Brought back the white box for the logo!
                         Container(
-                          padding: const EdgeInsets.all(10),
+                          padding: const EdgeInsets.all(8), 
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.2),
+                            color: const Color.fromARGB(255, 13, 8, 49), 
                             borderRadius: BorderRadius.circular(12),
                           ),
-                          child: const Icon(Icons.school_rounded,
-                              color: Colors.white, size: 28),
+                          child: Image.asset(
+                            'assets/logo/logo.png', 
+                            width: 24, 
+                            height: 24,
+                            fit: BoxFit.contain,
+                          ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 14),
                         const Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -290,7 +343,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                       fontWeight: FontWeight.bold,
                                       fontSize: 16)),
                               SizedBox(height: 4),
-                              Text("Link Unity • v1.0.0",
+                              Text("LeadUnity • v1.0.0",
                                   style: TextStyle(
                                       color: Colors.white70,
                                       fontSize: 12,

@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🟢 Added this import
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
 
-// 🟢 Core Imports
+// Core Imports
 import 'auth_provider.dart';
 import 'api services/api_services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
-// 🟢 Screen Imports
+// Screen Imports
 import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';
 
@@ -22,7 +23,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  // Controller for ID or Abbreviation
   final _identifierController = TextEditingController();
   final _passController = TextEditingController();
   final _api = ApiService();
@@ -53,10 +53,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
     try {
-      // Calls auth provider. Backend handles:
-      // if identifier has no '@', it checks Student ID OR Supervisor Abbreviation
       await Provider.of<AuthProvider>(context, listen: false)
           .login(identifier, password, role: widget.role); 
+
+      // 🟢 NEW: Save the login identifier (Abbreviation or Student ID) to storage!
+      const storage = FlutterSecureStorage();
+      await storage.write(key: 'login_identifier', value: identifier);
 
       if (!mounted) return;
 
@@ -78,7 +80,6 @@ class _LoginScreenState extends State<LoginScreen> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text("Role mismatch or invalid credentials"),
             backgroundColor: Colors.red));
-        // Logout to clear the mismatched token
         Provider.of<AuthProvider>(context, listen: false).logout();
       }
     } catch (e) {
@@ -96,11 +97,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeColor = theme.colorScheme.primary;
     
-    // Dynamic Logic for Labels/Inputs
     final isStudent = widget.role == 'student';
-    
-    // Student -> "Student ID", Number Keyboard
-    // Supervisor -> "Abbreviation", Text Keyboard
     final labelText = isStudent ? 'Student ID' : 'Abbreviation';
     final prefixIcon = isStudent ? Icons.badge_outlined : Icons.short_text;
     final keyboardType = isStudent ? TextInputType.number : TextInputType.text;
@@ -125,8 +122,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   : 'Switch to dark mode',
             )
           ]),
-      // 🟢 Changed from SingleChildScrollView to CustomScrollView 
-      // so we can dynamically force the hint box to the bottom
       body: CustomScrollView(
         slivers: [
           SliverFillRemaining(
@@ -148,7 +143,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 40),
 
-                  // Dynamic Input Field
                   TextField(
                     controller: _identifierController,
                     keyboardType: keyboardType,
@@ -192,7 +186,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
 
-                  // --- Supervisor: Activate Account ---
                   if (widget.role == 'supervisor')
                     Center(
                       child: Padding(
@@ -211,7 +204,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 20),
 
-                  // --- Student: Registration Link ---
                   if (widget.role == 'student')
                     Center(
                       child: _isRegOpen
@@ -249,11 +241,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                     ),
                     
-                  // 🟢 The Spacer dynamically takes up all empty space,
-                  // perfectly pushing the Note Box below it to the absolute bottom!
                   const Spacer(), 
 
-                  // 🟢 Dynamic Hint Text Box at the Bottom
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
@@ -282,7 +271,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30), // Safe area bottom padding
+                  const SizedBox(height: 30), 
                 ],
               ),
             ),

@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'login_screen.dart'; // 🟢 Points to the unified LoginScreen we merged earlier
+import 'login_screen.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
-  // --- Logic Merge: Use the role-based navigation from his logic ---
   void _navigateToStudentLogin(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -17,7 +16,6 @@ class HomePage extends StatelessWidget {
   }
 
   void _navigateToAdminLogin(BuildContext context) {
-    // 🟢 Fixed: Removed the placeholder SnackBar and connected to logic
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) => const LoginScreen(role: 'supervisor'),
@@ -43,11 +41,32 @@ class HomePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    // --- Logo & Title ---
-                    const SizedBox(height: 8),
+
+                    Center(
+                      child: Image.asset(
+                        'assets/logo/logo.png',
+                        height: 120,
+                        fit: BoxFit.contain,
+
+                        errorBuilder: (context, error, stackTrace) => Container(
+                          height: 120,
+                          width: 120,
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Icon(Icons.image_not_supported_rounded, size: 40, color: theme.colorScheme.primary),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    
                     Text(
                       'LeadUnity',
-                      style: theme.textTheme.displaySmall,
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: -0.5,
+                      ),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 6),
@@ -106,7 +125,6 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  // --- Your Original Card Design Helper ---
   Widget _buildLoginOptionCard({
     required BuildContext context,
     required String title,

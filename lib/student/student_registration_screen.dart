@@ -77,7 +77,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   child: const Text("Cancel"),
                 ),
               ElevatedButton(
-                // 🟢 Added padding so the text doesn't touch the edges of the box
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 ),
@@ -147,10 +146,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         ),
         content: const Text(
           "• Enter your full name and valid email address.\n\n"
-          "• You MUST input your exact 16-digit Student ID. Double-check for typos!\n\n"
+          "• You MUST input your exact 16-digit Student ID.\n\n"
           "  Example: 0182310012101025\n\n"
           "• Provide your current Batch and Section.\n\n"
-          "• After clicking Register, an OTP will be sent to your email to verify your identity.",
+          "• Passwords must be 8+ characters and contain at least one uppercase, one lowercase, one number, and one special character.\n\n" // Added password rule
+          "• After clicking Register, an OTP will be sent to your email.",
           style: TextStyle(height: 1.5),
         ),
         actions: [
@@ -176,7 +176,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         elevation: 0,
         iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
         actions: [
-          // 🟢 Dark Mode Button First
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -189,7 +188,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                 ? 'Switch to light mode'
                 : 'Switch to dark mode',
           ),
-          // 🟢 Info Button Second (Far Right)
           IconButton(
             icon: Icon(
               Icons.info_outline_rounded,
@@ -283,6 +281,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
               const SizedBox(height: 24),
               _buildLabel('Security'),
+              
+              // 🟢 REPLACED WITH REGEX VALIDATOR
               TextFormField(
                 decoration: const InputDecoration(
                     labelText: 'Password',
@@ -290,7 +290,27 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                     border: OutlineInputBorder()),
                 obscureText: true,
                 onSaved: (v) => _formData['password'] = v,
-                validator: (v) => v!.length < 6 ? 'Min 6 chars' : null,
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter a password';
+                  }
+                  if (value.length < 8) {
+                    return 'Must be at least 8 characters long';
+                  }
+                  if (!RegExp(r'(?=.*?[A-Z])').hasMatch(value)) {
+                    return 'Must contain at least one uppercase letter';
+                  }
+                  if (!RegExp(r'(?=.*?[a-z])').hasMatch(value)) {
+                    return 'Must contain at least one lowercase letter';
+                  }
+                  if (!RegExp(r'(?=.*?[0-9])').hasMatch(value)) {
+                    return 'Must contain at least one number';
+                  }
+                  if (!RegExp(r'(?=.*?[!@#\$&*~])').hasMatch(value)) {
+                    return 'Must contain at least one special character (!@#\$&*~)';
+                  }
+                  return null; // Return null if all checks pass
+                },
               ),
 
               const SizedBox(height: 40),
