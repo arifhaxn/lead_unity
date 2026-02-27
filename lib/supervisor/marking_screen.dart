@@ -7,7 +7,9 @@ import '../theme/theme_provider.dart';
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
-  const MarkingScreen({Key? key, required this.team}) : super(key: key);
+  final String? evaluationType;
+  const MarkingScreen({Key? key, required this.team, this.evaluationType})
+      : super(key: key);
 
   @override
   _MarkingScreenState createState() => _MarkingScreenState();
@@ -44,14 +46,17 @@ class _MarkingScreenState extends State<MarkingScreen> {
       final sups = widget.team['supervisors'] as List? ?? [];
       final assignedSup = widget.team['assignedSupervisor'];
 
-      bool isMyTeam = false;
-      if (myId != null) {
-        bool isAssigned = getId(assignedSup) == myId;
-        bool isPreferred = sups.any((s) => getId(s) == myId);
-        isMyTeam = isAssigned || isPreferred;
+      if (widget.evaluationType != null) {
+        _evaluationType = widget.evaluationType!;
+      } else {
+        bool isMyTeam = false;
+        if (myId != null) {
+          bool isAssigned = getId(assignedSup) == myId;
+          bool isPreferred = sups.any((s) => getId(s) == myId);
+          isMyTeam = isAssigned || isPreferred;
+        }
+        _evaluationType = isMyTeam ? 'own' : 'defense';
       }
-
-      _evaluationType = isMyTeam ? 'own' : 'defense';
 
       // 3. Load Existing Marks
       final List<dynamic> allMarksList = widget.team['marks'] ?? [];

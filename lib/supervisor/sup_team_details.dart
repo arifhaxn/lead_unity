@@ -151,6 +151,12 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
                   name: leader['name'] ?? 'Unknown',
                   id: leader['studentId'] ?? leader['_id'],
                   email: leader['email'],
+                  mobile: leader['mobile'],
+                  cgpa: leader['cgpa'] != null
+                      ? (double.tryParse(leader['cgpa'].toString())
+                              ?.toStringAsFixed(2) ??
+                          leader['cgpa'].toString())
+                      : null,
                   role: "Leader",
                   color: const Color(0xFFF59E0B) // Amber for Leader
                   ),
@@ -161,6 +167,12 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
                     name: m['name'] ?? 'Unknown',
                     id: m['studentId'] ?? m['_id'],
                     email: m['email'],
+                    mobile: m['mobile'],
+                    cgpa: m['cgpa'] != null
+                        ? (double.tryParse(m['cgpa'].toString())
+                                ?.toStringAsFixed(2) ??
+                            m['cgpa'].toString())
+                        : null,
                     role: "Member",
                     color: Colors.grey))
                 .toList(),
@@ -176,6 +188,8 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
       {required String name,
       required String? id,
       required String? email,
+      required String? mobile,
+      required String? cgpa,
       required String role,
       required Color color}) {
     final theme = Theme.of(context);
@@ -190,6 +204,7 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
         border: Border.all(color: theme.colorScheme.outline.withOpacity(0.1)),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
             backgroundColor: color.withOpacity(0.1),
@@ -202,9 +217,11 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w600, fontSize: 15)),
+                    Flexible(
+                      child: Text(name,
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w600, fontSize: 15)),
+                    ),
                     if (role == "Leader")
                       Container(
                         margin: const EdgeInsets.only(left: 8),
@@ -222,15 +239,45 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
                       )
                   ],
                 ),
-                Text(id ?? 'N/A',
-                    style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontSize: 13)),
+                const SizedBox(height: 6),
+                _memberDetailRow(
+                    Icons.badge_outlined, 'ID', id ?? 'N/A', theme),
+                const SizedBox(height: 4),
+                _memberDetailRow(
+                    Icons.email_outlined, 'Email', email ?? 'N/A', theme),
+                const SizedBox(height: 4),
+                _memberDetailRow(
+                    Icons.phone_outlined, 'Mobile', mobile ?? 'N/A', theme),
+                const SizedBox(height: 4),
+                _memberDetailRow(
+                    Icons.school_outlined, 'CGPA', cgpa ?? 'N/A', theme),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _memberDetailRow(
+      IconData icon, String label, String value, ThemeData theme) {
+    return Row(
+      children: [
+        Icon(icon,
+            size: 14,
+            color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6)),
+        const SizedBox(width: 6),
+        Text('$label: ',
+            style: TextStyle(
+                fontSize: 12,
+                color: theme.colorScheme.onSurfaceVariant.withOpacity(0.6))),
+        Expanded(
+          child: Text(value,
+              style:
+                  TextStyle(fontSize: 12, color: theme.colorScheme.onSurface),
+              overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 }

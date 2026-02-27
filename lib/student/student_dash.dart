@@ -41,7 +41,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void _navigateToSubmitProposal() {
     if (!_isSubmissionOpen) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project submissions are currently closed.'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Project submissions are currently closed.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
@@ -51,16 +53,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // ... (other navigation methods same as before) ...
   void _navigateToTeamInfo() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
   }
+
   void _navigateToRequestTeam() {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Request Team feature coming soon!')));
+    ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Request Team feature coming soon!')));
   }
+
   void _downloadTemplate() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
+
   void _openChatbot() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatbotScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const ChatbotScreen()));
   }
 
   @override
@@ -71,7 +80,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final user = authProvider.user;
     final String fullName = user?.name ?? 'Student';
     final String firstName = fullName.split(' ').first;
-    final bool hasTeam = false; 
+    final bool hasTeam = false;
     final String? currentTeamId = null;
 
     return Scaffold(
@@ -83,26 +92,40 @@ class _StudentDashboardState extends State<StudentDashboard> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
-            Text('Hello, $firstName', style: theme.textTheme.displaySmall),
+            Text('Hello,', style: theme.textTheme.titleLarge),
+            Text(fullName, style: theme.textTheme.displaySmall),
             const SizedBox(height: 10),
             _buildStatusBanner(hasTeam, currentTeamId),
             const SizedBox(height: 30),
-
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
                 // ROW 1: Submit Proposal (With Disabled State)
                 _buildSlickCard(
                   context: context,
-                  icon: _isSubmissionOpen ? Icons.upload_file_outlined : Icons.lock_outline,
-                  title: _isSubmissionOpen ? 'Submit Proposal' : 'Submissions Closed',
-                  action: _isSubmissionOpen ? 'Upload your team project proposal' : 'Please contact admin.',
-                  color: _isSubmissionOpen ? AppColors.accentCoral : Colors.grey,
-                  onTap: _isSubmissionOpen ? _navigateToSubmitProposal : () {}, // No-op if closed
+                  icon: _isSubmissionOpen
+                      ? Icons.upload_file_outlined
+                      : Icons.lock_outline,
+                  title: _isSubmissionOpen
+                      ? 'Submit Proposal'
+                      : 'Submissions Closed',
+                  action: _isSubmissionOpen
+                      ? 'Upload your team project proposal'
+                      : 'Please contact admin.',
+                  color:
+                      _isSubmissionOpen ? AppColors.accentCoral : Colors.grey,
+                  onTap: _isSubmissionOpen
+                      ? _navigateToSubmitProposal
+                      : () {}, // No-op if closed
                   isProminent: true,
-                  isDisabled: !_isSubmissionOpen, // Pass flag for visual styling
-                  darkBgColor: _isSubmissionOpen ? const Color(0xFF1E3A8A) : Colors.grey[800],
-                  lightBgColor: _isSubmissionOpen ? const Color(0xFFD6E4FF) : Colors.grey[300],
+                  isDisabled:
+                      !_isSubmissionOpen, // Pass flag for visual styling
+                  darkBgColor: _isSubmissionOpen
+                      ? const Color(0xFF1E3A8A)
+                      : Colors.grey[800],
+                  lightBgColor: _isSubmissionOpen
+                      ? const Color(0xFFD6E4FF)
+                      : Colors.grey[300],
                 ),
 
                 IntrinsicHeight(
@@ -165,8 +188,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
     // ... (Keep existing implementation)
     final theme = Theme.of(context);
-    final Color bannerColor = hasTeam ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surfaceVariant;
-    final Color textColor = hasTeam ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+    final Color bannerColor = hasTeam
+        ? theme.colorScheme.primary.withOpacity(0.08)
+        : theme.colorScheme.surfaceVariant;
+    final Color textColor = hasTeam
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -176,9 +203,19 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
       child: Row(
         children: [
-          Icon(hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined, color: textColor),
+          Icon(
+              hasTeam
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: textColor),
           const SizedBox(width: 12),
-          Expanded(child: Text(hasTeam ? 'You are part of Team $teamId.' : 'You are not yet on a team.', style: TextStyle(color: textColor, fontWeight: FontWeight.w600))),
+          Expanded(
+              child: Text(
+                  hasTeam
+                      ? 'You are part of Team $teamId.'
+                      : 'You are not yet on a team.',
+                  style: TextStyle(
+                      color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -211,7 +248,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
             decoration: BoxDecoration(
               color: darkBgColor ?? const Color(0xFF10B981),
               borderRadius: AppRadii.card,
-              boxShadow: isDisabled ? [] : AppShadows.level1, // Remove shadow if disabled
+              boxShadow: isDisabled
+                  ? []
+                  : AppShadows.level1, // Remove shadow if disabled
             ),
             padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
             child: isCompact
@@ -227,9 +266,15 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         child: Icon(icon, size: 28, color: Colors.white),
                       ),
                       const SizedBox(height: 16),
-                      Text(title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(title,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(action, style: const TextStyle(fontSize: 12, color: Colors.white70)),
+                      Text(action,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.white70)),
                     ],
                   )
                 : Row(
@@ -247,14 +292,21 @@ class _StudentDashboardState extends State<StudentDashboard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(title, style: TextStyle(fontSize: isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)),
+                            Text(title,
+                                style: TextStyle(
+                                    fontSize: isProminent ? 20 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
                             const SizedBox(height: 4),
-                            Text(action, style: const TextStyle(fontSize: 14, color: Colors.white70)),
+                            Text(action,
+                                style: const TextStyle(
+                                    fontSize: 14, color: Colors.white70)),
                           ],
                         ),
                       ),
-                      if (!isDisabled) 
-                        const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
+                      if (!isDisabled)
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 16, color: Colors.white70),
                     ],
                   ),
           ),

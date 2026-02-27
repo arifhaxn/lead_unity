@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../chatbot_screen.dart';
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -57,7 +58,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+            Icon(Icons.info_outline_rounded,
+                color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
             const Text("How to Submit"),
           ],
@@ -175,6 +177,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             tooltip: 'Submission Instructions',
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
+        backgroundColor: theme.colorScheme.primary,
+        child: const Icon(Icons.message, color: Colors.white),
       ),
       body: SingleProposalForm(
         courses: _courses,
@@ -507,10 +515,19 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
         items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
-          String name = s['name'].toString().split(' ')[0];
+          final abbreviation = [
+            s['abbreviation'],
+            s['abbr'],
+            s['shortName'],
+            s['initials'],
+          ].map((v) => (v ?? '').toString().trim()).firstWhere(
+                (v) => v.isNotEmpty,
+                orElse: () => '',
+              );
+
           return DropdownMenuItem(
               value: s['_id'],
-              child: Text(name,
+              child: Text(abbreviation,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(fontSize: 13)));
         }).toList(),

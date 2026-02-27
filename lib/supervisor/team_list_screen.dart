@@ -422,7 +422,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           await Navigator.push(
                             context,
                             MaterialPageRoute(
-                                builder: (_) => MarkingScreen(team: team)),
+                                builder: (_) => MarkingScreen(
+                                    team: team,
+                                    evaluationType: widget.onlyMyTeams
+                                        ? 'own'
+                                        : 'defense')),
                           );
                           setState(() {
                             _teamsFuture = _apiService.getAllProposals();
