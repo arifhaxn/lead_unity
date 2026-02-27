@@ -197,20 +197,47 @@ class _TeamListScreenState extends State<TeamListScreen> {
                               i + 1,
                       };
 
-                      final filtered = _filterTeams(
+                        final filtered = _filterTeams(
                           teams: orderedTeams,
                           courseCode: courseCode,
                           query: _searchQuery);
 
-                      if (filtered.isEmpty)
+                      final normalizedQuery = _searchQuery.toLowerCase();
+                        final filteredWithCardId = courseOrdered.where((team) {
+                        if (normalizedQuery.isEmpty) return true;
+
+                        final teamMap = team as Map<String, dynamic>;
+                        final serial =
+                            serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 0;
+
+                        final teamIdText =
+                            (teamMap['_id'] ??
+                                    teamMap['id'] ??
+                                    teamMap['proposalId'] ??
+                                    teamMap['teamId'] ??
+                                    '')
+                                .toString()
+                                .toLowerCase();
+
+                        final cardIdText = serial.toString();
+
+                        final matchesSupervisorOrTitle =
+                          filtered.any((t) => _teamKey(t) == _teamKey(teamMap));
+
+                        return matchesSupervisorOrTitle ||
+                          cardIdText.contains(normalizedQuery) ||
+                            teamIdText.contains(normalizedQuery);
+                      }).toList();
+
+                      if (filteredWithCardId.isEmpty)
                         return const Center(
                             child: Text("No teams match your filter."));
 
                       return ListView.builder(
                         padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                        itemCount: filtered.length,
+                        itemCount: filteredWithCardId.length,
                         itemBuilder: (context, index) {
-                          final team = filtered[index];
+                          final team = filteredWithCardId[index];
                           final teamMap = team as Map<String, dynamic>;
                           final serial =
                               serialByTeamKeyInCourse[_teamKey(teamMap)] ??
@@ -335,6 +362,26 @@ class _TeamListScreenState extends State<TeamListScreen> {
     }).toList();
   }
 
+  bool _hasSubmittedEvaluation(
+      Map<String, dynamic> team, String? myId, String evaluationType) {
+    if (myId == null || myId.isEmpty) return false;
+
+    final marks = team['marks'] as List? ?? [];
+    for (final mark in marks) {
+      if (mark is! Map) continue;
+
+      final supervisorId =
+          (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
+      final type = (mark['type'] ?? '').toString().toLowerCase().trim();
+
+      if (supervisorId == myId && type == evaluationType) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
   Widget _buildTeamCard(BuildContext context,
       {required int serialNumber,
       required Map<String, dynamic> team,
@@ -366,6 +413,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
     }
 
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
+    final String evaluationType = widget.onlyMyTeams ? 'own' : 'defense';
+    final bool hasSubmittedEvaluation =
+      _hasSubmittedEvaluation(team, myId, evaluationType);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -397,6 +447,24 @@ class _TeamListScreenState extends State<TeamListScreen> {
               style: TextStyle(
                   fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
             ),
+            trailing: Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color:
+                    hasSubmittedEvaluation ? const Color(0xFF16A34A) : null,
+                borderRadius: BorderRadius.circular(7),
+                border: Border.all(
+                  color: hasSubmittedEvaluation
+                      ? const Color(0xFF16A34A)
+                      : theme.colorScheme.outline.withOpacity(0.8),
+                  width: 1.6,
+                ),
+              ),
+              child: hasSubmittedEvaluation
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
+            ),
           ),
           const Divider(height: 1),
           Padding(
@@ -424,9 +492,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             MaterialPageRoute(
                                 builder: (_) => MarkingScreen(
                                     team: team,
-                                    evaluationType: widget.onlyMyTeams
-                                        ? 'own'
-                                        : 'defense')),
+                                    evaluationType: evaluationType)),
                           );
                           setState(() {
                             _teamsFuture = _apiService.getAllProposals();

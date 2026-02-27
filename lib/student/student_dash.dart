@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
+import 'package:link_unity/student/request_team_screen.dart';
 import 'package:provider/provider.dart';
 
 import '../../api services/api_services.dart'; // Ensure correct import
@@ -58,8 +59,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _navigateToRequestTeam() {
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Request Team feature coming soon!')));
+    Navigator.push(context,
+      MaterialPageRoute(builder: (context) => const RequestTeamScreen()));
   }
 
   void _downloadTemplate() {
@@ -79,7 +80,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final String fullName = user?.name ?? 'Student';
-    final String firstName = fullName.split(' ').first;
+    final String displayName = fullName
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .join(' ');
     final bool hasTeam = false;
     final String? currentTeamId = null;
 
@@ -93,7 +99,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             Text('Hello,', style: theme.textTheme.titleLarge),
-            Text(fullName, style: theme.textTheme.displaySmall),
+            Text(displayName, style: theme.textTheme.displaySmall),
             const SizedBox(height: 10),
             _buildStatusBanner(hasTeam, currentTeamId),
             const SizedBox(height: 30),

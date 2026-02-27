@@ -21,6 +21,12 @@ class SupervisorDashboard extends StatelessWidget {
     final user = authProvider.user;
 
     final String fullName = user?.name ?? 'Supervisor';
+    final String displayName = fullName
+      .trim()
+      .split(RegExp(r'\s+'))
+      .where((part) => part.isNotEmpty)
+      .take(2)
+      .join(' ');
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -42,7 +48,7 @@ class SupervisorDashboard extends StatelessWidget {
                 style: TextStyle(
                     fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
             Text(
-              fullName,
+              displayName,
               style: theme.textTheme.displaySmall
                   ?.copyWith(fontWeight: FontWeight.bold),
             ),
