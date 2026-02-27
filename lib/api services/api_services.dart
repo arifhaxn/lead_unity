@@ -2,8 +2,9 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ApiService {
-  static const String _baseUrl = 'https://leading-unity-nest-backend.vercel.app/api';
-  
+  static const String _baseUrl =
+      'https://leading-unity-nest-backend.vercel.app/api';
+
   final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
   final _storage = const FlutterSecureStorage();
 
@@ -23,7 +24,7 @@ class ApiService {
   // 🔐 AUTH & REGISTRATION
   // ===========================================================================
 
-    // --- AUTH ---
+  // --- AUTH ---
   Future<dynamic> login(String identifier, String password) async {
     try {
       final response = await _dio.post('/auth/login', data: {
@@ -53,7 +54,8 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> registerStudent(Map<String, dynamic> data) async {
+  Future<Map<String, dynamic>> registerStudent(
+      Map<String, dynamic> data) async {
     try {
       final response = await _dio.post('/auth/register/student', data: data);
       await _storage.write(key: 'jwt_token', value: response.data['token']);
@@ -71,7 +73,8 @@ class ApiService {
   // 👮 SUPERVISOR SPECIFIC
   // ===========================================================================
 
-  Future<void> changePasswordFirstLogin(String email, String tempPass, String newPass) async {
+  Future<void> changePasswordFirstLogin(
+      String email, String tempPass, String newPass) async {
     try {
       await _dio.post('/auth/change-password', data: {
         'email': email,
@@ -154,10 +157,10 @@ class ApiService {
 
   Future<List<dynamic>> getAllProposals() async {
     try {
-      final response = await _dio.get('/proposals'); 
+      final response = await _dio.get('/proposals');
       return response.data;
     } catch (e) {
-      return []; 
+      return [];
     }
   }
 
@@ -170,15 +173,33 @@ class ApiService {
     try {
       final response = await _dio.get('/settings');
       final data = response.data;
-      
+
+      // Defense Board criteria
+      final defC1Name = data['criteria1Name'] ?? 'Criteria 1';
+      final defC1Max = data['criteria1Max'] ?? 35;
+      final defC2Name = data['criteria2Name'] ?? 'Criteria 2';
+      final defC2Max = data['criteria2Max'] ?? 35;
+
+      // Supervisor Internal criteria (own teams)
+      final ownC1Name = data['ownTeamCriteria1Name'] ??
+          data['supervisorInternalLabel1'] ??
+          'Criteria 1';
+      final ownC1Max =
+          data['ownTeamCriteria1Max'] ?? data['supervisorInternalMax1'] ?? 15;
+      final ownC2Name = data['ownTeamCriteria2Name'] ??
+          data['supervisorInternalLabel2'] ??
+          'Criteria 2';
+      final ownC2Max =
+          data['ownTeamCriteria2Max'] ?? data['supervisorInternalMax2'] ?? 15;
+
       return {
         'defense': {
-           'c1': {'name': data['criteria1Name'] ?? 'Defense 1', 'max': data['criteria1Max'] ?? 30},
-           'c2': {'name': data['criteria2Name'] ?? 'Defense 2', 'max': data['criteria2Max'] ?? 30},
+          'c1': {'name': defC1Name, 'max': defC1Max},
+          'c2': {'name': defC2Name, 'max': defC2Max},
         },
         'own': {
-           'c1': {'name': data['ownTeamCriteria1Name'] ?? 'Own 1', 'max': data['ownTeamCriteria1Max'] ?? 40},
-           'c2': {'name': data['ownTeamCriteria2Name'] ?? 'Own 2', 'max': data['ownTeamCriteria2Max'] ?? 40},
+          'c1': {'name': ownC1Name, 'max': ownC1Max},
+          'c2': {'name': ownC2Name, 'max': ownC2Max},
         }
       };
     } catch (e) {
@@ -187,12 +208,11 @@ class ApiService {
   }
 
   // 🟢 NEW: Added the 'type' string parameter for saving marks
-  Future<void> saveTeamMarks(String proposalId, List<Map<String, dynamic>> marksData, String type) async {
+  Future<void> saveTeamMarks(String proposalId,
+      List<Map<String, dynamic>> marksData, String type) async {
     try {
-      await _dio.post('/proposals/$proposalId/marks', data: {
-        'marks': marksData,
-        'type': type
-      });
+      await _dio.post('/proposals/$proposalId/marks',
+          data: {'marks': marksData, 'type': type});
     } on DioException catch (e) {
       throw e.response?.data['message'] ?? 'Failed to save marks';
     }

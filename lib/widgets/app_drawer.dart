@@ -31,7 +31,7 @@ class _AppDrawerState extends State<AppDrawer> {
   Future<void> _loadInitialData() async {
     String? imagePath = await _storage.read(key: 'profile_image_path');
     String? ident = await _storage.read(key: 'login_identifier');
-    
+
     if (mounted) {
       setState(() {
         if (imagePath != null && File(imagePath).existsSync()) {
@@ -138,15 +138,12 @@ class _AppDrawerState extends State<AppDrawer> {
                           child: CircleAvatar(
                             radius: 42,
                             backgroundColor: theme.colorScheme.surface,
-
                             backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!)
-                                    as ImageProvider 
+                                ? FileImage(_profileImage!) as ImageProvider
                                 : (isEbrahimSir
                                     ? const AssetImage(
                                         "assets/template/crew/sir.jpeg")
                                     : null),
-
                             child: _profileImage == null && !isEbrahimSir
                                 ? Text(
                                     firstLetter,
@@ -223,7 +220,7 @@ class _AppDrawerState extends State<AppDrawer> {
                                 size: 14, color: theme.colorScheme.secondary),
                             const SizedBox(width: 4),
                             Text(
-                              _savedIdentifier, 
+                              _savedIdentifier,
                               style: TextStyle(
                                   color: theme.colorScheme.secondary,
                                   fontSize: 12,
@@ -242,22 +239,22 @@ class _AppDrawerState extends State<AppDrawer> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                
                 if (email.isNotEmpty && email.length > 4) ...[
                   const SizedBox(height: 4),
                   Text(
                     email,
                     style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant, fontSize: 14),
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontSize: 14),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ] else if (user?.role == 'supervisor') ...[
                   const SizedBox(height: 4),
                   Text(
-                    "Faculty Supervisor",
+                    user?.designation ?? 'Supervisor',
                     style: TextStyle(
-                        color: theme.colorScheme.onSurfaceVariant, 
+                        color: theme.colorScheme.onSurfaceVariant,
                         fontSize: 13,
                         fontWeight: FontWeight.w500),
                     maxLines: 1,
@@ -320,14 +317,14 @@ class _AppDrawerState extends State<AppDrawer> {
                       children: [
                         // 🟢 Brought back the white box for the logo!
                         Container(
-                          padding: const EdgeInsets.all(8), 
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 13, 8, 49), 
+                            color: const Color.fromARGB(255, 13, 8, 49),
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Image.asset(
-                            'assets/logo/logo.png', 
-                            width: 24, 
+                            'assets/logo/logo.png',
+                            width: 24,
                             height: 24,
                             fit: BoxFit.contain,
                           ),

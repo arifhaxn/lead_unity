@@ -46,16 +46,18 @@ class AuthProvider with ChangeNotifier {
       if (data['user'] != null) {
         _user = User.fromJson(data['user']);
       } else {
-        print("⚠️ Missing user object structure. attempting manual construction...");
-        
+        print(
+            "⚠️ Missing user object structure. attempting manual construction...");
+
         if (data['name'] != null) {
-           _user = User(
-             id: data['_id']?.toString() ?? '',
-             name: data['name']?.toString() ?? 'User',
-             email: data['email']?.toString() ?? '',
-             role: data['role']?.toString() ?? 'student',
-             studentId: data['studentId']?.toString(), // 🟢 Catch ID here too
-           );
+          _user = User(
+            id: data['_id']?.toString() ?? '',
+            name: data['name']?.toString() ?? 'User',
+            email: data['email']?.toString() ?? '',
+            role: data['role']?.toString() ?? 'student',
+            studentId: data['studentId']?.toString(), // 🟢 Catch ID here too
+            designation: data['designation']?.toString(),
+          );
         } else {
           try {
             final payload = _parseJwt(_token!);
@@ -63,10 +65,12 @@ class AuthProvider with ChangeNotifier {
             String userId = (payload['_id'] ?? payload['sub'] ?? '').toString();
             String? userRole = payload['role']?.toString().toLowerCase();
             String realName = payload['name']?.toString() ?? identifier;
-            String? extractedStudentId = payload['studentId']?.toString(); // 🟢 Extract ID
+            String? extractedStudentId =
+                payload['studentId']?.toString(); // 🟢 Extract ID
+            String? extractedDesignation;
 
             try {
-              final me = await _apiService.getUserByEmail(identifier); 
+              final me = await _apiService.getUserByEmail(identifier);
               if (me['_id'] != null && userId.isEmpty) {
                 userId = me['_id'].toString();
               }
@@ -77,7 +81,11 @@ class AuthProvider with ChangeNotifier {
                 userRole = me['role'].toString().toLowerCase();
               }
               if (me['studentId'] != null) {
-                extractedStudentId = me['studentId'].toString(); // 🟢 Extract ID from API
+                extractedStudentId =
+                    me['studentId'].toString(); // 🟢 Extract ID from API
+              }
+              if (me['designation'] != null) {
+                extractedDesignation = me['designation'].toString();
               }
             } catch (e) {
               print("Could not fetch real profile: $e");
@@ -86,12 +94,14 @@ class AuthProvider with ChangeNotifier {
             _user = User(
               id: userId,
               name: realName,
-              email: identifier.contains('@') ? identifier : '', 
+              email: identifier.contains('@') ? identifier : '',
               role: userRole ?? 'unknown',
               studentId: extractedStudentId, // 🟢 Add to user
+              designation: extractedDesignation,
             );
           } catch (e) {
-            _user = User(id: 'temp', name: 'User', email: identifier, role: 'unknown');
+            _user = User(
+                id: 'temp', name: 'User', email: identifier, role: 'unknown');
           }
         }
       }
@@ -103,6 +113,7 @@ class AuthProvider with ChangeNotifier {
           'email': _user!.email,
           'role': _user!.role,
           'studentId': _user!.studentId, // 🟢 Make sure to save it!
+          'designation': _user!.designation,
         };
         await _storage.write(key: 'user_data', value: json.encode(userMap));
       }
@@ -126,7 +137,7 @@ class AuthProvider with ChangeNotifier {
         'studentId': sid,
         'batch': batch,
         'section': section,
-        'otp': otp, 
+        'otp': otp,
       };
 
       // 1. Send data to backend
@@ -155,10 +166,10 @@ class AuthProvider with ChangeNotifier {
       // 4. 🟢 THE FIX: Build the user profile strictly from the frontend inputs!
       _user = User(
         id: userId.isNotEmpty ? userId : 'temp_id',
-        name: name,         
-        email: email,       
+        name: name,
+        email: email,
         role: userRole,
-        studentId: sid,     
+        studentId: sid,
       );
 
       // 5. 🟢 CRITICAL: Save this newly built profile to the phone's permanent storage
@@ -170,7 +181,7 @@ class AuthProvider with ChangeNotifier {
         'studentId': _user!.studentId,
       };
       await _storage.write(key: 'user_data', value: json.encode(userMap));
-      
+
       notifyListeners();
       _setLoading(false);
     } catch (e) {
@@ -178,7 +189,7 @@ class AuthProvider with ChangeNotifier {
       rethrow;
     }
   }
-  
+
   // --- OTP Helper ---
   Future<void> sendOtp(String email) async {
     await _apiService.sendOtp(email);

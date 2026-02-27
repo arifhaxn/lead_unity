@@ -45,7 +45,7 @@ class AboutAppScreen extends StatelessWidget {
         "name": "Omio Mahim",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
-        "role": "Frontend and QA Tester",
+        "role": "Frontend Developer (AI Feature Integration)",
         "image": "assets/template/crew/omio.jpeg",
         "fb": "https://www.facebook.com/omio.mahim.044",
         "linkedin": "https://www.linkedin.com/in/omio-mahim-79a2302a8",

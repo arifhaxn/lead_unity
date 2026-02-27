@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../chatbot_screen.dart';
 
 class TeamInfoScreen extends StatefulWidget {
   const TeamInfoScreen({super.key});
@@ -37,6 +38,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 : 'Switch to dark mode',
           )
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => Navigator.push(
+            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
+        backgroundColor: theme.colorScheme.primary,
+        child: const Icon(Icons.message, color: Colors.white),
       ),
       body: FutureBuilder<List<dynamic>>(
         // 🟢 Using his API method which automatically attaches the token
@@ -98,10 +105,11 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           children: [
                             Chip(
                               label: Text(course['courseCode'] ?? 'N/A'),
-                              backgroundColor: Colors.white.withOpacity(0.15),
+                              backgroundColor: const Color(0xFF1A4A4F),
                               labelStyle: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold),
+                              side: BorderSide.none,
                             ),
                             Container(
                               padding: const EdgeInsets.symmetric(
@@ -146,41 +154,69 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 ...members
                     .map((m) => Container(
                           margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
                           decoration: const BoxDecoration(
                             color: Color(0xFF245E63),
                             borderRadius: AppRadii.card,
                             boxShadow: AppShadows.level1,
                           ),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.white.withOpacity(0.15),
-                              child: Text(
-                                (m['name']?[0] ?? 'U').toString().toUpperCase(),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontWeight: FontWeight.bold),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              CircleAvatar(
+                                backgroundColor: Colors.white.withOpacity(0.15),
+                                child: Text(
+                                  (m['name']?[0] ?? 'U')
+                                      .toString()
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
                               ),
-                            ),
-                            title: Text(m['name'] ?? 'Unknown',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                    fontSize: 16, color: Colors.white)),
-                            subtitle: Text(m['studentId'] ?? 'No ID',
-                                style: const TextStyle(
-                                    color: Colors.white70, fontSize: 13)),
-                            trailing: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                const Text("CGPA",
-                                    style: TextStyle(
-                                        fontSize: 10, color: Colors.white70)),
-                                Text(m['cgpa'] ?? 'N/A',
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 14,
-                                        color: Colors.white)),
-                              ],
-                            ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(m['name'] ?? 'Unknown',
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                    const SizedBox(height: 6),
+                                    _memberDetailRow(Icons.badge_outlined, 'ID',
+                                        m['studentId'] ?? 'N/A'),
+                                    const SizedBox(height: 4),
+                                    _memberDetailRow(Icons.email_outlined,
+                                        'Email', m['email'] ?? 'N/A'),
+                                    const SizedBox(height: 4),
+                                    _memberDetailRow(Icons.phone_outlined,
+                                        'Mobile', m['mobile'] ?? 'N/A'),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text("CGPA",
+                                      style: TextStyle(
+                                          fontSize: 10, color: Colors.white70)),
+                                  Text(
+                                      m['cgpa'] != null
+                                          ? double.tryParse(
+                                                      m['cgpa'].toString())
+                                                  ?.toStringAsFixed(2) ??
+                                              m['cgpa'].toString()
+                                          : 'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.white)),
+                                ],
+                              ),
+                            ],
                           ),
                         ))
                     .toList(),
@@ -189,6 +225,22 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _memberDetailRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: Colors.white54),
+        const SizedBox(width: 6),
+        Text('$label: ',
+            style: const TextStyle(fontSize: 12, color: Colors.white54)),
+        Expanded(
+          child: Text(value,
+              style: const TextStyle(fontSize: 12, color: Colors.white),
+              overflow: TextOverflow.ellipsis),
+        ),
+      ],
     );
   }
 
