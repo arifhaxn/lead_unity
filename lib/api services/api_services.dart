@@ -116,14 +116,15 @@ class ApiService {
     }
   }
 
-  // 🟢 NEW: Check Submission Status
-  Future<bool> isSubmissionOpen() async {
+  // Returns DateTime or null (if open indefinitely)
+  Future<DateTime?> getSubmissionDeadline() async {
     try {
       final response = await _dio.get('/settings');
-      // If the field doesn't exist yet, assume OPEN (true) to prevent blocking
-      return response.data['isSubmissionOpen'] ?? true;
+      final raw = response.data['submissionDeadline'];
+      if (raw != null) return DateTime.parse(raw);
+      return null; 
     } catch (e) {
-      return true; // Fail safe to open
+      return null;
     }
   }
 
