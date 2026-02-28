@@ -20,12 +20,12 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   final _storage = const FlutterSecureStorage();
   File? _profileImage;
-  String _savedIdentifier = 'SUP'; // 🟢 Added to store fetched abbreviation
+  String _savedIdentifier = 'SUP';
 
   @override
   void initState() {
     super.initState();
-    _loadInitialData(); // 🟢 Now loads both image and abbreviation
+    _loadInitialData(); 
   }
 
   Future<void> _loadInitialData() async {
@@ -72,11 +72,10 @@ class _AppDrawerState extends State<AppDrawer> {
     final user = authProvider.user;
 
     final name = user?.name ?? 'Unknown User';
-    final email = user?.email?.trim() ?? '';
+    final email = user?.email.trim() ?? '';
     final studentId = user?.studentId ?? 'N/A';
     final firstLetter = name.isNotEmpty ? name[0].toUpperCase() : '?';
 
-    // 🟢 Magic Check: Detect if the logged-in user is Ebrahim Sir
     final bool isEbrahimSir = name.contains('Ebrahim Hossain') ||
         name.contains('Ebrahim Hussain') ||
         name.contains('MD Ebrahim Hossain') ||
@@ -92,7 +91,7 @@ class _AppDrawerState extends State<AppDrawer> {
       ),
       child: Column(
         children: [
-          // --- 1. Top User Info Section ---
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
@@ -174,7 +173,6 @@ class _AppDrawerState extends State<AppDrawer> {
                       ],
                     ),
 
-                    // 🟢 Conditional Role Badges
                     if (user?.role == 'student')
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -265,7 +263,6 @@ class _AppDrawerState extends State<AppDrawer> {
             ),
           ),
 
-          // --- 2. Middle Actions Section ---
           Expanded(
             child: ListView(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -315,7 +312,6 @@ class _AppDrawerState extends State<AppDrawer> {
                     ),
                     child: Row(
                       children: [
-                        // 🟢 Brought back the white box for the logo!
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
@@ -357,8 +353,6 @@ class _AppDrawerState extends State<AppDrawer> {
               ],
             ),
           ),
-
-          // --- 3. Bottom Logout Section ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: _buildDrawerItem(
