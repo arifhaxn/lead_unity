@@ -20,15 +20,10 @@ class ApiService {
     ));
   }
 
-  // ===========================================================================
-  // 🔐 AUTH & REGISTRATION
-  // ===========================================================================
-
-  // --- AUTH ---
   Future<dynamic> login(String identifier, String password) async {
     try {
       final response = await _dio.post('/auth/login', data: {
-        'identifier': identifier, // ⚠️ KEY MUST BE 'identifier' (not 'email')
+        'identifier': identifier,
         'password': password,
       });
       await _storage.write(key: 'jwt_token', value: response.data['token']);
@@ -37,8 +32,6 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Login failed';
     }
   }
-
-  // 🟢 CRITICAL FIX: Fallback to get user details if login response is empty
   Future<Map<String, dynamic>> getUserByEmail(String email) async {
     try {
       final response = await _dio.get('/users');
@@ -69,10 +62,6 @@ class ApiService {
     await _storage.delete(key: 'jwt_token');
   }
 
-  // ===========================================================================
-  // 👮 SUPERVISOR SPECIFIC
-  // ===========================================================================
-
   Future<void> changePasswordFirstLogin(
       String email, String tempPass, String newPass) async {
     try {
@@ -85,10 +74,6 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Failed to change password';
     }
   }
-
-  // ===========================================================================
-  // 🏫 COMMON DATA
-  // ===========================================================================
 
   Future<List<dynamic>> getCourses() async {
     final response = await _dio.get('/courses');
@@ -116,7 +101,6 @@ class ApiService {
     }
   }
 
-  // Returns DateTime or null (if open indefinitely)
   Future<DateTime?> getSubmissionDeadline() async {
     try {
       final response = await _dio.get('/settings');
@@ -127,10 +111,6 @@ class ApiService {
       return null;
     }
   }
-
-  // ===========================================================================
-  // 📝 PROPOSALS & TEAMS
-  // ===========================================================================
 
   Future<void> submitProposal(Map<String, dynamic> data) async {
     try {
@@ -165,11 +145,6 @@ class ApiService {
     }
   }
 
-  // ===========================================================================
-  // 📊 EVALUATION
-  // ===========================================================================
-
-  // 🟢 NEW: Updated to return 'defense' and 'own' criteria categories
   Future<Map<String, dynamic>> getEvaluationSettings() async {
     try {
       final response = await _dio.get('/settings');
@@ -208,7 +183,6 @@ class ApiService {
     }
   }
 
-  // 🟢 NEW: Added the 'type' string parameter for saving marks
   Future<void> saveTeamMarks(String proposalId,
       List<Map<String, dynamic>> marksData, String type) async {
     try {

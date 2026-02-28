@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:provider/provider.dart';
-
-// 🟢 Core Imports
 import '../../api services/api_services.dart';
 import '../../auth_provider.dart';
 import '../../chatbot_screen.dart';
@@ -39,7 +37,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
     super.dispose();
   }
 
-  // 🟢 Helper to show dynamic Instructions Dialog
   void _showInstructions() {
     final title =
         widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
@@ -268,7 +265,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  // --- Helpers ---
+  //Helpers
 
   String _teamKey(Map<String, dynamic> team) {
     final key =
@@ -307,11 +304,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
       child: TabBar(
         isScrollable: true,
         dividerColor: Colors
-            .transparent, // 🟢 Removes the ugly default grey line underneath
+            .transparent,
         indicatorSize:
-            TabBarIndicatorSize.label, // 🟢 Binds the box closely to the text
+            TabBarIndicatorSize.label,
         labelPadding:
-            const EdgeInsets.symmetric(horizontal: 6), // Space between the tabs
+            const EdgeInsets.symmetric(horizontal: 6),
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
         indicator: BoxDecoration(
@@ -321,7 +318,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         tabs: courseTabs
             .map((c) => Tab(
-                  // 🟢 The padding inside here creates the left/right breathing room inside the box
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Text(c,

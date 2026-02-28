@@ -1,15 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
-// 🟢 Core Imports
 import '../auth_provider.dart';
 import '../chatbot_screen.dart';
-
-// 🟢 Screen Imports
 import 'team_list_screen.dart';
 import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_drawer.dart'; // 🟢 Added Drawer Import
+import '../widgets/app_drawer.dart';
 
 class SupervisorDashboard extends StatelessWidget {
   const SupervisorDashboard({Key? key}) : super(key: key);
@@ -30,14 +26,13 @@ class SupervisorDashboard extends StatelessWidget {
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
-      // 🟢 Implement the Drawer here
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Supervisor Portal'),
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        // 🟢 Actions removed because the drawer now handles Dark Mode & Logout
+        
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -54,7 +49,6 @@ class SupervisorDashboard extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            // 🟢 Row 1: My Teams (Evaluation Hub)
             _buildCard(
               context,
               "My Teams",

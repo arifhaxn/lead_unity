@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// 🟢 Import your Theme
 import '../theme/app_theme.dart';
 
 class SupervisorTeamDetailsScreen extends StatelessWidget {
@@ -12,7 +11,6 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Safe Data Extraction
     final title = team['title'] ?? 'Untitled Project';
     final courseCode =
         team['course'] is Map ? team['course']['courseCode'] ?? 'N/A' : 'N/A';
@@ -21,7 +19,7 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
     final description = team['description'] ?? 'No description provided';
     final status = team['status']?.toString().toUpperCase() ?? 'PENDING';
 
-    // Logic: Show only teamMembers, first one as leader (hide student account)
+    //Show only teamMembers
     final members = team['teamMembers'] as List? ?? [];
     final leader = members.isNotEmpty ? members.first : {};
     final restMembers = members.length > 1 ? members.sublist(1) : [];
@@ -39,7 +37,7 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // --- HEADER CARD ---
+
             Container(
               width: double.infinity,
               padding: const EdgeInsets.all(24),
@@ -104,7 +102,6 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // --- DRIVE LINK / DESCRIPTION ---
             Text("Submission Link / Description",
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold)),
@@ -139,13 +136,12 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // --- TEAM ROSTER ---
             Text("Team Roster",
                 style: theme.textTheme.titleMedium
                     ?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 10),
 
-            // Leader Card (first of teamMembers)
+            // Leader Card
             if (leader.isNotEmpty)
               _buildMemberCard(context,
                   name: leader['name'] ?? 'Unknown',

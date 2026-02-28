@@ -105,11 +105,8 @@ class AppTheme {
       onTertiary: AppColors.textPrimary,
       error: AppColors.accentCoral,
       onError: Colors.white,
-      background: AppColors.surfaceAlt,
-      onBackground: AppColors.textPrimary,
       surface: AppColors.surface,
       onSurface: AppColors.textPrimary,
-      surfaceVariant: AppColors.surfaceAlt,
       onSurfaceVariant: AppColors.textSecondary,
       outline: AppColors.divider,
     );
@@ -147,7 +144,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(   // ✅ FIXED
+      cardTheme: const CardTheme( 
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -216,11 +213,8 @@ class AppTheme {
       onTertiary: AppColors.nightTextPrimary,
       error: AppColors.accentCoral,
       onError: Colors.white,
-      background: AppColors.nightSurface,
-      onBackground: AppColors.nightTextPrimary,
       surface: AppColors.nightSurfaceAlt,
       onSurface: AppColors.nightTextPrimary,
-      surfaceVariant: AppColors.nightCard,
       onSurfaceVariant: AppColors.nightTextSecondary,
       outline: AppColors.nightDivider,
     );
@@ -258,7 +252,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData(   // ✅ FIXED
+      cardTheme: const CardTheme( 
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,

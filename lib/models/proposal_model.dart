@@ -1,10 +1,8 @@
-
 class Proposal {
   final String id;
   final String title;
   final String description;
   final String status;
-  // This would ideally be a reference to a User/Team object
   final String studentId; 
   final DateTime createdAt;
 

@@ -18,7 +18,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final Map<String, dynamic> _formData = {};
   bool _isLoading = false;
 
-  // --- 1. Initiate: Validate Form & Send OTP ---
   Future<void> _initiateRegistration() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
@@ -26,7 +25,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       setState(() => _isLoading = true);
       
       try {
-        // Call Backend to send OTP
         await Provider.of<AuthProvider>(context, listen: false).sendOtp(_formData['email']);
         
         if (!mounted) return;
@@ -43,7 +41,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
-  // --- 2. Show Dialog to Enter Code ---
+  //Show Dialog to Enter Code
   void _showOTPDialog() {
     final otpController = TextEditingController();
     bool isVerifying = false;
@@ -51,7 +49,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder( // Use StatefulBuilder to update dialog state
+      builder: (ctx) => StatefulBuilder(
         builder: (context, setDialogState) {
           return AlertDialog(
             title: const Text("Verify Email"),
@@ -98,7 +96,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     );
   }
 
-  // --- 3. Finalize: Call Register API with OTP ---
   void _finalizeRegistration(String otp, BuildContext dialogContext) async {
     try {
       await Provider.of<AuthProvider>(context, listen: false).register(
@@ -108,12 +105,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         _formData['studentId'],
         _formData['batch'],
         _formData['section'],
-        otp, // <--- Pass OTP here
+        otp, //Pass OTP
       );
 
       if (!mounted) return;
 
-      // Close dialog
       Navigator.pop(dialogContext);
 
       // Go to Dashboard
@@ -123,7 +119,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         (route) => false,
       );
     } catch (e) {
-      // Close dialog so user can try again or see error
       Navigator.pop(dialogContext); 
       
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -132,7 +127,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     }
   }
 
-  // 🟢 Helper to show the Instructions Dialog
   void _showInstructions() {
     showDialog(
       context: context,
@@ -278,11 +272,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: 24),
               _buildLabel('Security'),
-              
-              // 🟢 REPLACED WITH REGEX VALIDATOR
+
+              //Regex
               TextFormField(
                 decoration: const InputDecoration(
                     labelText: 'Password',

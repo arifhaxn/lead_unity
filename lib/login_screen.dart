@@ -1,16 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart'; // 🟢 Added this import
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
-
-// Core Imports
 import 'auth_provider.dart';
 import 'api services/api_services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
-
-// Screen Imports
 import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';
 
@@ -56,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
       await Provider.of<AuthProvider>(context, listen: false)
           .login(identifier, password, role: widget.role); 
 
-      // 🟢 NEW: Save the login identifier (Abbreviation or Student ID) to storage!
+      //Save the login Abbreviation or Student ID
       const storage = FlutterSecureStorage();
       await storage.write(key: 'login_identifier', value: identifier);
 

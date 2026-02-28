@@ -48,7 +48,7 @@ class SupervisorListScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 🟢 No Provider needed here anymore
+
     final ApiService apiService = ApiService();
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -76,8 +76,7 @@ class SupervisorListScreen extends StatelessWidget {
         ],
       ),
       body: FutureBuilder<List<dynamic>>(
-        // 🟢 FIXED: Call API directly without token argument
-        // The Service handles the filtering ('role' == 'supervisor') and the token automatically.
+
         future: apiService.getSupervisors(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {

@@ -22,7 +22,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
   bool _isLoading = true;
   String _evaluationType = 'defense';
 
-  // Marks State: { studentId: { c1: 0, c2: 0, absent: false, data: {} } }
   final Map<String, Map<String, dynamic>> _studentMarks = {};
 
   @override

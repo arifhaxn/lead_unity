@@ -51,7 +51,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     }
   }
 
-  // 🟢 Helper to show the Instructions Dialog
   void _showInstructions() {
     showDialog(
       context: context,
@@ -154,7 +153,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
-          // 🟢 Dark Mode Button First
+          
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -167,7 +166,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                 ? 'Switch to light mode'
                 : 'Switch to dark mode',
           ),
-          // 🟢 Info Button Second (Far Right)
+          
           IconButton(
             icon: Icon(
               Icons.info_outline_rounded,
@@ -356,7 +355,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // 🟢 Prominent Course Selection Banner
+            
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(

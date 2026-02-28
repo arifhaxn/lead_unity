@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-// 🟢 No need for Provider or AuthProvider here anymore because ApiService handles the token
 import '../api services/api_services.dart';
 import '../chatbot_screen.dart';
 import '../theme/app_theme.dart';
@@ -17,13 +16,11 @@ class SupervisorFirstLoginScreen extends StatefulWidget {
 class _SupervisorFirstLoginScreenState
     extends State<SupervisorFirstLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  
-  // 🟢 Renamed controller to match Supervisor Abbreviation
+
   final _abbrevCtrl = TextEditingController();
   final _tempPassCtrl = TextEditingController();
   final _newPassCtrl = TextEditingController();
 
-  // 🟢 Use the shared API Service
   final ApiService _apiService = ApiService();
   bool _isLoading = false;
 
@@ -32,8 +29,7 @@ class _SupervisorFirstLoginScreenState
       setState(() => _isLoading = true);
 
       try {
-        // 🟢 FIXED: Call API directly.
-        // Backend 'changePassword' logic now checks abbreviation if input has no '@'
+
         await _apiService.changePasswordFirstLogin(
             _abbrevCtrl.text.trim(), 
             _tempPassCtrl.text,
@@ -91,14 +87,13 @@ class _SupervisorFirstLoginScreenState
               const Text("Security Update",
                   style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
               const SizedBox(height: 10),
-              // 🟢 Updated Text
+
               Text(
                   "Please enter your Supervisor Abbreviation (e.g. MRA) and the temporary password provided by the admin.",
                   style: TextStyle(
                       color: theme.colorScheme.onSurfaceVariant, fontSize: 14)),
               const SizedBox(height: 30),
-              
-              // 🟢 Abbreviation Input
+
               TextFormField(
                   controller: _abbrevCtrl,
                   decoration: const InputDecoration(

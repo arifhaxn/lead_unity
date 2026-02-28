@@ -46,7 +46,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         child: const Icon(Icons.message, color: Colors.white),
       ),
       body: FutureBuilder<List<dynamic>>(
-        // 🟢 Using his API method which automatically attaches the token
+        
         future: _apiService.getUserProposals(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -78,7 +78,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
             );
           }
 
-          // 🟢 Logic: Display the first active proposal (similar to his logic)
           final proposal = snapshot.data![0];
           final members = proposal['teamMembers'] as List? ?? [];
           final course = proposal['course'] ?? {};
@@ -88,7 +87,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 🟢 Your Card UI for the Project Info
+                
                 Container(
                   decoration: const BoxDecoration(
                     color: Color(0xFF245E63),
@@ -150,7 +149,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 Text("Team Members", style: theme.textTheme.titleLarge),
                 const SizedBox(height: 12),
 
-                // 🟢 Your List-based UI for members
                 ...members
                     .map((m) => Container(
                           margin: const EdgeInsets.only(bottom: 12),

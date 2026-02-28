@@ -17,7 +17,6 @@ class AuthProvider with ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isAuthenticated => _token != null;
 
-  // --- Auto Login ---
   Future<bool> tryAutoLogin() async {
     final savedToken = await _storage.read(key: 'jwt_token');
     final userDataString = await _storage.read(key: 'user_data');
@@ -34,7 +33,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // --- Login with Name Correction & ID Support ---
+  //Login with Name Correction & ID
   Future<void> login(String identifier, String password, {String? role}) async {
     _setLoading(true);
     try {
@@ -47,7 +46,7 @@ class AuthProvider with ChangeNotifier {
         _user = User.fromJson(data['user']);
       } else {
         print(
-            "⚠️ Missing user object structure. attempting manual construction...");
+            "Missing user object structure. attempting manual construction...");
 
         if (data['name'] != null) {
           _user = User(
@@ -55,7 +54,7 @@ class AuthProvider with ChangeNotifier {
             name: data['name']?.toString() ?? 'User',
             email: data['email']?.toString() ?? '',
             role: data['role']?.toString() ?? 'student',
-            studentId: data['studentId']?.toString(), // 🟢 Catch ID here too
+            studentId: data['studentId']?.toString(),
             designation: data['designation']?.toString(),
           );
         } else {
@@ -66,7 +65,7 @@ class AuthProvider with ChangeNotifier {
             String? userRole = payload['role']?.toString().toLowerCase();
             String realName = payload['name']?.toString() ?? identifier;
             String? extractedStudentId =
-                payload['studentId']?.toString(); // 🟢 Extract ID
+                payload['studentId']?.toString();
             String? extractedDesignation;
 
             try {
@@ -82,7 +81,7 @@ class AuthProvider with ChangeNotifier {
               }
               if (me['studentId'] != null) {
                 extractedStudentId =
-                    me['studentId'].toString(); // 🟢 Extract ID from API
+                    me['studentId'].toString(); 
               }
               if (me['designation'] != null) {
                 extractedDesignation = me['designation'].toString();
@@ -96,7 +95,7 @@ class AuthProvider with ChangeNotifier {
               name: realName,
               email: identifier.contains('@') ? identifier : '',
               role: userRole ?? 'unknown',
-              studentId: extractedStudentId, // 🟢 Add to user
+              studentId: extractedStudentId,
               designation: extractedDesignation,
             );
           } catch (e) {
@@ -112,7 +111,7 @@ class AuthProvider with ChangeNotifier {
           'name': _user!.name,
           'email': _user!.email,
           'role': _user!.role,
-          'studentId': _user!.studentId, // 🟢 Make sure to save it!
+          'studentId': _user!.studentId,
           'designation': _user!.designation,
         };
         await _storage.write(key: 'user_data', value: json.encode(userMap));
@@ -125,7 +124,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // --- Registration Logic (Merged OTP + Frontend Override) ---
+  //Registration
   Future<void> register(String name, String email, String password, String sid,
       String batch, String section, String otp) async {
     _setLoading(true);
@@ -140,14 +139,14 @@ class AuthProvider with ChangeNotifier {
         'otp': otp,
       };
 
-      // 1. Send data to backend
+      //Send data to backend
       final data = await _apiService.registerStudent(registrationData);
 
-      // 2. Save the token immediately
+      //Save the token immediately
       _token = data['token'];
       await _storage.write(key: 'jwt_token', value: _token);
 
-      // 3. Extract IDs if the backend provided them
+      //Extract IDs if the backend provided them
       String userId = '';
       String userRole = 'student';
 
@@ -163,7 +162,6 @@ class AuthProvider with ChangeNotifier {
         }
       }
 
-      // 4. 🟢 THE FIX: Build the user profile strictly from the frontend inputs!
       _user = User(
         id: userId.isNotEmpty ? userId : 'temp_id',
         name: name,
@@ -172,7 +170,6 @@ class AuthProvider with ChangeNotifier {
         studentId: sid,
       );
 
-      // 5. 🟢 CRITICAL: Save this newly built profile to the phone's permanent storage
       final userMap = {
         '_id': _user!.id,
         'name': _user!.name,
@@ -190,12 +187,11 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  // --- OTP Helper ---
+  //OTP Helper
   Future<void> sendOtp(String email) async {
     await _apiService.sendOtp(email);
   }
 
-  // --- Logout ---
   Future<void> logout() async {
     await _apiService.logout();
     await _storage.delete(key: 'user_data');
@@ -209,7 +205,7 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  // --- Token Decoders ---
+  //Token Decoders
   Map<String, dynamic> _parseJwt(String token) {
     final parts = token.split('.');
     if (parts.length != 3) throw Exception('Invalid token');

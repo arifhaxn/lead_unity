@@ -22,7 +22,6 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   final ApiService _api = ApiService();
   DateTime? _deadline; 
-  bool _isLoadingStatus = true;
 
   @override
   void initState() {
@@ -36,7 +35,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (mounted) {
       setState(() {
         _deadline = deadlineDate;
-        _isLoadingStatus = false;
       });
     }
   }
@@ -134,13 +132,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                // ROW 1: Submit Proposal
+                //Submit Proposal
                 _buildSlickCard(
                   context: context,
                   icon: canSubmit ? Icons.upload_file_outlined : Icons.lock_clock_outlined,
                   title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
                   action: statusText,
-                  actionColor: statusColor, // Pass color
+                  actionColor: statusColor,
                   color: canSubmit ? AppColors.accentCoral : Colors.grey,
                   onTap: canSubmit ? _navigateToSubmitProposal : () {}, 
                   isProminent: true,
@@ -157,7 +155,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           context: context,
                           icon: Icons.groups_2_outlined,
                           title: 'Team Info',
-                          action: 'View Info',
+                          action: 'Submitted Info',
                           color: AppColors.accentGreen,
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
@@ -171,7 +169,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           context: context,
                           icon: Icons.person_add_alt_1_outlined,
                           title: 'Request Team',
-                          action: 'Find a group',
+                          action: 'If not in a group',
                           color: AppColors.accentPink,
                           onTap: _navigateToRequestTeam,
                           isCompact: true,
@@ -235,7 +233,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     bool isDisabled = false,
     Color? darkBgColor,
     Color? lightBgColor,
-    Color? actionColor, // New Parameter
+    Color? actionColor,
   }) {
     final double opacity = isDisabled ? 0.6 : 1.0;
     return Padding(

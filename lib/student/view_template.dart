@@ -71,11 +71,11 @@ class ViewTemplateScreen extends StatelessWidget {
               child: Image.asset(
                 templateImages[index],
                 fit: BoxFit.cover,
-                // Optional: Show a placeholder if the image is missing
+
                 errorBuilder: (context, error, stackTrace) {
                   return Container(
                     height: 200,
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     child: const Center(child: Text('Image Page Missing')),
                   );
                 },

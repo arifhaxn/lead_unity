@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:provider/provider.dart';
-
-// 🟢 Correct Imports for your project
 import 'auth_provider.dart';
 import 'home_page.dart';
 import 'student/student_dash.dart';
@@ -11,11 +9,9 @@ import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
 void main() {
-  // 🟢 Fix 1: Ensure bindings are initialized for Secure Storage/SystemChrome
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🟢 Fix 2: Add his professional Status Bar styling
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle( //for transparent status bar
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
@@ -23,7 +19,6 @@ void main() {
   runApp(
     MultiProvider(
       providers: [
-        // 🟢 Fix 3: Initialize AuthProvider and try auto-login immediately
         ChangeNotifierProvider(create: (_) => AuthProvider()..tryAutoLogin()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
@@ -45,7 +40,6 @@ class LeadUnityApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
-          // 🟢 Fix 5: Use your Consumer logic to route the user automatically
           home: Consumer<AuthProvider>(
             builder: (context, auth, _) {
               if (auth.isAuthenticated) {
@@ -56,7 +50,6 @@ class LeadUnityApp extends StatelessWidget {
                   return const SupervisorDashboard();
                 }
               }
-              // If not authenticated, show the choice screen
               return const HomePage();
             },
           ),

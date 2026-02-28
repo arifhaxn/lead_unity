@@ -17,11 +17,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   void initState() {
     super.initState();
 
-    // 1. Create the controller
     _controller = WebViewController();
-
-    // 2. ONLY run JavaScript settings if NOT on Web
-    // (Web browsers enable JS by default, so we skip this on web to avoid errors)
     if (!kIsWeb) {
       _controller.setJavaScriptMode(JavaScriptMode.unrestricted);
       _controller.setBackgroundColor(Colors.white);
@@ -48,7 +44,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                 controller: _controller,
               ),
             ),
-            // Positioned back button at top-left
             Positioned(
               top: MediaQuery.of(context).padding.top +
                   8, // Account for status bar
