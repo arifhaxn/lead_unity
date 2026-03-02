@@ -1,3 +1,4 @@
+import 'dart:async'; // 🟢 1. Added this to get access to the Timer!
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
@@ -22,11 +23,20 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   final ApiService _api = ApiService();
   DateTime? _deadline; 
+  Timer? _timer; // 🟢 2. Created the Timer variable
 
   @override
   void initState() {
     super.initState();
     _checkDeadline();
+  }
+
+  // 🟢 3. The Cleanup Crew! We MUST destroy the timer when the user leaves the screen, 
+  // otherwise it will keep ticking forever in the background and crash the app.
+  @override
+  void dispose() {
+    _timer?.cancel(); 
+    super.dispose();
   }
 
   void _checkDeadline() async {
@@ -36,7 +46,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
       setState(() {
         _deadline = deadlineDate;
       });
+      
+      // 🟢 4. Start the ticking clock only AFTER we get the deadline from the kitchen!
+      if (_deadline != null) {
+        _startTickingClock();
+      }
     }
+  }
+
+  // 🟢 5. The Heartbeat Function
+  void _startTickingClock() {
+    // This tells the app: "Every 1 second, run setState to redraw the screen!"
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {}); // Redraws the UI with the new second
+      }
+    });
   }
 
   bool get _canSubmit {
@@ -48,15 +73,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
   String _getSubmissionStatusText() {
     if (_deadline != null) {
       final now = DateTime.now();
+      
       if (now.isAfter(_deadline!)) {
+        _timer?.cancel(); // 🟢 Stop the clock if the deadline passed!
         return 'Deadline Passed';
       }
       
       final diff = _deadline!.difference(now);
-      if (diff.inHours < 24) {
-        return 'Closes in ${diff.inHours}h ${diff.inMinutes % 60}m';
+      
+      // 🟢 6. Format the live countdown!
+      if (diff.inDays > 0) {
+        // If it's more than a day away, show Days, Hours, and Minutes
+        final hours = diff.inHours.remainder(24);
+        final minutes = diff.inMinutes.remainder(60);
+        return 'Closes in ${diff.inDays}d ${hours}h ${minutes}m';
+      } else {
+        // If it's less than 24 hours, show Hours, Minutes, and SECONDS ticking!
+        final hours = diff.inHours;
+        // .padLeft(2, '0') makes sure "5 seconds" looks like "05" instead of just "5"
+        final minutesStr = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
+        final secondsStr = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
+        
+        return 'Closes in ${hours}h ${minutesStr}m ${secondsStr}s';
       }
-      return 'Deadline: ${DateFormat('MMM d, h:mm a').format(_deadline!)}';
     }
     
     return 'Upload your team project proposal';
@@ -113,7 +152,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     final canSubmit = _canSubmit;
     final statusText = _getSubmissionStatusText();
-    final statusColor = _getSubmissionStatusColor(); // Get color
+    final statusColor = _getSubmissionStatusColor(); 
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -137,7 +176,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   context: context,
                   icon: canSubmit ? Icons.upload_file_outlined : Icons.lock_clock_outlined,
                   title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
-                  action: statusText,
+                  action: statusText, // 🟢 This string will now magically update every second!
                   actionColor: statusColor,
                   color: canSubmit ? AppColors.accentCoral : Colors.grey,
                   onTap: canSubmit ? _navigateToSubmitProposal : () {}, 

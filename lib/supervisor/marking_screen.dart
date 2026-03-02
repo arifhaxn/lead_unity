@@ -32,11 +32,11 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
   _loadSettingsAndMarks() async {
     try {
-      // 1. Fetch Settings
+      //Fetch Settings
       final settings = await _apiService.getEvaluationSettings();
       final myId = Provider.of<AuthProvider>(context, listen: false).user?.id;
 
-      // 2. Determine Type (Own vs Defense)
+      //Determine Type (Own vs Defense)
       String getId(dynamic obj) {
         if (obj is Map) return obj['_id']?.toString() ?? '';
         return obj?.toString() ?? '';

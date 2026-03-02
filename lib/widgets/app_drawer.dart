@@ -111,125 +111,67 @@ class _AppDrawerState extends State<AppDrawer> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                Stack(
+                  alignment: Alignment.bottomRight,
                   children: [
-                    Stack(
-                      alignment: Alignment.bottomRight,
-                      children: [
-                        Container(
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                                color:
-                                    theme.colorScheme.primary.withOpacity(0.3),
-                                width: 3),
-                            boxShadow: [
-                              BoxShadow(
-                                color:
-                                    theme.colorScheme.primary.withOpacity(0.2),
-                                blurRadius: 15,
-                                offset: const Offset(0, 5),
-                              )
-                            ],
-                          ),
-                          child: CircleAvatar(
-                            radius: 42,
-                            backgroundColor: theme.colorScheme.surface,
-                            backgroundImage: _profileImage != null
-                                ? FileImage(_profileImage!) as ImageProvider
-                                : (isEbrahimSir
-                                    ? const AssetImage(
-                                        "assets/template/crew/sir.jpeg")
-                                    : null),
-                            child: _profileImage == null && !isEbrahimSir
-                                ? Text(
-                                    firstLetter,
-                                    style: TextStyle(
-                                        fontSize: 34,
-                                        fontWeight: FontWeight.bold,
-                                        color: theme.colorScheme.primary),
-                                  )
-                                : null,
-                          ),
-                        ),
-                        InkWell(
-                          onTap: _pickImage,
-                          customBorder: const CircleBorder(),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: theme.colorScheme.primary,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: theme.scaffoldBackgroundColor,
-                                  width: 2),
-                            ),
-                            child: const Icon(Icons.camera_alt_rounded,
-                                size: 16, color: Colors.white),
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    if (user?.role == 'student')
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.badge_rounded,
-                                size: 14, color: theme.colorScheme.primary),
-                            const SizedBox(width: 4),
-                            Text(
-                              studentId,
-                              style: TextStyle(
-                                  color: theme.colorScheme.primary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (user?.role == 'supervisor')
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.secondary.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                          border: Border.all(
-                              color:
-                                  theme.colorScheme.secondary.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(Icons.admin_panel_settings_rounded,
-                                size: 14, color: theme.colorScheme.secondary),
-                            const SizedBox(width: 4),
-                            Text(
-                              _savedIdentifier,
-                              style: TextStyle(
-                                  color: theme.colorScheme.secondary,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ],
-                        ),
+                    Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                            color:
+                                theme.colorScheme.primary.withOpacity(0.3),
+                            width: 3),
+                        boxShadow: [
+                          BoxShadow(
+                            color:
+                                theme.colorScheme.primary.withOpacity(0.2),
+                            blurRadius: 15,
+                            offset: const Offset(0, 5),
+                          )
+                        ],
                       ),
+                      child: CircleAvatar(
+                        radius: 42,
+                        backgroundColor: theme.colorScheme.surface,
+                        backgroundImage: _profileImage != null
+                            ? FileImage(_profileImage!) as ImageProvider
+                            : (isEbrahimSir
+                                ? const AssetImage(
+                                    "assets/template/crew/sir.jpeg")
+                                : null),
+                        child: _profileImage == null && !isEbrahimSir
+                            ? Text(
+                                firstLetter,
+                                style: TextStyle(
+                                    fontSize: 34,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary),
+                              )
+                            : null,
+                      ),
+                    ),
+                    InkWell(
+                      onTap: _pickImage,
+                      customBorder: const CircleBorder(),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                              color: theme.scaffoldBackgroundColor,
+                              width: 2),
+                        ),
+                        child: const Icon(Icons.camera_alt_rounded,
+                            size: 16, color: Colors.white),
+                      ),
+                    ),
                   ],
                 ),
+                
                 const SizedBox(height: 20),
+                
+                // 1. The Name
                 Text(
                   name,
                   style: theme.textTheme.titleLarge?.copyWith(
@@ -237,8 +179,79 @@ class _AppDrawerState extends State<AppDrawer> {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
+                
+                const SizedBox(height: 8), 
+                
+                // 2. 🟢 The Role Badges (Nudged left for Optical Alignment!)
+                if (user?.role == 'student')
+                  Container(
+                    // 🟢 This line nudges the whole badge exactly 6 pixels left!
+                    transform: Matrix4.translationValues(-6.0, 0.0, 0.0), 
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color:
+                              theme.colorScheme.primary.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.badge_rounded,
+                            size: 14, color: theme.colorScheme.primary),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            studentId, 
+                            style: TextStyle(
+                                color: theme.colorScheme.primary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (user?.role == 'supervisor')
+                  Container(
+                    // 🟢 Nudged left for Supervisor as well
+                    transform: Matrix4.translationValues(-6.0, 0.0, 0.0),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.secondary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                          color:
+                              theme.colorScheme.secondary.withOpacity(0.2)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Icon(Icons.admin_panel_settings_rounded,
+                            size: 14, color: theme.colorScheme.secondary),
+                        const SizedBox(width: 4),
+                        Flexible(
+                          child: Text(
+                            _savedIdentifier, 
+                            style: TextStyle(
+                                color: theme.colorScheme.secondary,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                const SizedBox(height: 8),
+
+                // 3. The Email / Designation
                 if (email.isNotEmpty && email.length > 4) ...[
-                  const SizedBox(height: 4),
                   Text(
                     email,
                     style: TextStyle(
@@ -248,7 +261,6 @@ class _AppDrawerState extends State<AppDrawer> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ] else if (user?.role == 'supervisor') ...[
-                  const SizedBox(height: 4),
                   Text(
                     user?.designation ?? 'Supervisor',
                     style: TextStyle(
@@ -259,6 +271,7 @@ class _AppDrawerState extends State<AppDrawer> {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ],
+
               ],
             ),
           ),
@@ -315,7 +328,9 @@ class _AppDrawerState extends State<AppDrawer> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: const Color.fromARGB(255, 13, 8, 49),
+                            color: themeProvider.isDarkMode 
+                                ? const Color.fromARGB(255, 13, 8, 49) 
+                                : Colors.white.withOpacity(0.2),       
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Image.asset(

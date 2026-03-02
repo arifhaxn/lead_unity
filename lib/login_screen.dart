@@ -22,7 +22,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController();
   final _passController = TextEditingController();
   final _api = ApiService();
-  bool _isRegOpen = false;
+  
+  // 🟢 CHANGED: This now defaults to true! The app assumes registration 
+  // is open until the backend explicitly tells it otherwise.
+  bool _isRegOpen = true; 
+  
   bool _isLoading = false;
   
   @override

@@ -65,7 +65,6 @@ class SupervisorDashboard extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // 🟢 Row 2: All Teams & Supervisors
             Row(
               children: [
                 Expanded(
