@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/api%20services/api_services.dart';
 import 'package:provider/provider.dart';
-import '../../auth_provider.dart';
+import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
 
 class MarkingScreen extends StatefulWidget {

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../chatbot_screen.dart';
 import '../theme/theme_provider.dart';
@@ -142,8 +142,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
+    // 🟢 REPLACED: Now returns the Shimmer Loader instead of a Spinner
     if (_isLoadingData) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return _buildSkeletonLoader(theme, themeProvider);
     }
 
     if (_errorMessage != null) {
@@ -386,6 +387,67 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                 ),
               ),
               const SizedBox(height: 60),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🟢 NEW: Custom Skeleton Layout for Request Team Form
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Request Team')),
+      body: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Dummy Target Course Box
+              Container(
+                height: 100,
+                decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              ),
+              const SizedBox(height: 24),
+              
+              // Dummy Supervisors row
+              Container(height: 20, width: 120, color: Colors.white), // label
+              const SizedBox(height: 10),
+              Row(
+                children: List.generate(3, (index) => Expanded(
+                  child: Container(
+                    height: 50,
+                    margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
+                  ),
+                )),
+              ),
+              const SizedBox(height: 24),
+
+              // Dummy Team Member details box
+              Container(height: 20, width: 120, color: Colors.white), // label
+              const SizedBox(height: 10),
+              Container(
+                height: 240,
+                decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(16)),
+              ),
+              const SizedBox(height: 28),
+
+              // Dummy Button
+              Container(
+                height: 50,
+                decoration: BoxDecoration(
+                    color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              ),
             ],
           ),
         ),

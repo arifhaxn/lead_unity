@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
+import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -15,11 +15,22 @@ class TeamInfoScreen extends StatefulWidget {
 
 class _TeamInfoScreenState extends State<TeamInfoScreen> {
   final ApiService _apiService = ApiService();
+  
+  // 🟢 1. Create a variable to hold the Future
+  late Future<List<dynamic>> _proposalFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🟢 2. Initialize the future ONLY ONCE when the screen is first created
+    _proposalFuture = _apiService.getUserProposals();
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -47,10 +58,10 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         child: const Icon(Icons.message, color: Colors.white),
       ),
       body: FutureBuilder<List<dynamic>>(
-        future: _apiService.getUserProposals(),
+        // 🟢 3. Use the stored variable here instead of calling the function
+        future: _proposalFuture,
         builder: (context, snapshot) {
           
-          // 🟢 NEW: Shimmer Skeleton Loader!
           if (snapshot.connectionState == ConnectionState.waiting) {
             return _buildSkeletonLoader(theme);
           }
@@ -89,7 +100,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                
                 Container(
                   decoration: const BoxDecoration(
                     color: Color(0xFF245E63),
@@ -146,80 +156,75 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                     ),
                   ),
                 ),
-
                 const SizedBox(height: 24),
                 Text("Team Members", style: theme.textTheme.titleLarge),
                 const SizedBox(height: 12),
-
-                ...members
-                    .map((m) => Container(
-                          margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(16),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFF245E63),
-                            borderRadius: AppRadii.card,
-                            boxShadow: AppShadows.level1,
+                ...members.map((m) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(16),
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF245E63),
+                        borderRadius: AppRadii.card,
+                        boxShadow: AppShadows.level1,
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          CircleAvatar(
+                            backgroundColor: Colors.white.withOpacity(0.15),
+                            child: Text(
+                              (m['name']?[0] ?? 'U')
+                                  .toString()
+                                  .toUpperCase(),
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
                           ),
-                          child: Row(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(m['name'] ?? 'Unknown',
+                                    style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white)),
+                                const SizedBox(height: 6),
+                                _memberDetailRow(Icons.badge_outlined, 'ID',
+                                    m['studentId'] ?? 'N/A'),
+                                const SizedBox(height: 4),
+                                _memberDetailRow(Icons.email_outlined,
+                                    'Email', m['email'] ?? 'N/A'),
+                                const SizedBox(height: 4),
+                                _memberDetailRow(Icons.phone_outlined,
+                                    'Mobile', m['mobile'] ?? 'N/A'),
+                              ],
+                            ),
+                          ),
+                          Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.white.withOpacity(0.15),
-                                child: Text(
-                                  (m['name']?[0] ?? 'U')
-                                      .toString()
-                                      .toUpperCase(),
+                              const Text("CGPA",
+                                  style: TextStyle(
+                                      fontSize: 10, color: Colors.white70)),
+                              Text(
+                                  m['cgpa'] != null
+                                      ? double.tryParse(m['cgpa'].toString())
+                                              ?.toStringAsFixed(2) ??
+                                          m['cgpa'].toString()
+                                      : 'N/A',
                                   style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              const SizedBox(width: 14),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(m['name'] ?? 'Unknown',
-                                        style: const TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white)),
-                                    const SizedBox(height: 6),
-                                    _memberDetailRow(Icons.badge_outlined, 'ID',
-                                        m['studentId'] ?? 'N/A'),
-                                    const SizedBox(height: 4),
-                                    _memberDetailRow(Icons.email_outlined,
-                                        'Email', m['email'] ?? 'N/A'),
-                                    const SizedBox(height: 4),
-                                    _memberDetailRow(Icons.phone_outlined,
-                                        'Mobile', m['mobile'] ?? 'N/A'),
-                                  ],
-                                ),
-                              ),
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.start,
-                                crossAxisAlignment: CrossAxisAlignment.end,
-                                children: [
-                                  const Text("CGPA",
-                                      style: TextStyle(
-                                          fontSize: 10, color: Colors.white70)),
-                                  Text(
-                                      m['cgpa'] != null
-                                          ? double.tryParse(
-                                                      m['cgpa'].toString())
-                                                  ?.toStringAsFixed(2) ??
-                                              m['cgpa'].toString()
-                                          : 'N/A',
-                                      style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: 14,
-                                          color: Colors.white)),
-                                ],
-                              ),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: Colors.white)),
                             ],
                           ),
-                        ))
-                    .toList(),
+                        ],
+                      ),
+                    )),
               ],
             ),
           );
@@ -228,7 +233,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     );
   }
 
-  // 🟢 Custom Skeleton Layout for Team Info
+  // 🟢 Skeleton Loader Method
   Widget _buildSkeletonLoader(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
@@ -242,9 +247,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Dummy Proposal Info Card
             Container(
-              height: 200, // Matches approximate height of the top card
+              height: 200,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,
@@ -252,8 +256,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               ),
             ),
             const SizedBox(height: 24),
-            
-            // Dummy "Team Members" Title
             Container(
               height: 24,
               width: 140,
@@ -263,11 +265,9 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-
-            // Dummy Member Cards (Usually 3 or 4)
             ...List.generate(3, (index) => Container(
               margin: const EdgeInsets.only(bottom: 12),
-              height: 110, // Matches approximate height of a member card
+              height: 110,
               width: double.infinity,
               decoration: BoxDecoration(
                 color: Colors.white,

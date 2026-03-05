@@ -3,10 +3,9 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; 
 
 import '../../api services/api_services.dart';
-import '../auth_provider.dart';
+import '../providers/auth_provider.dart';
 import 'view_template.dart';
 import '../chatbot_screen.dart';
 import 'team_info.dart';

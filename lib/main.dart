@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:provider/provider.dart';
-import 'auth_provider.dart';
+import 'providers/auth_provider.dart';
+import 'providers/data_provider.dart'; // 🟢 Added the DataProvider import
 import 'home_page.dart';
 import 'student/student_dash.dart';
 import 'theme/app_theme.dart';
@@ -21,6 +22,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..tryAutoLogin()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => DataProvider()), // 🟢 Registered the new provider here!
       ],
       child: const LeadUnityApp(),
     ),

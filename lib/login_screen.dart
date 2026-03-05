@@ -3,7 +3,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
-import 'auth_provider.dart';
+import 'providers/auth_provider.dart';
 import 'api services/api_services.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';

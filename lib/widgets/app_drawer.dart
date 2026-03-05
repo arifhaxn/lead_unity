@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
-import '../auth_provider.dart';
+import '../providers/auth_provider.dart';
 import '../home_page.dart';
 import '../theme/theme_provider.dart';
 import 'about_app_screen.dart';

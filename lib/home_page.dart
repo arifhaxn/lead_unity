@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/about_app_screen.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
-import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart'; 
 
 class HomePage extends StatelessWidget {

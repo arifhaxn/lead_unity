@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../auth_provider.dart';
+import '../providers/auth_provider.dart';
 import '../chatbot_screen.dart';
 import 'team_list_screen.dart';
 import 'sup_list_screen.dart';

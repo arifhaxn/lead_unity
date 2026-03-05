@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../api services/api_services.dart';
-import '../models/user_model.dart';
+import '../../api services/api_services.dart';
+import '../../models/user_model.dart';
 
 class AuthProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();

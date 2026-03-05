@@ -1,13 +1,32 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
-import '../../api services/api_services.dart';
+import 'package:shimmer/shimmer.dart'; 
 import '../../chatbot_screen.dart';
+import '../providers/data_provider.dart'; // 🟢 Added DataProvider Import!
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
-class SupervisorListScreen extends StatelessWidget {
+class SupervisorListScreen extends StatefulWidget {
   const SupervisorListScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SupervisorListScreen> createState() => _SupervisorListScreenState();
+}
+
+class _SupervisorListScreenState extends State<SupervisorListScreen> {
+
+  // 🟢 CPU Optimization Variables (Memoization)
+  List<dynamic>? _cachedRawSups;
+  List<dynamic> _processedSups = [];
+
+  @override
+  void initState() {
+    super.initState();
+    // 🟢 Ask the Memory Bank for data as soon as the screen opens!
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DataProvider>(context, listen: false).fetchSupervisorsIfNeeded();
+    });
+  }
 
   int _designationPriority(String? designation) {
     final value = (designation ?? '').trim().toLowerCase();
@@ -47,12 +66,34 @@ class SupervisorListScreen extends StatelessWidget {
     return designation.isNotEmpty ? designation : 'Designation not set';
   }
 
+  // 🟢 Sort the list only ONCE when it actually changes, not every frame!
+  void _processDataIfNeeded(List<dynamic>? rawSups) {
+    if (rawSups == null) return;
+    if (_cachedRawSups == rawSups) return; // Skip heavy sorting if data hasn't changed
+
+    _cachedRawSups = rawSups;
+    
+    _processedSups = [...rawSups]..sort((a, b) {
+      final rankA = _designationPriority(
+          (a['designation'] ?? a['title'])?.toString());
+      final rankB = _designationPriority(
+          (b['designation'] ?? b['title'])?.toString());
+      if (rankA != rankB) return rankA.compareTo(rankB);
+
+      final nameA = _fullName(a).toLowerCase();
+      final nameB = _fullName(b).toLowerCase();
+      return nameA.compareTo(nameB);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-
-    final ApiService apiService = ApiService();
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final dataProvider = Provider.of<DataProvider>(context); // 🟢 Listen to the Memory Bank
+
+    // Process the data immediately if we have it
+    _processDataIfNeeded(dataProvider.allSupervisors);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -76,91 +117,84 @@ class SupervisorListScreen extends StatelessWidget {
           )
         ],
       ),
-      body: FutureBuilder<List<dynamic>>(
+      // 🟢 Replaced FutureBuilder with RefreshIndicator for Pull-to-Refresh!
+      body: RefreshIndicator(
+        onRefresh: () => dataProvider.fetchSupervisorsIfNeeded(forceRefresh: true),
+        color: theme.colorScheme.primary,
+        child: Builder(
+          builder: (context) {
+            
+            // 1. First Load: Skeletons!
+            if (dataProvider.isLoadingSupervisors && dataProvider.allSupervisors == null) {
+              return _buildSkeletonLoader(theme);
+            }
 
-        future: apiService.getSupervisors(),
-        builder: (context, snapshot) {
-          
-          // 🟢 NEW: Shimmer Skeleton Loader!
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return _buildSkeletonLoader(theme);
-          }
+            // 2. Empty State
+            if (_processedSups.isEmpty) {
+              return ListView(
+                physics: const AlwaysScrollableScrollPhysics(), // Keeps pull-to-refresh working
+                children: const [
+                  SizedBox(height: 200),
+                  Center(child: Text("No other supervisors found.")),
+                ],
+              );
+            }
 
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
+            // 3. The Actual List (Already sorted!)
+            return ListView.builder(
+              itemCount: _processedSups.length,
+              padding: const EdgeInsets.all(20),
+              itemBuilder: (context, index) {
+                final s = _processedSups[index];
+                final name = _fullName(s);
+                final designation = _designation(s);
 
-          final sups = snapshot.data ?? [];
-
-          if (sups.isEmpty) {
-            return const Center(child: Text("No other supervisors found."));
-          }
-
-          final sortedSups = [...sups]..sort((a, b) {
-              final rankA = _designationPriority(
-                  (a['designation'] ?? a['title'])?.toString());
-              final rankB = _designationPriority(
-                  (b['designation'] ?? b['title'])?.toString());
-              if (rankA != rankB) return rankA.compareTo(rankB);
-
-              final nameA = _fullName(a).toLowerCase();
-              final nameB = _fullName(b).toLowerCase();
-              return nameA.compareTo(nameB);
-            });
-
-          return ListView.builder(
-            itemCount: sortedSups.length,
-            padding: const EdgeInsets.all(20),
-            itemBuilder: (context, index) {
-              final s = sortedSups[index];
-              final name = _fullName(s);
-              final designation = _designation(s);
-
-              return Container(
-                margin: const EdgeInsets.only(bottom: 12),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF245E63),
-                  borderRadius: AppRadii.card,
-                  boxShadow: AppShadows.level1,
-                ),
-                child: ListTile(
-                  leading: Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF1F6F55),
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Color(0x33000000),
-                          blurRadius: 4,
-                          offset: Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        (index + 1).toString(),
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Colors.white,
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF245E63),
+                    borderRadius: AppRadii.card,
+                    boxShadow: AppShadows.level1,
+                  ),
+                  child: ListTile(
+                    leading: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF1F6F55),
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: const [
+                          BoxShadow(
+                            color: Color(0x33000000),
+                            blurRadius: 4,
+                            offset: Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          (index + 1).toString(),
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                     ),
+                    title: Text(name,
+                        style: theme.textTheme.titleLarge
+                            ?.copyWith(fontSize: 16, color: Colors.white)),
+                    subtitle: Text(designation,
+                        style:
+                            const TextStyle(fontSize: 12, color: Colors.white70)),
                   ),
-                  title: Text(name,
-                      style: theme.textTheme.titleLarge
-                          ?.copyWith(fontSize: 16, color: Colors.white)),
-                  subtitle: Text(designation,
-                      style:
-                          const TextStyle(fontSize: 12, color: Colors.white70)),
-                ),
-              );
-            },
-          );
-        },
+                );
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () => Navigator.push(

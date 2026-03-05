@@ -2,9 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
-import '../../api services/api_services.dart';
-import '../../auth_provider.dart';
+import 'package:shimmer/shimmer.dart'; 
+import '../providers/auth_provider.dart';
+import '../providers/data_provider.dart'; 
 import '../../chatbot_screen.dart';
 import 'marking_screen.dart';
 import '../theme/app_theme.dart';
@@ -19,16 +19,20 @@ class TeamListScreen extends StatefulWidget {
 }
 
 class _TeamListScreenState extends State<TeamListScreen> {
-  final ApiService _apiService = ApiService();
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  Future<List<dynamic>>? _teamsFuture;
   Timer? _searchDebounce;
+
+  List<dynamic>? _cachedRawTeams; 
+  List<dynamic> _processedTeams = [];
+  List<String> _courseTabs = [];
 
   @override
   void initState() {
     super.initState();
-    _teamsFuture = _apiService.getAllProposals();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DataProvider>(context, listen: false).fetchTeamsIfNeeded();
+    });
   }
 
   @override
@@ -38,9 +42,36 @@ class _TeamListScreenState extends State<TeamListScreen> {
     super.dispose();
   }
 
+  void _processDataIfNeeded(List<dynamic>? rawTeams, String? myId) {
+    if (rawTeams == null) return;
+    if (_cachedRawTeams == rawTeams) return; 
+
+    _cachedRawTeams = rawTeams; 
+    var teams = rawTeams;
+
+    if (widget.onlyMyTeams && myId != null) {
+      teams = teams.where((t) {
+        final assigned = (t['assignedSupervisor'] is Map)
+            ? t['assignedSupervisor']['_id']
+            : t['assignedSupervisor'];
+        return assigned == myId;
+      }).toList();
+    }
+
+    teams = teams.where((t) {
+      final status = (t['status'] ?? '').toString().toLowerCase().trim();
+      return status == 'approved';
+    }).toList();
+
+    _processedTeams = [...teams]..sort((a, b) =>
+        _submissionTime(a as Map<String, dynamic>)
+            .compareTo(_submissionTime(b as Map<String, dynamic>)));
+
+    _courseTabs = _extractCourseTabs(_processedTeams);
+  }
+
   void _showInstructions() {
-    final title =
-        widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
+    final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
     final content = widget.onlyMyTeams
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
@@ -73,9 +104,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final dataProvider = Provider.of<DataProvider>(context); 
     final myId = authProvider.user?.id;
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    _processDataIfNeeded(dataProvider.allTeams, myId);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -96,9 +130,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
           ),
           IconButton(
             icon: Icon(
@@ -106,63 +137,38 @@ class _TeamListScreenState extends State<TeamListScreen> {
               color: theme.colorScheme.primary,
             ),
             onPressed: _showInstructions,
-            tooltip: 'Information',
           )
         ],
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: _teamsFuture,
-        builder: (context, snapshot) {
-          
-          // 🟢 NEW: Shimmer Skeleton Loader!
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      body: Builder(
+        builder: (context) {
+          if (dataProvider.isLoadingTeams && dataProvider.allTeams == null) {
             return _buildSkeletonLoader(theme); 
           }
 
-          if (snapshot.hasError) {
-            return Center(child: Text("Error: ${snapshot.error}"));
-          }
-
-          var teams = snapshot.data ?? [];
-
-          if (widget.onlyMyTeams && myId != null) {
-            teams = teams.where((t) {
-              final assigned = (t['assignedSupervisor'] is Map)
-                  ? t['assignedSupervisor']['_id']
-                  : t['assignedSupervisor'];
-              return assigned == myId;
-            }).toList();
-          }
-
-          teams = teams.where((t) {
-            final status = (t['status'] ?? '').toString().toLowerCase().trim();
-            return status == 'approved';
-          }).toList();
-
-          final orderedTeams = [...teams]..sort((a, b) =>
-              _submissionTime(a as Map<String, dynamic>)
-                  .compareTo(_submissionTime(b as Map<String, dynamic>)));
-
-          if (teams.isEmpty) {
-            return const Center(child: Text("No approved teams found."));
-          }
-
-          final courseTabs = _extractCourseTabs(orderedTeams);
-
-          if (courseTabs.isEmpty) {
-            return const Center(child: Text("No course tabs found."));
+          if (_processedTeams.isEmpty) {
+            return RefreshIndicator(
+              onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+              color: theme.colorScheme.primary,
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(), 
+                children: const [
+                  SizedBox(height: 200),
+                  Center(child: Text("No approved teams found.")),
+                ],
+              ),
+            );
           }
 
           return DefaultTabController(
-            length: courseTabs.length,
+            length: _courseTabs.length,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildCourseTabs(context, courseTabs),
+                _buildCourseTabs(context, _courseTabs),
 
-                // Search Bar
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 10, 20, 10),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10), // Slightly reduced top padding
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) {
@@ -184,26 +190,25 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
                 Expanded(
                   child: TabBarView(
-                    children: courseTabs.map((courseCode) {
+                    children: _courseTabs.map((courseCode) {
                       final courseOrdered = _filterTeams(
-                        teams: orderedTeams,
+                        teams: _processedTeams,
                         courseCode: courseCode,
                         query: '',
                       );
 
                       final serialByTeamKeyInCourse = <String, int>{
                         for (int i = 0; i < courseOrdered.length; i++)
-                          _teamKey(courseOrdered[i] as Map<String, dynamic>):
-                              i + 1,
+                          _teamKey(courseOrdered[i] as Map<String, dynamic>): i + 1,
                       };
 
-                        final filtered = _filterTeams(
-                          teams: orderedTeams,
-                          courseCode: courseCode,
-                          query: _searchQuery);
+                      final filtered = _filterTeams(
+                        teams: _processedTeams,
+                        courseCode: courseCode,
+                        query: _searchQuery);
 
                       final normalizedQuery = _searchQuery.toLowerCase();
-                        final filteredWithCardId = courseOrdered.where((team) {
+                      final filteredWithCardId = courseOrdered.where((team) {
                         if (normalizedQuery.isEmpty) return true;
 
                         final teamMap = team as Map<String, dynamic>;
@@ -229,27 +234,43 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             teamIdText.contains(normalizedQuery);
                       }).toList();
 
-                      if (filteredWithCardId.isEmpty)
-                        return const Center(
-                            child: Text("No teams match your filter."));
+                      if (filteredWithCardId.isEmpty) {
+                        return RefreshIndicator(
+                          onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+                          color: theme.colorScheme.primary,
+                          child: ListView(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            children: const [
+                              SizedBox(height: 100),
+                              Center(child: Text("No teams match your filter.")),
+                            ],
+                          ),
+                        );
+                      }
 
-                      return ListView.builder(
-                        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                        itemCount: filteredWithCardId.length,
-                        itemBuilder: (context, index) {
-                          final team = filteredWithCardId[index];
-                          final teamMap = team as Map<String, dynamic>;
-                          final serial =
-                              serialByTeamKeyInCourse[_teamKey(teamMap)] ??
-                                  (index + 1);
+                      return RefreshIndicator(
+                        onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+                        color: theme.colorScheme.primary,
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                          itemCount: filteredWithCardId.length,
+                          itemBuilder: (context, index) {
+                            final team = filteredWithCardId[index];
+                            final teamMap = team as Map<String, dynamic>;
+                            final serial =
+                                serialByTeamKeyInCourse[_teamKey(teamMap)] ??
+                                    (index + 1);
 
-                          return _buildTeamCard(
-                            context,
-                            serialNumber: serial,
-                            team: teamMap,
-                            myId: myId,
-                          );
-                        },
+                            return _buildTeamCard(
+                              context,
+                              serialNumber: serial,
+                              team: teamMap,
+                              myId: myId,
+                              dataProvider: dataProvider, 
+                            );
+                          },
+                        ),
                       );
                     }).toList(),
                   ),
@@ -268,7 +289,40 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  // 🟢 Custom Skeleton Layout for the Team List Screen
+  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      // 🟢 Reduced vertical padding to 8 for a tighter look
+      padding: const EdgeInsets.only(top: 8, bottom: 10), 
+      color: theme.colorScheme.surface,
+      child: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.center, 
+        dividerColor: Colors.transparent, // Ensures it doesn't touch any line
+        indicatorSize: TabBarIndicatorSize.label,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 10), 
+        labelColor: theme.colorScheme.primary,
+        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+        indicator: BoxDecoration(
+          color: theme.colorScheme.primary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+        ),
+        tabs: courseTabs
+            .map((c) => Tab(
+                  height: 34, // 🟢 Explicit height to keep the border away from edges
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Text(c,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ))
+            .toList(),
+      ),
+    );
+  }
+
   Widget _buildSkeletonLoader(ThemeData theme) {
     final isDark = theme.brightness == Brightness.dark;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
@@ -276,26 +330,25 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
     return Column(
       children: [
-        // Dummy Tab Bar
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), // Adjusted to match header
           child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Shimmer.fromColors(
                 baseColor: baseColor,
                 highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15))),
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
               ),
               const SizedBox(width: 10),
               Shimmer.fromColors(
                 baseColor: baseColor,
                 highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15))),
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
               ),
             ],
           ),
         ),
-        // Dummy Search Bar
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
           child: Shimmer.fromColors(
@@ -308,9 +361,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
             ),
           ),
         ),
-        // Dummy Team Cards List
         Expanded(
           child: ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
             itemCount: 5,
             itemBuilder: (context, index) {
@@ -319,7 +372,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 highlightColor: highlightColor,
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 14),
-                  height: 120, // Approximate height of the team card
+                  height: 120, 
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -333,23 +386,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  //Helpers
-
   String _teamKey(Map<String, dynamic> team) {
-    final key =
-        (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
+    final key = (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
     if (key.isNotEmpty) return key;
-
     final title = (team['title'] ?? '').toString();
-    final createdAt =
-        (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
+    final createdAt = (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
     return '$title|$createdAt';
   }
 
   DateTime _submissionTime(Map<String, dynamic> team) {
-    final raw =
-        (team['createdAt'] ?? team['submittedAt'] ?? team['created_at'] ?? '')
-            .toString();
+    final raw = (team['createdAt'] ?? team['submittedAt'] ?? team['created_at'] ?? '').toString();
     return DateTime.tryParse(raw) ?? DateTime.fromMillisecondsSinceEpoch(0);
   }
 
@@ -360,126 +406,50 @@ class _TeamListScreenState extends State<TeamListScreen> {
         courseCodes.add(team['course']['courseCode'].toString());
       }
     }
-    final sorted = courseCodes.toList()..sort();
-    return sorted;
+    return courseCodes.toList()..sort();
   }
 
-  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      color: theme.colorScheme.surface,
-      child: TabBar(
-        isScrollable: true,
-        dividerColor: Colors
-            .transparent,
-        indicatorSize:
-            TabBarIndicatorSize.label,
-        labelPadding:
-            const EdgeInsets.symmetric(horizontal: 6),
-        labelColor: theme.colorScheme.primary,
-        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        indicator: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.4)),
-        ),
-        tabs: courseTabs
-            .map((c) => Tab(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: Text(c,
-                        style: const TextStyle(fontWeight: FontWeight.w600)),
-                  ),
-                ))
-            .toList(),
-      ),
-    );
-  }
-
-  List<dynamic> _filterTeams(
-      {required List<dynamic> teams,
-      required String courseCode,
-      required String query}) {
+  List<dynamic> _filterTeams({required List<dynamic> teams, required String courseCode, required String query}) {
     final normalizedQuery = query.toLowerCase();
     return teams.where((team) {
-      final code = (team['course'] is Map)
-          ? team['course']['courseCode']?.toString()
-          : null;
+      final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
       if (code != courseCode) return false;
       if (normalizedQuery.isEmpty) return true;
-
       final title = (team['title'] ?? '').toString().toLowerCase();
-      final assignedSupervisorName = (team['assignedSupervisor'] is Map)
-          ? (team['assignedSupervisor']['name'] ?? '').toString().toLowerCase()
-          : '';
+      final assignedSupervisorName = (team['assignedSupervisor'] is Map) ? (team['assignedSupervisor']['name'] ?? '').toString().toLowerCase() : '';
       final supervisors = team['supervisors'] as List? ?? [];
-      final supervisorMatch = supervisors.any((s) {
-        if (s is Map)
-          return (s['name'] ?? '').toLowerCase().contains(normalizedQuery);
-        return false;
-      });
-
-      return title.contains(normalizedQuery) ||
-          supervisorMatch ||
-          assignedSupervisorName.contains(normalizedQuery);
+      final supervisorMatch = supervisors.any((s) => s is Map && (s['name'] ?? '').toLowerCase().contains(normalizedQuery));
+      return title.contains(normalizedQuery) || supervisorMatch || assignedSupervisorName.contains(normalizedQuery);
     }).toList();
   }
 
-  bool _hasSubmittedEvaluation(
-      Map<String, dynamic> team, String? myId, String evaluationType) {
+  bool _hasSubmittedEvaluation(Map<String, dynamic> team, String? myId, String evaluationType) {
     if (myId == null || myId.isEmpty) return false;
-
     final marks = team['marks'] as List? ?? [];
     for (final mark in marks) {
       if (mark is! Map) continue;
-
-      final supervisorId =
-          (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
+      final supervisorId = (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
       final type = (mark['type'] ?? '').toString().toLowerCase().trim();
-
-      if (supervisorId == myId && type == evaluationType) {
-        return true;
-      }
+      if (supervisorId == myId && type == evaluationType) return true;
     }
-
     return false;
   }
 
-  Widget _buildTeamCard(BuildContext context,
-      {required int serialNumber,
-      required Map<String, dynamic> team,
-      required String? myId}) {
+  Widget _buildTeamCard(BuildContext context, {required int serialNumber, required Map<String, dynamic> team, required String? myId, required DataProvider dataProvider}) { 
     final theme = Theme.of(context);
     final title = team['title'] ?? 'Untitled Team';
-    final sups = team['supervisors'] as List? ?? [];
-
     String supervisorName = 'Not Assigned';
     final assignedSupervisor = team['assignedSupervisor'];
-    if (assignedSupervisor is Map) {
-      final name = (assignedSupervisor['name'] ?? '').toString().trim();
-      if (name.isNotEmpty) supervisorName = name;
-    }
-    if (supervisorName == 'Not Assigned' && sups.isNotEmpty) {
-      final firstSup = sups.first;
-      if (firstSup is Map) {
-        final name = (firstSup['name'] ?? '').toString().trim();
-        if (name.isNotEmpty) supervisorName = name;
-      }
-    }
-
+    if (assignedSupervisor is Map) supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
+    
     bool isMyTeam = false;
     if (myId != null) {
-      final assigned = (team['assignedSupervisor'] is Map)
-          ? team['assignedSupervisor']['_id']
-          : team['assignedSupervisor'];
+      final assigned = (team['assignedSupervisor'] is Map) ? team['assignedSupervisor']['_id'] : team['assignedSupervisor'];
       isMyTeam = assigned == myId;
     }
-
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
-    final String evaluationType = widget.onlyMyTeams ? 'own' : 'defense';
-    final bool hasSubmittedEvaluation =
-      _hasSubmittedEvaluation(team, myId, evaluationType);
+    final evaluationType = widget.onlyMyTeams ? 'own' : 'defense';
+    final hasSubmitted = _hasSubmittedEvaluation(team, myId, evaluationType);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -492,42 +462,21 @@ class _TeamListScreenState extends State<TeamListScreen> {
       child: Column(
         children: [
           ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-              child: Text(
-                serialNumber.toString(),
-                style: TextStyle(
-                    color: theme.colorScheme.primary,
-                    fontWeight: FontWeight.bold),
-              ),
+              child: Text(serialNumber.toString(), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
-            title: Text(title,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.bold)),
-            subtitle: Text(
-              "Supervisor: $supervisorName",
-              style: TextStyle(
-                  fontSize: 12, color: theme.colorScheme.onSurfaceVariant),
-            ),
+            title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            subtitle: Text("Supervisor: $supervisorName", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             trailing: Container(
-              width: 24,
-              height: 24,
+              width: 24, height: 24,
               decoration: BoxDecoration(
-                color:
-                    hasSubmittedEvaluation ? const Color(0xFF16A34A) : null,
+                color: hasSubmitted ? const Color(0xFF16A34A) : null,
                 borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                  color: hasSubmittedEvaluation
-                      ? const Color(0xFF16A34A)
-                      : theme.colorScheme.outline.withOpacity(0.8),
-                  width: 1.6,
-                ),
+                border: Border.all(color: hasSubmitted ? const Color(0xFF16A34A) : theme.colorScheme.outline.withOpacity(0.8), width: 1.6),
               ),
-              child: hasSubmittedEvaluation
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
+              child: hasSubmitted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
             ),
           ),
           const Divider(height: 1),
@@ -537,40 +486,20 @@ class _TeamListScreenState extends State<TeamListScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) =>
-                                SupervisorTeamDetailsScreen(team: team)));
-                  },
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SupervisorTeamDetailsScreen(team: team))),
                   child: const Text("Details"),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: isActionDisabled
-                      ? null
-                      : () async {
-                          await Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                                builder: (_) => MarkingScreen(
-                                    team: team,
-                                    evaluationType: evaluationType)),
-                          );
-                          setState(() {
-                            _teamsFuture = _apiService.getAllProposals();
-                          });
-                        },
-                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note,
-                      size: 16),
+                  onPressed: isActionDisabled ? null : () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => MarkingScreen(team: team, evaluationType: evaluationType)));
+                    dataProvider.fetchTeamsIfNeeded(forceRefresh: true);
+                  },
+                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note, size: 16),
                   label: Text(isActionDisabled ? "Your Team" : "Evaluate"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isActionDisabled
-                        ? Colors.grey[300]
-                        : const Color(0xFFF59E0B),
-                    foregroundColor:
-                        isActionDisabled ? Colors.grey[600] : Colors.white,
+                    backgroundColor: isActionDisabled ? Colors.grey[300] : const Color(0xFFF59E0B),
+                    foregroundColor: isActionDisabled ? Colors.grey[600] : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     elevation: isActionDisabled ? 0 : 2,
                   ),
