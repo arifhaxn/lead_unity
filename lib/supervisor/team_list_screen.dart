@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
 import '../../api services/api_services.dart';
 import '../../auth_provider.dart';
 import '../../chatbot_screen.dart';
@@ -112,8 +113,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
       body: FutureBuilder<List<dynamic>>(
         future: _teamsFuture,
         builder: (context, snapshot) {
+          
+          // 🟢 NEW: Shimmer Skeleton Loader!
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildSkeletonLoader(theme); 
           }
 
           if (snapshot.hasError) {
@@ -262,6 +265,71 @@ class _TeamListScreenState extends State<TeamListScreen> {
         backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.message, color: Colors.white),
       ),
+    );
+  }
+
+  // 🟢 Custom Skeleton Layout for the Team List Screen
+  Widget _buildSkeletonLoader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Column(
+      children: [
+        // Dummy Tab Bar
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+          child: Row(
+            children: [
+              Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15))),
+              ),
+              const SizedBox(width: 10),
+              Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(15))),
+              ),
+            ],
+          ),
+        ),
+        // Dummy Search Bar
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Shimmer.fromColors(
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        // Dummy Team Cards List
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  height: 120, // Approximate height of the team card
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 

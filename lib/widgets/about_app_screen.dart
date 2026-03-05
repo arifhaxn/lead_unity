@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/theme/theme_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:provider/provider.dart';
 
 class AboutAppScreen extends StatelessWidget {
   const AboutAppScreen({Key? key}) : super(key: key);
 
-  // 🟢 Helper function to open websites
   Future<void> _launchUrl(String urlString) async {
     final Uri url = Uri.parse(urlString);
     if (!await launchUrl(url, mode: LaunchMode.externalApplication)) {
@@ -16,10 +17,8 @@ class AboutAppScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final themeProvider = Provider.of<ThemeProvider>(context); // 🟢 Grab the theme provider
 
-    // ==========================================
-    // 🟢 ENTER YOUR DEVELOPER DETAILS HERE
-    // ==========================================
     final List<Map<String, dynamic>> developers = [
       {
         "name": "Arif Hasan",
@@ -45,7 +44,7 @@ class AboutAppScreen extends StatelessWidget {
         "name": "Omio Mahim",
         "batch": "61st Batch",
         "department": "Dept. of CSE",
-        "role": "Frontend Developer & AI Feature Integrator",
+        "role": "Frontend & AI Feature Integrator",
         "image": "assets/template/crew/omio.jpeg",
         "fb": "https://www.facebook.com/omio.mahim.044",
         "linkedin": "https://www.linkedin.com/in/omio-mahim-79a2302a8",
@@ -71,6 +70,20 @@ class AboutAppScreen extends StatelessWidget {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        // 🟢 Added the Dark Mode toggle button to the top right of the AppBar!
+        actions: [
+          IconButton(
+            icon: Icon(
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
+            ),
+            onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -142,7 +155,7 @@ class AboutAppScreen extends StatelessWidget {
             const Divider(),
             const SizedBox(height: 16),
             Text(
-              "Inspired by the previous \"LU Desertation\" app.",
+              "Inspired by the previous \"LU Dissertation\" app.",
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 13,

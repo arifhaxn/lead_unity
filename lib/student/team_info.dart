@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -46,11 +47,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         child: const Icon(Icons.message, color: Colors.white),
       ),
       body: FutureBuilder<List<dynamic>>(
-        
         future: _apiService.getUserProposals(),
         builder: (context, snapshot) {
+          
+          // 🟢 NEW: Shimmer Skeleton Loader!
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildSkeletonLoader(theme);
           }
 
           if (!snapshot.hasData || snapshot.data!.isEmpty) {
@@ -222,6 +224,58 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  // 🟢 Custom Skeleton Layout for Team Info
+  Widget _buildSkeletonLoader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Dummy Proposal Info Card
+            Container(
+              height: 200, // Matches approximate height of the top card
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            const SizedBox(height: 24),
+            
+            // Dummy "Team Members" Title
+            Container(
+              height: 24,
+              width: 140,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(4),
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Dummy Member Cards (Usually 3 or 4)
+            ...List.generate(3, (index) => Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              height: 110, // Matches approximate height of a member card
+              width: double.infinity,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+              ),
+            )),
+          ],
+        ),
       ),
     );
   }

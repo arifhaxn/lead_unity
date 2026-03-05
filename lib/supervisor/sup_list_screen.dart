@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
 import '../../api services/api_services.dart';
 import '../../chatbot_screen.dart';
 import '../theme/app_theme.dart';
@@ -79,8 +80,10 @@ class SupervisorListScreen extends StatelessWidget {
 
         future: apiService.getSupervisors(),
         builder: (context, snapshot) {
+          
+          // 🟢 NEW: Shimmer Skeleton Loader!
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return _buildSkeletonLoader(theme);
           }
 
           if (snapshot.hasError) {
@@ -167,6 +170,74 @@ class SupervisorListScreen extends StatelessWidget {
         backgroundColor: theme.colorScheme.primary,
         child: const Icon(Icons.message, color: Colors.white),
         tooltip: 'Chat with Assistant',
+      ),
+    );
+  }
+
+  // 🟢 Custom Skeleton Layout for the Supervisor List
+  Widget _buildSkeletonLoader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Shimmer.fromColors(
+      baseColor: baseColor,
+      highlightColor: highlightColor,
+      child: ListView.builder(
+        itemCount: 8, // Show 8 dummy cards while loading
+        padding: const EdgeInsets.all(20),
+        itemBuilder: (context, index) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), // Mimic ListTile padding
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: AppRadii.card, // Matches your card radius
+            ),
+            child: Row(
+              children: [
+                // Dummy Avatar/Number Circle
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                
+                // Dummy Text Lines
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Dummy Name Line
+                      Container(
+                        width: double.infinity,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      // Dummy Designation Line (shorter)
+                      Container(
+                        width: 150,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

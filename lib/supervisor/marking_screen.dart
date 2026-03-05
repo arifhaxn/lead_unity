@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/api%20services/api_services.dart';
 import 'package:provider/provider.dart';
-
 import '../../auth_provider.dart';
 import '../theme/theme_provider.dart';
 
@@ -188,7 +187,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🟢 Sleek Criteria Legend
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -218,7 +216,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
             ),
             const SizedBox(height: 32),
 
-            // 🟢 Students Header
             Text(
               "Team Members",
               style: theme.textTheme.titleLarge
@@ -226,7 +223,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
             ),
             const SizedBox(height: 16),
 
-            // 🟢 Render Students
             ..._studentMarks.keys.map((uid) {
               return StudentMarkingCard(
                 studentData: _studentMarks[uid]!['data'],
@@ -241,7 +237,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
             const SizedBox(height: 20),
 
-            // 🟢 Submit Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -255,7 +250,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
                   shadowColor: theme.colorScheme.primary.withOpacity(0.4),
                 ),
                 child: const Text(
-                  "Lock & Submit Scores",
+                  "Submit Scores",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w800,
@@ -400,7 +395,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isLightMode = theme.brightness == Brightness.light;
     final studentName = widget.studentData['name'] ?? 'Unknown Student';
     final studentId = widget.studentData['studentId']?.toString() ??
         widget.studentData['_id']?.toString() ??
@@ -477,101 +471,62 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   ),
                 ),
 
-                // 🟢 Modern Sliding Segmented Control
-                Container(
-                  height: 34,
-                  width: 140, // Fixed width to contain both options
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant
-                        .withOpacity(isLightMode ? 0.7 : 0.3),
-                    borderRadius: BorderRadius.circular(30),
-                    border: Border.all(
-                        color: theme.colorScheme.outline.withOpacity(0.1)),
-                  ),
-                  child: Stack(
+                // 🟢 NEW: Animated Toggle Button
+                GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      _isAbsent = !_isAbsent; // Toggle the state
+                      _updateMarks();
+                    });
+                  },
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // The sliding colored background thumb
-                      AnimatedPositioned(
-                        duration: const Duration(milliseconds: 250),
+                      // 🟢 Smoothly animates the background color and border
+                      AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
-                        left: _isAbsent
-                            ? 70
-                            : 0, // Slides to the right half if absent
-                        right: _isAbsent
-                            ? 0
-                            : 70, // Stays on the left half if present
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          decoration: BoxDecoration(
-                              color:
-                                  _isAbsent ? Colors.redAccent : Colors.green,
-                              borderRadius: BorderRadius.circular(30),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: (_isAbsent
-                                          ? Colors.redAccent
-                                          : Colors.green)
-                                      .withOpacity(0.3),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                )
-                              ]),
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: _isAbsent
+                              ? Colors.green.withOpacity(0.1)
+                              : Colors.redAccent.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: _isAbsent
+                                ? Colors.green.withOpacity(0.5)
+                                : Colors.redAccent.withOpacity(0.5),
+                            width: 1.5,
+                          ),
+                        ),
+                        // 🟢 Smoothly scales/pops the icon when it changes
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          transitionBuilder: (Widget child, Animation<double> animation) {
+                            return ScaleTransition(scale: animation, child: child);
+                          },
+                          child: Icon(
+                            _isAbsent 
+                                ? Icons.settings_backup_restore_rounded 
+                                : Icons.person_off_rounded,
+                            // The key is required so Flutter knows the icon actually changed!
+                            key: ValueKey<bool>(_isAbsent), 
+                            size: 18,
+                            color: _isAbsent ? Colors.green : Colors.redAccent,
+                          ),
                         ),
                       ),
-                      // The clickable text areas
-                      Row(
-                        children: [
-                          Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                if (_isAbsent) {
-                                  setState(() {
-                                    _isAbsent = false;
-                                    _updateMarks();
-                                  });
-                                }
-                              },
-                              child: Center(
-                                child: Text("PRESENT",
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      letterSpacing: 0.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: _isAbsent
-                                          ? theme.colorScheme.onSurfaceVariant
-                                          : Colors.white,
-                                    )),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: GestureDetector(
-                              behavior: HitTestBehavior.opaque,
-                              onTap: () {
-                                if (!_isAbsent) {
-                                  setState(() {
-                                    _isAbsent = true;
-                                    _updateMarks();
-                                  });
-                                }
-                              },
-                              child: Center(
-                                child: Text("ABSENT",
-                                    style: TextStyle(
-                                      fontSize: 10,
-                                      letterSpacing: 0.5,
-                                      fontWeight: FontWeight.bold,
-                                      color: _isAbsent
-                                          ? Colors.white
-                                          : theme.colorScheme.onSurfaceVariant,
-                                    )),
-                              ),
-                            ),
-                          ),
-                        ],
-                      )
+                      const SizedBox(height: 4),
+                      // 🟢 Smoothly fades the text color
+                      AnimatedDefaultTextStyle(
+                        duration: const Duration(milliseconds: 300),
+                        style: TextStyle(
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold,
+                          color: _isAbsent ? Colors.green : Colors.redAccent,
+                        ),
+                        child: Text(_isAbsent ? "Mark Present" : "Mark Absent"),
+                      ),
                     ],
                   ),
                 ),

@@ -330,7 +330,7 @@ class _AppDrawerState extends State<AppDrawer> {
                           decoration: BoxDecoration(
                             color: themeProvider.isDarkMode 
                                 ? const Color.fromARGB(255, 13, 8, 49) 
-                                : Colors.white.withOpacity(0.2),       
+                                : Colors.white.withOpacity(0.5),       
                             borderRadius: BorderRadius.circular(12),
                           ),
                           child: Image.asset(

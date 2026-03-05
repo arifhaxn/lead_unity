@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -88,8 +89,73 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
+    // 🟢 NEW: Custom Skeleton Loader for the Form!
     if (_isLoadingData) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      final isDark = theme.brightness == Brightness.dark;
+      final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+      final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+      return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        appBar: AppBar(
+          title: const Text('Submit Proposal'),
+          backgroundColor: theme.colorScheme.surface,
+          elevation: 0,
+        ),
+        body: Shimmer.fromColors(
+          baseColor: baseColor,
+          highlightColor: highlightColor,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Dummy Course Selector Box
+                Container(
+                  height: 90,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                
+                // Dummy Text Fields (Title and Link)
+                Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                const SizedBox(height: 16),
+                Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                const SizedBox(height: 24),
+                
+                // Dummy Supervisors Title
+                Container(height: 20, width: 150, color: Colors.white),
+                const SizedBox(height: 10),
+                
+                // Dummy Supervisor Dropdown Row
+                Row(
+                  children: [
+                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    const SizedBox(width: 8),
+                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                  ],
+                ),
+                const SizedBox(height: 30),
+                
+                // Dummy Team Members Title
+                Container(height: 20, width: 120, color: Colors.white),
+                const SizedBox(height: 10),
+                
+                // Dummy Team Member Cards
+                Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+                const SizedBox(height: 15),
+                Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+              ],
+            ),
+          ),
+        ),
+      );
     }
 
     if (_errorMessage != null) {

@@ -11,7 +11,7 @@ import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  final String role; // 'student' or 'supervisor'
+  final String role;
   const LoginScreen({Key? key, required this.role}) : super(key: key);
 
   @override
@@ -22,13 +22,11 @@ class _LoginScreenState extends State<LoginScreen> {
   final _identifierController = TextEditingController();
   final _passController = TextEditingController();
   final _api = ApiService();
-  
-  // 🟢 CHANGED: This now defaults to true! The app assumes registration 
-  // is open until the backend explicitly tells it otherwise.
-  bool _isRegOpen = true; 
-  
+
+  bool _isRegOpen = true;
+
   bool _isLoading = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -54,7 +52,7 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
     try {
       await Provider.of<AuthProvider>(context, listen: false)
-          .login(identifier, password, role: widget.role); 
+          .login(identifier, password, role: widget.role);
 
       //Save the login Abbreviation or Student ID
       const storage = FlutterSecureStorage();
@@ -96,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final themeColor = theme.colorScheme.primary;
-    
+
     final isStudent = widget.role == 'student';
     final labelText = isStudent ? 'Student ID' : 'Abbreviation';
     final prefixIcon = isStudent ? Icons.badge_outlined : Icons.short_text;
@@ -133,16 +131,17 @@ class _LoginScreenState extends State<LoginScreen> {
                 children: [
                   Text(
                     isStudent ? 'Student Login' : 'Supervisor Login',
-                    style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 28, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Welcome back! Please sign in to continue.',
                     style: TextStyle(
-                        fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 40),
-
                   TextField(
                     controller: _identifierController,
                     keyboardType: keyboardType,
@@ -153,7 +152,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide(color: themeColor))),
                   ),
                   const SizedBox(height: 20),
-                  
                   TextField(
                     controller: _passController,
                     obscureText: true,
@@ -164,7 +162,6 @@ class _LoginScreenState extends State<LoginScreen> {
                             borderSide: BorderSide(color: themeColor))),
                   ),
                   const SizedBox(height: 30),
-
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -182,10 +179,10 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: CircularProgressIndicator(
                                   color: Colors.white, strokeWidth: 2))
                           : const Text('Login',
-                              style: TextStyle(fontSize: 18, color: Colors.white)),
+                              style:
+                                  TextStyle(fontSize: 18, color: Colors.white)),
                     ),
                   ),
-
                   if (widget.role == 'supervisor')
                     Center(
                       child: Padding(
@@ -196,14 +193,13 @@ class _LoginScreenState extends State<LoginScreen> {
                               MaterialPageRoute(
                                   builder: (_) =>
                                       const SupervisorFirstLoginScreen())),
-                          child: const Text("First time login? Activate Account",
+                          child: const Text(
+                              "First time login? Activate Account",
                               style: TextStyle(fontWeight: FontWeight.w600)),
                         ),
                       ),
                     ),
-
                   const SizedBox(height: 20),
-
                   if (widget.role == 'student')
                     Center(
                       child: _isRegOpen
@@ -217,7 +213,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 text: TextSpan(
                                   text: 'Don\'t have an account? ',
                                   style: TextStyle(
-                                      color: theme.colorScheme.onSurfaceVariant),
+                                      color:
+                                          theme.colorScheme.onSurfaceVariant),
                                   children: [
                                     TextSpan(
                                         text: 'Register Now',
@@ -232,7 +229,8 @@ class _LoginScreenState extends State<LoginScreen> {
                               padding: const EdgeInsets.symmetric(
                                   horizontal: 12, vertical: 8),
                               decoration: BoxDecoration(
-                                  color: theme.colorScheme.error.withOpacity(0.1),
+                                  color:
+                                      theme.colorScheme.error.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8)),
                               child: Text("Registration Closed",
                                   style: TextStyle(
@@ -240,29 +238,29 @@ class _LoginScreenState extends State<LoginScreen> {
                                       fontWeight: FontWeight.bold)),
                             ),
                     ),
-                    
-                  const Spacer(), 
-
+                  const Spacer(),
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.2)),
+                      border: Border.all(
+                          color: theme.colorScheme.primary.withOpacity(0.2)),
                     ),
                     child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.info_outline_rounded, size: 20, color: theme.colorScheme.primary),
+                        Icon(Icons.info_outline_rounded,
+                            size: 20, color: theme.colorScheme.primary),
                         const SizedBox(width: 12),
                         Expanded(
                           child: Text(
-                            isStudent 
-                              ? "Note: New registrations can only be processed while the portal is explicitly opened by the department admin. Otherwise, it will show 'Registration Closed'."
-                              : "Note: Use your exact capitalized Abbreviation (e.g., EBH). Your initial temporary password will be provided by the department admin.",
+                            isStudent
+                                ? "Note: New registrations can only be processed while the portal is explicitly opened by the department admin. Otherwise, it will show 'Registration Closed'."
+                                : "Note: Use your exact capitalized Abbreviation (e.g., EBH). Your initial temporary password will be provided by the department admin.",
                             style: TextStyle(
-                              fontSize: 13, 
+                              fontSize: 13,
                               color: theme.colorScheme.onSurfaceVariant,
                               height: 1.4,
                             ),
@@ -271,7 +269,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                   ),
-                  const SizedBox(height: 30), 
+                  const SizedBox(height: 30),
                 ],
               ),
             ),

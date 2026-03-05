@@ -52,7 +52,7 @@ class SupervisorDashboard extends StatelessWidget {
             _buildCard(
               context,
               "My Teams",
-              "Evaluate & Manage",
+              "Personal Markings",
               Icons.groups,
               () => Navigator.push(
                   context,
