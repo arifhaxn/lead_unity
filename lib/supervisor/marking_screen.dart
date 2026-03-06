@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/api%20services/api_services.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import
+import 'package:shimmer/shimmer.dart'; 
 import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
 
@@ -150,9 +150,17 @@ class _MarkingScreenState extends State<MarkingScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 REPLACED: Show the Skeleton Loader instead of the spinner
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
+
     if (_isLoading) {
-      return _buildSkeletonLoader(theme, themeProvider);
+      return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
     }
 
     // Config Loading Logic
@@ -167,9 +175,10 @@ class _MarkingScreenState extends State<MarkingScreen> {
       appBar: AppBar(
         title: const Text("Evaluation Board",
             style: TextStyle(fontWeight: FontWeight.w700)),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Add bottom line
         centerTitle: true,
         actions: [
           IconButton(
@@ -312,8 +321,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
   }
 
-  // 🟢 NEW: Custom Skeleton Layout for the Evaluation Board
-  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider) {
+  // 🟢 Modified to accept appBarBottomLine
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
@@ -323,9 +332,10 @@ class _MarkingScreenState extends State<MarkingScreen> {
       appBar: AppBar(
         title: const Text("Evaluation Board",
             style: TextStyle(fontWeight: FontWeight.w700)),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Add bottom line
         centerTitle: true,
         actions: [
           IconButton(

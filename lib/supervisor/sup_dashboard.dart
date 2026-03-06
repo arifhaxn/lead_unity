@@ -24,14 +24,24 @@ class SupervisorDashboard extends StatelessWidget {
         .take(2)
         .join(' ');
 
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('Supervisor Portal'),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Add bottom line
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

@@ -142,15 +142,28 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 REPLACED: Now returns the Shimmer Loader instead of a Spinner
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
+
     if (_isLoadingData) {
-      return _buildSkeletonLoader(theme, themeProvider);
+      return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
     }
 
     if (_errorMessage != null) {
       return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
         appBar: AppBar(
           title: const Text('Request Team'),
+          backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+          foregroundColor: theme.colorScheme.onSurface,
+          elevation: 0,
+          bottom: appBarBottomLine, // 🟢 Add bottom line
           actions: [
             IconButton(
               icon: Icon(themeProvider.isDarkMode
@@ -170,8 +183,10 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Request Team'),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
         foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Add bottom line
         actions: [
           IconButton(
             icon: Icon(
@@ -394,14 +409,21 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     );
   }
 
-  // 🟢 NEW: Custom Skeleton Layout for Request Team Form
-  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider) {
+  // 🟢 Modified to accept the appBarBottomLine variable
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Request Team')),
+      backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+      appBar: AppBar(
+        title: const Text('Request Team'),
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Add bottom line
+      ),
       body: Shimmer.fromColors(
         baseColor: baseColor,
         highlightColor: highlightColor,

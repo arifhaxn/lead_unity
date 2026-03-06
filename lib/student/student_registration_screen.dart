@@ -140,10 +140,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         ),
         content: const Text(
           "• Enter your full name and valid email address.\n\n"
-          "• You MUST input your exact 16-digit Student ID.\n\n"
-          "  Example: 0182310012101025\n\n"
+          // 🟢 Updated Instructions
+          "• You MUST input your exact Student ID (must be at least 10 digits).\n\n"
           "• Provide your current Batch and Section.\n\n"
-          "• Passwords must be 8+ characters and contain at least one uppercase, one lowercase, one number, and one special character.\n\n" // Added password rule
+          "• Passwords must be 8+ characters and contain at least one uppercase, one lowercase, one number, and one special character.\n\n"
           "• After clicking Register, an OTP will be sent to your email.",
           style: TextStyle(height: 1.5),
         ),
@@ -161,13 +161,24 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
     
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matched background color
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matched background color
+        foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Added bottom line
         iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
         actions: [
           IconButton(
@@ -235,14 +246,16 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               _buildLabel('Academic Info'),
               TextFormField(
                 decoration: const InputDecoration(
-                    labelText: 'Student ID (16 Digits)',
+                    // 🟢 Updated Label
+                    labelText: 'Student ID',
                     prefixIcon: Icon(Icons.badge_outlined),
                     border: OutlineInputBorder()),
                 keyboardType: TextInputType.number,
                 onSaved: (v) => _formData['studentId'] = v,
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Required';
-                  if (v.length != 16) return 'ID must be exactly 16 digits';
+                  // 🟢 Updated Validation Check
+                  if (v.length < 10) return 'ID must be at least 10 digits';
                   return null;
                 },
               ),

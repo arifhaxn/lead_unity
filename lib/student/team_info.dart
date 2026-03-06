@@ -30,12 +30,25 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
     
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('My Team & Proposal'),
-        backgroundColor: theme.colorScheme.surface,
+        // 🟢 MATCHES BACKGROUND AND REMOVES SHADOW
+        backgroundColor: theme.scaffoldBackgroundColor,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine, // 🟢 ADDED THE LINE HERE
         actions: [
           IconButton(
             icon: Icon(

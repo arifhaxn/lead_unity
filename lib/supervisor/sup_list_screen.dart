@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
 import '../../chatbot_screen.dart';
-import '../providers/data_provider.dart'; // 🟢 Added DataProvider Import!
+import '../providers/data_provider.dart'; 
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
@@ -95,13 +95,23 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
     // Process the data immediately if we have it
     _processDataIfNeeded(dataProvider.allSupervisors);
 
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("All Supervisors"),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matches Background
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Bottom border added here
         actions: [
           IconButton(
             icon: Icon(

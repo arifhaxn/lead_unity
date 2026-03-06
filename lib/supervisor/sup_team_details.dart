@@ -24,13 +24,23 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
     final leader = members.isNotEmpty ? members.first : {};
     final restMembers = members.length > 1 ? members.sublist(1) : [];
 
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Project Details"),
-        elevation: 0,
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matches Background
         foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Bottom border added here
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

@@ -5,6 +5,7 @@ import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../chatbot_screen.dart';
+import 'request_team_screen.dart'; 
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -79,7 +80,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            // 🟢 Instructions updated to reflect flexible members
             "• Fill in the details for at least 2 team members. You can submit info for 2, 3, or 4 members. Leave unused cards blank.\n\n"
             "• Note: You can only submit one proposal per course.",
             style: TextStyle(height: 1.5),
@@ -95,10 +95,63 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     );
   }
 
+  void _showSoloStudentDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Icon(Icons.group_off_rounded, color: Colors.amber[700]),
+            const SizedBox(width: 8),
+            const Text("Need a Team?"),
+          ],
+        ),
+        content: const Text(
+          "Proposals require at least 2 members to be submitted. If you don't have a team yet, you can send a 'Request Team' application so supervisors can group you with others.",
+          style: TextStyle(height: 1.4),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx), 
+            child: const Text("Cancel"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(ctx); 
+              Navigator.pushReplacement( 
+                context,
+                MaterialPageRoute(builder: (_) => const RequestTeamScreen()),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            ),
+            child: const Text(
+              "Go to Request Team", 
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
+    final appBarBottomLine = PreferredSize(
+      preferredSize: const Size.fromHeight(1.0),
+      child: Container(
+        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        height: 1.0,
+      ),
+    );
 
     if (_isLoadingData) {
       final isDark = theme.brightness == Brightness.dark;
@@ -109,8 +162,10 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Submit Proposal'),
-          backgroundColor: theme.colorScheme.surface,
+          backgroundColor: theme.scaffoldBackgroundColor,
+          foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
+          bottom: appBarBottomLine, // 🟢 Added line
         ),
         body: Shimmer.fromColors(
           baseColor: baseColor,
@@ -150,8 +205,13 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
 
     if (_errorMessage != null) {
       return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Error'),
+          backgroundColor: theme.scaffoldBackgroundColor,
+          foregroundColor: theme.colorScheme.onSurface,
+          elevation: 0,
+          bottom: appBarBottomLine, // 🟢 Added line
           actions: [
             IconButton(
               icon: Icon(
@@ -171,8 +231,13 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
 
     if (_courses.isEmpty) {
       return Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Submit Proposal'),
+          backgroundColor: theme.scaffoldBackgroundColor,
+          foregroundColor: theme.colorScheme.onSurface,
+          elevation: 0,
+          bottom: appBarBottomLine, // 🟢 Added line
           actions: [
             IconButton(
               icon: Icon(
@@ -190,8 +255,10 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Submit Proposal'),
-        backgroundColor: theme.colorScheme.surface,
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine, // 🟢 Added line
         actions: [
           IconButton(
             icon: Icon(
@@ -218,6 +285,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         courses: _courses,
         supervisors: _supervisors,
         submittedCourseIds: _submittedCourseIds,
+        onSoloStudentDetected: _showSoloStudentDialog, 
       ),
     );
   }
@@ -227,12 +295,14 @@ class SingleProposalForm extends StatefulWidget {
   final List<dynamic> courses;
   final List<dynamic> supervisors;
   final Set<String> submittedCourseIds; 
+  final VoidCallback onSoloStudentDetected; 
 
   const SingleProposalForm({
     super.key,
     required this.courses,
     required this.supervisors,
     required this.submittedCourseIds,
+    required this.onSoloStudentDetected,
   });
 
   @override
@@ -240,7 +310,6 @@ class SingleProposalForm extends StatefulWidget {
 }
 
 class _SingleProposalFormState extends State<SingleProposalForm> {
-  // 🟢 We use a regular form key now, not validating specific inputs anymore
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
 
@@ -249,7 +318,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
 
-  // 🟢 Always keep controllers for 4 members ready in memory
   final List<Map<String, TextEditingController>> _memberControllers =
       List.generate(
           4,
@@ -262,8 +330,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               });
 
   bool _isSubmitting = false;
-  
-  // 🟢 NEW: Flags to handle UI visibility, not backend submission count
   bool _showFourthMember = false;
 
   String? _sup1, _sup2, _sup3;
@@ -280,9 +346,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     super.dispose();
   }
 
-  // 🟢 NEW: Submission Logic that skips empty cards
   Future<void> _submitProposal() async {
-    // 1. Basic validation for the main form (Course, Title, Link, Sups)
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
@@ -305,7 +369,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     
-    // 2. Loop through all 4 possible controllers
     for (int i = 0; i < 4; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
@@ -313,18 +376,15 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       String email = _memberControllers[i]['email']!.text.trim();
       String mobile = _memberControllers[i]['mobile']!.text.trim();
 
-      // 🟢 Logic: If ID or Name is partially filled, all fields become required.
       bool isCardPartiallyFilled = id.isNotEmpty || name.isNotEmpty || cgpaRaw.isNotEmpty || email.isNotEmpty || mobile.isNotEmpty;
 
       if (isCardPartiallyFilled) {
-        // Validation check for partial fill
         if (id.isEmpty || name.isEmpty || cgpaRaw.isEmpty || email.isEmpty || mobile.isEmpty) {
           setState(() => _isSubmitting = false);
           _showError('Please complete all fields for Member ${i + 1}.');
           return;
         }
 
-        // Duplicate check
         if (uniqueIds.contains(id)) {
           setState(() => _isSubmitting = false);
           _showError('Duplicate Student ID: $id');
@@ -349,14 +409,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     }
 
-    // 3. Ensure we have at least 2 people counted
     if (members.length < 2) {
       setState(() => _isSubmitting = false);
-      _showError('Please provide information for at least 2 team members.');
+      widget.onSoloStudentDetected();
       return;
     }
 
-    // (API call logic remains the same)
     List<String> supervisorIds = [];
     if (_sup1 != null) supervisorIds.add(_sup1!);
     if (_sup2 != null) supervisorIds.add(_sup2!);
@@ -392,7 +450,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    
     final bool isAlreadySubmitted = _selectedCourseId != null && 
                                     widget.submittedCourseIds.contains(_selectedCourseId);
 
@@ -403,7 +460,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            // Target Course Selector
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -454,7 +510,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    // We can still use validator here, the logic now handles empty member cards
                     validator: (value) => value == null ? 'Required to submit' : null,
                     items:
                         widget.courses.map<DropdownMenuItem<String>>((course) {
@@ -483,7 +538,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             ),
             const SizedBox(height: 30),
 
-            // Main form fields
             TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Project Title'),
@@ -495,7 +549,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
 
-            // Supervisors
             Text('Select Supervisors',
                 style: TextStyle(
                     fontSize: 16,
@@ -518,19 +571,16 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                     color: theme.colorScheme.primary)),
             const SizedBox(height: 10),
 
-            // 🟢 Hardcoded Cards 1, 2, 3
-            _buildMemberCard(0), // Leader
+            _buildMemberCard(0), 
             _buildMemberCard(1),
             _buildMemberCard(2),
 
-            // 🟢 Conditional Card 4
             if (_showFourthMember)
               _buildMemberCard(3),
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                // 🟢 NEW: Add button toggles visibility, not count
                 if (!_showFourthMember)
                   TextButton.icon(
                     onPressed: () => setState(() => _showFourthMember = true),
@@ -541,11 +591,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 else
                   const SizedBox.shrink(),
 
-                // 🟢 NEW: Remove button hides visibility and clears data
                 if (_showFourthMember)
                   TextButton.icon(
                     onPressed: () => setState(() {
-                      // We clear the 4th controller data immediately when removing it
                       for (var controller in _memberControllers[3].values) {
                         controller.clear();
                       }
@@ -588,12 +636,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
+        menuMaxHeight: 300, 
         decoration: InputDecoration(
           labelText: 'Sup $index',
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
-        //Validator for the sups is still needed
         validator: (value) => value == null ? 'Required' : null,
         items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
           final abbreviation = [
@@ -617,10 +665,14 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-  // 🟢 NEW: Member card no longer contains validators. Submission logic handles it.
   Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
+    
+    // Custom white text styles for inputs inside the dark teal card
+    const whiteTextStyle = TextStyle(color: Colors.white);
+    const whiteLabelStyle = TextStyle(color: Colors.white70);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
@@ -645,36 +697,71 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            decoration: const InputDecoration(labelText: 'Name', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
-            // validator removed
+            style: whiteTextStyle,
+            decoration: const InputDecoration(
+              labelText: 'Name', 
+              labelStyle: whiteLabelStyle,
+              isDense: true, 
+              filled: true, 
+              fillColor: Colors.white10, 
+              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+            ),
           ),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
-              decoration: const InputDecoration(labelText: 'ID', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
-              // validator removed
+              style: whiteTextStyle,
+              decoration: const InputDecoration(
+                labelText: 'ID', 
+                labelStyle: whiteLabelStyle,
+                isDense: true, 
+                filled: true, 
+                fillColor: Colors.white10, 
+                border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              ),
             )),
             const SizedBox(width: 8),
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['cgpa'],
-              decoration:
-                  const InputDecoration(labelText: 'CGPA', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
+              style: whiteTextStyle,
+              decoration: const InputDecoration(
+                labelText: 'CGPA', 
+                labelStyle: whiteLabelStyle,
+                isDense: true, 
+                filled: true, 
+                fillColor: Colors.white10, 
+                border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              ),
             )),
           ]),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['email'],
-            decoration:
-                const InputDecoration(labelText: 'Email', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
+            style: whiteTextStyle,
+            decoration: const InputDecoration(
+              labelText: 'Email', 
+              labelStyle: whiteLabelStyle,
+              isDense: true, 
+              filled: true, 
+              fillColor: Colors.white10, 
+              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+            ),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['mobile'],
-            decoration:
-                const InputDecoration(labelText: 'Mobile', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
+            style: whiteTextStyle,
+            decoration: const InputDecoration(
+              labelText: 'Mobile', 
+              labelStyle: whiteLabelStyle,
+              isDense: true, 
+              filled: true, 
+              fillColor: Colors.white10, 
+              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+            ),
           ),
         ],
       ),
