@@ -16,6 +16,7 @@ class SubmitProposalScreen extends StatefulWidget {
 class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
   List<dynamic> _courses = [];
   List<dynamic> _supervisors = [];
+  Set<String> _submittedCourseIds = {}; 
   bool _isLoadingData = true;
   String? _errorMessage;
 
@@ -32,12 +33,22 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       final results = await Future.wait([
         _apiService.getCourses(),
         _apiService.getSupervisors(),
+        _apiService.getUserProposals(),
       ]);
 
       if (mounted) {
+        final myProposals = results[2] as List<dynamic>;
+
+        final submittedIds = myProposals.map((p) {
+          final courseData = p['course'];
+          if (courseData is Map) return courseData['_id']?.toString();
+          return courseData?.toString();
+        }).whereType<String>().toSet();
+
         setState(() {
-          _courses = results[0];
+          _courses = results[0]; 
           _supervisors = results[1];
+          _submittedCourseIds = submittedIds;
           _isLoadingData = false;
         });
       }
@@ -45,8 +56,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       if (mounted) {
         setState(() {
           _isLoadingData = false;
-          _errorMessage =
-              "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
+          _errorMessage = "Failed to load data: ${e.toString().replaceAll('Exception: ', '')}";
         });
       }
     }
@@ -69,9 +79,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            // 🟢 Updated instructions to reflect new team sizes
-            "• Fill in the details for all team members (2 to 4 members). The first member listed will be designated as the Team Leader.\n\n"
-            "• Note: You cannot submit a new proposal if you are already leading an active team.",
+            // 🟢 Instructions updated to reflect flexible members
+            "• Fill in the details for at least 2 team members. You can submit info for 2, 3, or 4 members. Leave unused cards blank.\n\n"
+            "• Note: You can only submit one proposal per course.",
             style: TextStyle(height: 1.5),
           ),
         ),
@@ -110,14 +120,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  height: 90,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
+                Container(height: 90, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
                 const SizedBox(height: 30),
                 Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
                 const SizedBox(height: 16),
@@ -138,8 +141,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                 Container(height: 20, width: 120, color: Colors.white),
                 const SizedBox(height: 10),
                 Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
-                const SizedBox(height: 15),
-                Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
               ],
             ),
           ),
@@ -154,24 +155,17 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           actions: [
             IconButton(
               icon: Icon(
-                themeProvider.isDarkMode
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
             ),
             IconButton(
-              icon: Icon(
-                Icons.info_outline_rounded,
-                color: theme.colorScheme.primary,
-              ),
+              icon: Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
               onPressed: _showInstructions,
             ),
           ],
         ),
-        body: Center(
-            child: Text(_errorMessage!,
-                style: const TextStyle(color: Colors.red))),
+        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
       );
     }
 
@@ -182,18 +176,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           actions: [
             IconButton(
               icon: Icon(
-                themeProvider.isDarkMode
-                    ? Icons.light_mode_rounded
-                    : Icons.dark_mode_rounded,
+                themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
-            ),
-            IconButton(
-              icon: Icon(
-                Icons.info_outline_rounded,
-                color: theme.colorScheme.primary,
-              ),
-              onPressed: _showInstructions,
             ),
           ],
         ),
@@ -210,21 +195,14 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              themeProvider.isDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
+              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
+            tooltip: themeProvider.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
           ),
           IconButton(
-            icon: Icon(
-              Icons.info_outline_rounded,
-              color: theme.colorScheme.primary,
-            ),
+            icon: Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
             onPressed: _showInstructions,
             tooltip: 'Submission Instructions',
           ),
@@ -239,6 +217,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
       body: SingleProposalForm(
         courses: _courses,
         supervisors: _supervisors,
+        submittedCourseIds: _submittedCourseIds,
       ),
     );
   }
@@ -247,11 +226,13 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
 class SingleProposalForm extends StatefulWidget {
   final List<dynamic> courses;
   final List<dynamic> supervisors;
+  final Set<String> submittedCourseIds; 
 
   const SingleProposalForm({
     super.key,
     required this.courses,
     required this.supervisors,
+    required this.submittedCourseIds,
   });
 
   @override
@@ -259,6 +240,7 @@ class SingleProposalForm extends StatefulWidget {
 }
 
 class _SingleProposalFormState extends State<SingleProposalForm> {
+  // 🟢 We use a regular form key now, not validating specific inputs anymore
   final _formKey = GlobalKey<FormState>();
   final ApiService _apiService = ApiService();
 
@@ -267,9 +249,10 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _linkController = TextEditingController();
 
+  // 🟢 Always keep controllers for 4 members ready in memory
   final List<Map<String, TextEditingController>> _memberControllers =
       List.generate(
-          4, // Still generates 4 in memory just in case
+          4,
           (index) => {
                 'name': TextEditingController(),
                 'id': TextEditingController(),
@@ -280,8 +263,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   bool _isSubmitting = false;
   
-  // 🟢 NEW: Starts at 2 members instead of a boolean
-  int _memberCount = 2;
+  // 🟢 NEW: Flags to handle UI visibility, not backend submission count
+  bool _showFourthMember = false;
 
   String? _sup1, _sup2, _sup3;
 
@@ -297,11 +280,18 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     super.dispose();
   }
 
+  // 🟢 NEW: Submission Logic that skips empty cards
   Future<void> _submitProposal() async {
+    // 1. Basic validation for the main form (Course, Title, Link, Sups)
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
       _showError('Please select a course at the top of the form.');
+      return;
+    }
+
+    if (widget.submittedCourseIds.contains(_selectedCourseId)) {
+      _showError('You have already submitted a proposal for this course.');
       return;
     }
 
@@ -312,68 +302,65 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
     setState(() => _isSubmitting = true);
 
-    try {
-      final myProposals = await _apiService.getUserProposals();
-      if (myProposals.isNotEmpty) {
-        _showError(
-            'Your account is already leading a team. Use another student account or remove the existing team first.');
-        if (mounted) setState(() => _isSubmitting = false);
-        return;
-      }
-    } catch (e) {
-      _showError('Could not verify existing teams. Please try again.');
-      if (mounted) setState(() => _isSubmitting = false);
-      return;
-    }
-
-    List<String> supervisorIds = [];
-    if (_sup1 != null) supervisorIds.add(_sup1!);
-    if (_sup2 != null) supervisorIds.add(_sup2!);
-    if (_sup3 != null) supervisorIds.add(_sup3!);
-
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     
-    // 🟢 Uses the dynamic member count instead of hardcoded 3 or 4
-    for (int i = 0; i < _memberCount; i++) {
+    // 2. Loop through all 4 possible controllers
+    for (int i = 0; i < 4; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
       String cgpaRaw = _memberControllers[i]['cgpa']!.text.trim();
       String email = _memberControllers[i]['email']!.text.trim();
       String mobile = _memberControllers[i]['mobile']!.text.trim();
 
-      if (id.isEmpty ||
-          name.isEmpty ||
-          cgpaRaw.isEmpty ||
-          email.isEmpty ||
-          mobile.isEmpty) {
-        setState(() => _isSubmitting = false);
-        _showError('Please complete all fields for Member ${i + 1}.');
-        return;
-      }
+      // 🟢 Logic: If ID or Name is partially filled, all fields become required.
+      bool isCardPartiallyFilled = id.isNotEmpty || name.isNotEmpty || cgpaRaw.isNotEmpty || email.isNotEmpty || mobile.isNotEmpty;
 
-      if (uniqueIds.contains(id)) {
-        setState(() => _isSubmitting = false);
-        _showError('Duplicate Student ID: $id');
-        return;
-      }
+      if (isCardPartiallyFilled) {
+        // Validation check for partial fill
+        if (id.isEmpty || name.isEmpty || cgpaRaw.isEmpty || email.isEmpty || mobile.isEmpty) {
+          setState(() => _isSubmitting = false);
+          _showError('Please complete all fields for Member ${i + 1}.');
+          return;
+        }
 
-      final cgpa = double.tryParse(cgpaRaw);
-      if (cgpa == null) {
-        setState(() => _isSubmitting = false);
-        _showError('Invalid CGPA for Member ${i + 1}.');
-        return;
-      }
+        // Duplicate check
+        if (uniqueIds.contains(id)) {
+          setState(() => _isSubmitting = false);
+          _showError('Duplicate Student ID: $id');
+          return;
+        }
 
-      uniqueIds.add(id);
-      members.add({
-        'name': name,
-        'studentId': id,
-        'cgpa': cgpaRaw,
-        'email': email,
-        'mobile': mobile,
-      });
+        final cgpa = double.tryParse(cgpaRaw);
+        if (cgpa == null) {
+          setState(() => _isSubmitting = false);
+          _showError('Invalid CGPA for Member ${i + 1}.');
+          return;
+        }
+
+        uniqueIds.add(id);
+        members.add({
+          'name': name,
+          'studentId': id,
+          'cgpa': cgpaRaw,
+          'email': email,
+          'mobile': mobile,
+        });
+      }
     }
+
+    // 3. Ensure we have at least 2 people counted
+    if (members.length < 2) {
+      setState(() => _isSubmitting = false);
+      _showError('Please provide information for at least 2 team members.');
+      return;
+    }
+
+    // (API call logic remains the same)
+    List<String> supervisorIds = [];
+    if (_sup1 != null) supervisorIds.add(_sup1!);
+    if (_sup2 != null) supervisorIds.add(_sup2!);
+    if (_sup3 != null) supervisorIds.add(_sup3!);
 
     try {
       await _apiService.submitProposal({
@@ -388,7 +375,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Proposal Submitted Successfully!'),
             backgroundColor: Colors.green));
-        Navigator.pop(context); // Go back to Dashboard
+        Navigator.pop(context); 
       }
     } catch (e) {
       if (mounted) _showError(e.toString().replaceAll('Exception: ', ''));
@@ -405,6 +392,10 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    
+    final bool isAlreadySubmitted = _selectedCourseId != null && 
+                                    widget.submittedCourseIds.contains(_selectedCourseId);
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20.0),
       child: Form(
@@ -412,6 +403,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
+            // Target Course Selector
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -420,7 +412,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 border: Border.all(
                     color: _selectedCourseId == null
                         ? theme.colorScheme.primary.withOpacity(0.5)
-                        : Colors.green.withOpacity(0.5),
+                        : (isAlreadySubmitted ? Colors.redAccent.withOpacity(0.5) : Colors.green.withOpacity(0.5)), 
                     width: 2),
               ),
               child: Column(
@@ -431,10 +423,10 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       Icon(
                         _selectedCourseId == null
                             ? Icons.school_rounded
-                            : Icons.check_circle_rounded,
+                            : (isAlreadySubmitted ? Icons.block_rounded : Icons.check_circle_rounded),
                         color: _selectedCourseId == null
                             ? theme.colorScheme.primary
-                            : Colors.green,
+                            : (isAlreadySubmitted ? Colors.redAccent : Colors.green),
                         size: 22,
                       ),
                       const SizedBox(width: 8),
@@ -462,15 +454,14 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       filled: true,
                       fillColor: theme.colorScheme.surface,
                     ),
-                    validator: (value) =>
-                        value == null ? 'Required to submit' : null,
+                    // We can still use validator here, the logic now handles empty member cards
+                    validator: (value) => value == null ? 'Required to submit' : null,
                     items:
                         widget.courses.map<DropdownMenuItem<String>>((course) {
                       return DropdownMenuItem<String>(
                         value: course['_id'],
                         child: Text(course['courseCode'],
-                            style:
-                                const TextStyle(fontWeight: FontWeight.w600)),
+                            style: const TextStyle(fontWeight: FontWeight.w600)),
                       );
                     }).toList(),
                     onChanged: (newValue) {
@@ -479,11 +470,20 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       });
                     },
                   ),
+                  if (isAlreadySubmitted)
+                    const Padding(
+                      padding: EdgeInsets.only(top: 8.0),
+                      child: Text(
+                        '⚠️ You have already submitted a proposal for this course.',
+                        style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                    )
                 ],
               ),
             ),
             const SizedBox(height: 30),
 
+            // Main form fields
             TextFormField(
                 controller: _titleController,
                 decoration: const InputDecoration(labelText: 'Project Title'),
@@ -491,11 +491,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             const SizedBox(height: 16),
             TextFormField(
                 controller: _linkController,
-                decoration:
-                    const InputDecoration(labelText: 'Google Drive Link'),
+                decoration: const InputDecoration(labelText: 'Google Drive Link'),
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
 
+            // Supervisors
             Text('Select Supervisors',
                 style: TextStyle(
                     fontSize: 16,
@@ -518,35 +518,41 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                     color: theme.colorScheme.primary)),
             const SizedBox(height: 10),
 
-            // 🟢 Dynamically generates the number of cards based on _memberCount
-            ...List.generate(
-                _memberCount, (index) => _buildMemberCard(index)),
+            // 🟢 Hardcoded Cards 1, 2, 3
+            _buildMemberCard(0), // Leader
+            _buildMemberCard(1),
+            _buildMemberCard(2),
 
-            // 🟢 Adaptive Buttons for Adding/Removing members
+            // 🟢 Conditional Card 4
+            if (_showFourthMember)
+              _buildMemberCard(3),
+
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                if (_memberCount < 4)
+                // 🟢 NEW: Add button toggles visibility, not count
+                if (!_showFourthMember)
                   TextButton.icon(
-                    onPressed: () => setState(() => _memberCount++),
+                    onPressed: () => setState(() => _showFourthMember = true),
                     icon: const Icon(Icons.group_add_rounded, color: Color(0xFF245E63)),
-                    label: Text('Add Member ${_memberCount + 1}',
-                        style: const TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
+                    label: const Text('Add 4th Member',
+                        style: TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
                   )
                 else
-                  const SizedBox.shrink(), // Keeps the remove button on the right if add is missing
+                  const SizedBox.shrink(),
 
-                if (_memberCount > 2)
+                // 🟢 NEW: Remove button hides visibility and clears data
+                if (_showFourthMember)
                   TextButton.icon(
                     onPressed: () => setState(() {
-                      // 🟢 Clears the data so if they add the slot back, it's empty
-                      for (var controller in _memberControllers[_memberCount - 1].values) {
+                      // We clear the 4th controller data immediately when removing it
+                      for (var controller in _memberControllers[3].values) {
                         controller.clear();
                       }
-                      _memberCount--;
+                      _showFourthMember = false;
                     }),
                     icon: Icon(Icons.person_remove_rounded, color: theme.colorScheme.error),
-                    label: Text('Remove Member',
+                    label: Text('Remove 4th Member',
                         style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold)),
                   ),
               ],
@@ -556,13 +562,17 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             SizedBox(
               height: 50,
               child: ElevatedButton(
-                onPressed: _isSubmitting ? null : _submitProposal,
+                onPressed: (_isSubmitting || isAlreadySubmitted) ? null : _submitProposal,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF245E63)),
+                    backgroundColor: isAlreadySubmitted ? Colors.grey : const Color(0xFF245E63),
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: Colors.grey.withOpacity(0.5), 
+                ),
                 child: _isSubmitting
                     ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Submit Proposal',
-                        style: TextStyle(fontSize: 18, color: Colors.white)),
+                    : Text(
+                        isAlreadySubmitted ? 'Already Submitted' : 'Submit Proposal',
+                        style: TextStyle(fontSize: 18, color: isAlreadySubmitted ? Colors.white70 : Colors.white)),
               ),
             ),
             const SizedBox(height: 50),
@@ -583,6 +593,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           contentPadding:
               const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
         ),
+        //Validator for the sups is still needed
+        validator: (value) => value == null ? 'Required' : null,
         items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
           final abbreviation = [
             s['abbreviation'],
@@ -605,6 +617,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
+  // 🟢 NEW: Member card no longer contains validators. Submission logic handles it.
   Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
@@ -632,36 +645,36 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            decoration: const InputDecoration(labelText: 'Name', isDense: true),
-            validator: (v) => v!.isEmpty ? 'Required' : null,
+            decoration: const InputDecoration(labelText: 'Name', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
+            // validator removed
           ),
           const SizedBox(height: 8),
           Row(children: [
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
-              decoration: const InputDecoration(labelText: 'ID', isDense: true),
-              validator: (v) => v!.isEmpty ? 'Required' : null,
+              decoration: const InputDecoration(labelText: 'ID', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
+              // validator removed
             )),
             const SizedBox(width: 8),
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['cgpa'],
               decoration:
-                  const InputDecoration(labelText: 'CGPA', isDense: true),
+                  const InputDecoration(labelText: 'CGPA', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
             )),
           ]),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['email'],
             decoration:
-                const InputDecoration(labelText: 'Email', isDense: true),
+                const InputDecoration(labelText: 'Email', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['mobile'],
             decoration:
-                const InputDecoration(labelText: 'Mobile', isDense: true),
+                const InputDecoration(labelText: 'Mobile', isDense: true, filled: true, fillColor: Colors.white10, border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))),
           ),
         ],
       ),
