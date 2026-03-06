@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/about_app_screen.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
-import 'theme/theme_provider.dart'; 
+import 'theme/theme_provider.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -46,7 +46,7 @@ class HomePage extends StatelessWidget {
                     return Opacity(
                       opacity: value,
                       child: Transform.translate(
-                        offset: Offset(0, 40 * (1 - value)), 
+                        offset: Offset(0, 40 * (1 - value)),
                         child: child,
                       ),
                     );
@@ -55,7 +55,6 @@ class HomePage extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: <Widget>[
-
                       Center(
                         child: Hero(
                           tag: 'app_logo',
@@ -63,24 +62,26 @@ class HomePage extends StatelessWidget {
                             'assets/logo/logo.png',
                             height: 120,
                             fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) => Container(
+                            errorBuilder: (context, error, stackTrace) =>
+                                Container(
                               height: 120,
                               width: 120,
                               decoration: BoxDecoration(
-                                color: theme.colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(30), 
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(30),
                               ),
-                              child: Icon(Icons.image_not_supported_rounded, size: 40, color: theme.colorScheme.primary),
+                              child: Icon(Icons.image_not_supported_rounded,
+                                  size: 40, color: theme.colorScheme.primary),
                             ),
                           ),
                         ),
                       ),
                       const SizedBox(height: 24),
-                      
                       Text(
                         'LeadUnity',
                         style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w900, 
+                          fontWeight: FontWeight.w900,
                           letterSpacing: -0.8,
                         ),
                         textAlign: TextAlign.center,
@@ -95,12 +96,10 @@ class HomePage extends StatelessWidget {
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 60),
-
                       _buildLoginOptionCard(
                         context: context,
                         title: 'Student',
-                        subtitle:
-                            'Submit proposals, build a team and connect.',
+                        subtitle: 'Submit proposals, build a team and connect.',
                         icon: Icons.school_rounded,
                         // 🟢 Back to your clean, flat Slate color
                         bgColor: const Color(0xFF475569),
@@ -123,7 +122,6 @@ class HomePage extends StatelessWidget {
               ),
             ),
           ),
-          
           Positioned(
             top: 8,
             left: 8,
@@ -136,14 +134,14 @@ class HomePage extends StatelessWidget {
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const AboutAppScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const AboutAppScreen()),
                   );
                 },
                 tooltip: 'About App',
               ),
             ),
           ),
-
           Positioned(
             top: 8,
             right: 8,
@@ -176,14 +174,14 @@ class HomePage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-    
+
     const Color textColor = Colors.white;
     const Color subtitleColor = Colors.white70;
     const Color iconColor = Colors.white;
 
     return Container(
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(24), 
+        borderRadius: BorderRadius.circular(24),
         // We kept the colored glow! It makes the flat color pop off the screen.
         boxShadow: [
           BoxShadow(
@@ -207,7 +205,7 @@ class HomePage extends StatelessWidget {
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
-              padding: const EdgeInsets.all(24.0), 
+              padding: const EdgeInsets.all(24.0),
               child: Row(
                 children: <Widget>[
                   // Glass icon background
@@ -232,11 +230,12 @@ class HomePage extends StatelessWidget {
                             style: theme.textTheme.titleLarge?.copyWith(
                                 color: textColor,
                                 fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5)), 
+                                letterSpacing: 0.5)),
                         const SizedBox(height: 6),
                         Text(
                           subtitle,
-                          style: const TextStyle(color: subtitleColor, height: 1.4), 
+                          style: const TextStyle(
+                              color: subtitleColor, height: 1.4),
                         ),
                       ],
                     ),
@@ -250,7 +249,7 @@ class HomePage extends StatelessWidget {
                     ),
                     child: const Icon(Icons.arrow_forward_ios_rounded,
                         size: 14, color: Colors.white),
-                  ), 
+                  ),
                 ],
               ),
             ),

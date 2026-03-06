@@ -1,4 +1,4 @@
-import 'dart:async'; // 🟢 1. Added this to get access to the Timer!
+import 'dart:async'; 
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
@@ -22,7 +22,7 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   final ApiService _api = ApiService();
   DateTime? _deadline; 
-  Timer? _timer; // 🟢 2. Created the Timer variable
+  Timer? _timer; 
 
   @override
   void initState() {
@@ -30,8 +30,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     _checkDeadline();
   }
 
-  // 🟢 3. The Cleanup Crew! We MUST destroy the timer when the user leaves the screen, 
-  // otherwise it will keep ticking forever in the background and crash the app.
   @override
   void dispose() {
     _timer?.cancel(); 
@@ -46,19 +44,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
         _deadline = deadlineDate;
       });
       
-      // 🟢 4. Start the ticking clock only AFTER we get the deadline from the kitchen!
       if (_deadline != null) {
         _startTickingClock();
       }
     }
   }
 
-  // 🟢 5. The Heartbeat Function
   void _startTickingClock() {
-    // This tells the app: "Every 1 second, run setState to redraw the screen!"
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        setState(() {}); // Redraws the UI with the new second
+        setState(() {}); 
       }
     });
   }
@@ -68,28 +63,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return true;
   }
 
-  // --- Helper: Get Status Text ---
+  // 🟢 Enhanced text with emojis for immediate visual recognition
   String _getSubmissionStatusText() {
     if (_deadline != null) {
       final now = DateTime.now();
       
       if (now.isAfter(_deadline!)) {
-        _timer?.cancel(); // 🟢 Stop the clock if the deadline passed!
-        return 'Deadline Passed';
+        _timer?.cancel(); 
+        return '🚨 Deadline Passed';
       }
       
       final diff = _deadline!.difference(now);
       
-      // 🟢 6. Format the live countdown!
       if (diff.inDays > 0) {
-        // If it's more than a day away, show Days, Hours, and Minutes
         final hours = diff.inHours.remainder(24);
         final minutes = diff.inMinutes.remainder(60);
         return 'Closes in ${diff.inDays}d ${hours}h ${minutes}m';
       } else {
-        // If it's less than 24 hours, show Hours, Minutes, and SECONDS ticking!
         final hours = diff.inHours;
-        // .padLeft(2, '0') makes sure "5 seconds" looks like "05" instead of just "5"
         final minutesStr = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
         final secondsStr = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
         
@@ -100,16 +91,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return 'Upload your team project proposal';
   }
 
-  // --- Helper: Get Status Color ---
+  // 🟢 Bright, high-contrast colors for the clock
   Color _getSubmissionStatusColor() {
     if (_deadline != null) {
       final now = DateTime.now();
-      if (now.isAfter(_deadline!)) return Colors.redAccent; // Expired
+      if (now.isAfter(_deadline!)) return Colors.redAccent; 
       
       final diff = _deadline!.difference(now);
-      if (diff.inHours < 24) return Colors.redAccent; // Urgent (<24h)
+      if (diff.inHours < 24) return Colors.redAccent; // Urgent (Red)
+      
+      return Colors.amberAccent; // Normal Ticking (Bright Gold)
     }
-    return Colors.white70; // Normal
+    return Colors.white70; 
   }
 
   void _navigateToSubmitProposal() {
@@ -170,64 +163,59 @@ class _StudentDashboardState extends State<StudentDashboard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                //Submit Proposal
-                _buildSlickCard(
-                  context: context,
-                  icon: canSubmit ? Icons.upload_file_outlined : Icons.lock_clock_outlined,
+                
+                // Submit Proposal Card
+                _AnimatedStudentCard(
+                  icon: canSubmit ? Icons.upload_file_rounded : Icons.lock_clock_rounded,
                   title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
-                  action: statusText, // 🟢 This string will now magically update every second!
-                  actionColor: statusColor,
-                  color: canSubmit ? AppColors.accentCoral : Colors.grey,
+                  action: statusText, 
+                  actionColor: statusColor, // 🟢 Now passes the vibrant colors
+                  iconColor: canSubmit ? const Color.fromARGB(255, 255, 255, 255) : Colors.grey,
                   onTap: canSubmit ? _navigateToSubmitProposal : () {}, 
                   isProminent: true,
                   isDisabled: !canSubmit, 
-                  darkBgColor: canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800],
-                  lightBgColor: canSubmit ? const Color(0xFFD6E4FF) : Colors.grey[300],
+                  bgColor: canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800]!,
                 ),
+                const SizedBox(height: 16),
 
                 IntrinsicHeight(
                   child: Row(
                     children: [
                       Expanded(
-                        child: _buildSlickCard(
-                          context: context,
-                          icon: Icons.groups_2_outlined,
+                        child: _AnimatedStudentCard(
+                          icon: Icons.groups_2_rounded,
                           title: 'Team Info',
                           action: 'Submitted Info',
-                          color: AppColors.accentGreen,
+                          iconColor: const Color.fromARGB(255, 255, 255, 255),
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
-                          darkBgColor: const Color(0xFF6B7280),
-                          lightBgColor: const Color(0xFFE5E7EB),
+                          bgColor: const Color(0xFF6B7280),
                         ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
-                        child: _buildSlickCard(
-                          context: context,
-                          icon: Icons.person_add_alt_1_outlined,
+                        child: _AnimatedStudentCard(
+                          icon: Icons.person_add_alt_1_rounded,
                           title: 'Request Team',
                           action: 'If not in a group',
-                          color: AppColors.accentPink,
+                          iconColor: const Color.fromARGB(255, 255, 255, 255),
                           onTap: _navigateToRequestTeam,
                           isCompact: true,
-                          darkBgColor: const Color(0xFF0E7490),
-                          lightBgColor: const Color(0xFFCFFAFE),
+                          bgColor: const Color(0xFF0E7490),
                         ),
                       ),
                     ],
                   ),
                 ),
+                const SizedBox(height: 16),
 
-                _buildSlickCard(
-                  context: context,
-                  icon: Icons.download_for_offline_outlined,
+                _AnimatedStudentCard(
+                  icon: Icons.download_for_offline_rounded,
                   title: 'Get Template',
                   action: 'Preview and Download',
-                  color: AppColors.accentLime,
+                  iconColor: const Color.fromARGB(255, 255, 255, 255),
                   onTap: _downloadTemplate,
-                  darkBgColor: const Color(0xFF4338CA),
-                  lightBgColor: const Color(0xFFDDD6FE),
+                  bgColor: const Color(0xFF4338CA),
                 ),
               ],
             ),
@@ -258,57 +246,127 @@ class _StudentDashboardState extends State<StudentDashboard> {
       ),
     );
   }
+}
 
-  Widget _buildSlickCard({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    required String action,
-    required Color color,
-    required VoidCallback onTap,
-    bool isProminent = false,
-    bool isCompact = false,
-    bool isDisabled = false,
-    Color? darkBgColor,
-    Color? lightBgColor,
-    Color? actionColor,
-  }) {
-    final double opacity = isDisabled ? 0.6 : 1.0;
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16.0),
-      child: Opacity(
-        opacity: opacity,
-        child: InkWell(
-          onTap: isDisabled ? null : onTap,
-          borderRadius: AppRadii.card,
+// Custom Animated Card Widget for Student Dashboard
+class _AnimatedStudentCard extends StatefulWidget {
+  final IconData icon;
+  final String title;
+  final String action;
+  final VoidCallback onTap;
+  final Color bgColor;
+  final Color iconColor;
+  final Color? actionColor;
+  final bool isProminent;
+  final bool isCompact;
+  final bool isDisabled;
+
+  const _AnimatedStudentCard({
+    required this.icon,
+    required this.title,
+    required this.action,
+    required this.onTap,
+    required this.bgColor,
+    required this.iconColor,
+    this.actionColor,
+    this.isProminent = false,
+    this.isCompact = false,
+    this.isDisabled = false,
+  });
+
+  @override
+  State<_AnimatedStudentCard> createState() => _AnimatedStudentCardState();
+}
+
+class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
+  bool _isPressed = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final double opacity = widget.isDisabled ? 0.6 : 1.0;
+
+    return Opacity(
+      opacity: opacity,
+      child: GestureDetector(
+        onTapDown: widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
+        onTapUp: widget.isDisabled ? null : (_) {
+          setState(() => _isPressed = false);
+          widget.onTap();
+        },
+        onTapCancel: () => setState(() => _isPressed = false),
+        
+        child: AnimatedScale(
+          scale: _isPressed ? 0.95 : 1.0, 
+          duration: const Duration(milliseconds: 150),
+          curve: Curves.easeOutCubic,
           child: Container(
-            decoration: BoxDecoration(color: darkBgColor ?? const Color(0xFF10B981), borderRadius: AppRadii.card, boxShadow: isDisabled ? [] : AppShadows.level1),
-            padding: EdgeInsets.all(isProminent ? 24.0 : 20.0),
-            child: isCompact
+            decoration: BoxDecoration(
+              color: widget.bgColor, 
+              borderRadius: AppRadii.card, 
+              boxShadow: widget.isDisabled || _isPressed ? [] : AppShadows.level1,
+              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+            ),
+            padding: EdgeInsets.all(widget.isProminent ? 24.0 : 20.0),
+            child: widget.isCompact
                 ? Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(padding: const EdgeInsets.all(10), decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)), child: Icon(icon, size: 28, color: Colors.white)),
+                      _buildAnimatedIcon(),
                       const SizedBox(height: 16),
-                      Text(title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(widget.title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(action, style: TextStyle(fontSize: 12, color: actionColor ?? Colors.white70)),
+                      Text(widget.action, style: TextStyle(fontSize: 12, color: widget.actionColor ?? Colors.white70)),
                     ],
                   )
                 : Row(
                     children: <Widget>[
-                      Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(12)), child: Icon(icon, size: 30, color: Colors.white)),
+                      _buildAnimatedIcon(),
                       const SizedBox(width: 20),
-                      Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Text(title, style: TextStyle(fontSize: isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)), 
-                        const SizedBox(height: 4), 
-                        Text(action, style: TextStyle(fontSize: 14, color: actionColor ?? Colors.white70, fontWeight: actionColor != null ? FontWeight.bold : FontWeight.normal))
-                      ])),
-                      if (!isDisabled) const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start, 
+                          children: [
+                            Text(widget.title, style: TextStyle(fontSize: widget.isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)), 
+                            const SizedBox(height: 6), 
+                            // 🟢 Increased font size, letter spacing, and weight for Prominent cards
+                            Text(
+                              widget.action, 
+                              style: TextStyle(
+                                fontSize: widget.isProminent ? 15 : 14, 
+                                color: widget.actionColor ?? Colors.white70, 
+                                fontWeight: widget.isProminent || widget.actionColor != null ? FontWeight.w800 : FontWeight.normal,
+                                letterSpacing: widget.isProminent ? 0.3 : 0,
+                              )
+                            )
+                          ]
+                        )
+                      ),
+                      if (!widget.isDisabled) const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
                     ],
                   ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildAnimatedIcon() {
+    return AnimatedScale(
+      scale: _isPressed ? 1.25 : 1.0, 
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.elasticOut, 
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: EdgeInsets.all(widget.isCompact ? 10 : 12),
+        decoration: BoxDecoration(
+          color: _isPressed 
+              ? widget.iconColor.withOpacity(0.3) 
+              : widget.iconColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: widget.iconColor.withOpacity(0.3)),
+        ),
+        child: Icon(widget.icon, size: widget.isCompact ? 28 : 30, color: widget.iconColor),
       ),
     );
   }

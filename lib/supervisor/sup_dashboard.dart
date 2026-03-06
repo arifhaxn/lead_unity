@@ -18,11 +18,11 @@ class SupervisorDashboard extends StatelessWidget {
 
     final String fullName = user?.name ?? 'Supervisor';
     final String displayName = fullName
-      .trim()
-      .split(RegExp(r'\s+'))
-      .where((part) => part.isNotEmpty)
-      .take(2)
-      .join(' ');
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .join(' ');
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -32,7 +32,6 @@ class SupervisorDashboard extends StatelessWidget {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -49,18 +48,19 @@ class SupervisorDashboard extends StatelessWidget {
             ),
             const SizedBox(height: 30),
 
-            _buildCard(
-              context,
-              "My Teams",
-              "Personal Markings",
-              Icons.groups,
-              () => Navigator.push(
+            // 🟢 Animated Card 1: Deep Blue & Gold
+            _AnimatedDashboardCard(
+              title: "My Teams",
+              subtitle: "Personal Markings",
+              icon: Icons.groups_rounded,
+              bgColor: const Color(0xFF1E3A8A),
+              iconColor: const Color.fromARGB(255, 24, 255, 143), // Royal Gold
+              height: 120,
+              horizontalLayout: true,
+              onTap: () => Navigator.push(
                   context,
                   MaterialPageRoute(
                       builder: (_) => const TeamListScreen(onlyMyTeams: true))),
-              darkBgColor: const Color(0xFF2F2A6D),
-              height: 120,
-              horizontalLayout: true,
             ),
 
             const SizedBox(height: 16),
@@ -68,31 +68,33 @@ class SupervisorDashboard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _buildCard(
-                    context,
-                    "All Teams",
-                    "Global List",
-                    Icons.format_list_bulleted,
-                    () => Navigator.push(
+                  // 🟢 Animated Card 2: Purple-Slate & Mint
+                  child: _AnimatedDashboardCard(
+                    title: "All Teams",
+                    subtitle: "Board Marking",
+                    icon: Icons.format_list_bulleted_rounded,
+                    bgColor: const Color.fromARGB(255, 74, 65, 91),
+                    iconColor: const Color.fromARGB(255, 255, 156, 252), // Bright Mint
+                    onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (_) =>
                                 const TeamListScreen(onlyMyTeams: false))),
-                    darkBgColor: const Color(0xFF245E63),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: _buildCard(
-                    context,
-                    "Supervisors",
-                    "Colleagues",
-                    Icons.person_pin_circle_outlined,
-                    () => Navigator.push(
+                  // 🟢 Animated Card 3: Deep Teal & Cyan
+                  child: _AnimatedDashboardCard(
+                    title: "Supervisors",
+                    subtitle: "Colleagues",
+                    icon: Icons.person_pin_circle_rounded,
+                    bgColor: const Color(0xFF0E7490),
+                    iconColor: Colors.cyanAccent, // Sleek Cyan (Replaced Amber)
+                    onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
                             builder: (_) => const SupervisorListScreen())),
-                    darkBgColor: const Color(0xFF4E2E3C),
                   ),
                 ),
               ],
@@ -111,86 +113,135 @@ class SupervisorDashboard extends StatelessWidget {
       ),
     );
   }
+}
 
-  Widget _buildCard(BuildContext context, String title, String subtitle,
-      IconData icon, VoidCallback onTap,
-      {Color? darkBgColor,
-      double height = 180,
-      bool horizontalLayout = false}) {
+// 🟢 NEW: Custom Animated Card Widget
+class _AnimatedDashboardCard extends StatefulWidget {
+  final String title;
+  final String subtitle;
+  final IconData icon;
+  final VoidCallback onTap;
+  final Color bgColor;
+  final Color iconColor;
+  final double height;
+  final bool horizontalLayout;
+
+  const _AnimatedDashboardCard({
+    required this.title,
+    required this.subtitle,
+    required this.icon,
+    required this.onTap,
+    required this.bgColor,
+    required this.iconColor,
+    this.height = 180,
+    this.horizontalLayout = false,
+  });
+
+  @override
+  State<_AnimatedDashboardCard> createState() => _AnimatedDashboardCardState();
+}
+
+class _AnimatedDashboardCardState extends State<_AnimatedDashboardCard> {
+  bool _isPressed = false; // Tracks physical touch
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return InkWell(
-      onTap: onTap,
-      borderRadius: AppRadii.card,
-      child: Container(
-        height: height,
+
+    return GestureDetector(
+      // 🟢 Tap listeners to trigger the animation states
+      onTapDown: (_) => setState(() => _isPressed = true),
+      onTapUp: (_) {
+        setState(() => _isPressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _isPressed = false),
+      
+      // 🟢 Card Shrink Animation
+      child: AnimatedScale(
+        scale: _isPressed ? 0.95 : 1.0, // Shrinks 5% on press
+        duration: const Duration(milliseconds: 150),
+        curve: Curves.easeOutCubic,
+        child: Container(
+          height: widget.height,
+          decoration: BoxDecoration(
+            color: widget.bgColor,
+            borderRadius: AppRadii.card,
+            boxShadow: _isPressed ? [] : AppShadows.level1, // Shadow drops out when pressed
+            border: Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: widget.horizontalLayout
+                ? Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildAnimatedIcon(),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(widget.title,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text(widget.subtitle,
+                                style: const TextStyle(
+                                    fontSize: 13, color: Colors.white70)),
+                          ],
+                        ),
+                      ),
+                      Icon(Icons.arrow_forward_ios_rounded,
+                          color: Colors.white.withOpacity(0.5), size: 18),
+                    ],
+                  )
+                : Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      _buildAnimatedIcon(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(widget.title,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          Text(widget.subtitle,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.white70)),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 🟢 Icon Pop Animation & Coloring
+  Widget _buildAnimatedIcon() {
+    return AnimatedScale(
+      scale: _isPressed ? 1.25 : 1.0, // Icon jumps up 25% when pressed
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.elasticOut, // Springy bounce effect
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 150),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: darkBgColor ?? const Color(0xFF10B981),
-          borderRadius: AppRadii.card,
-          boxShadow: AppShadows.level1,
-          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
+          // Icon background lights up slightly when pressed
+          color: _isPressed 
+              ? widget.iconColor.withOpacity(0.3) 
+              : widget.iconColor.withOpacity(0.15),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: widget.iconColor.withOpacity(0.3)),
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: horizontalLayout
-              ? Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: AppShadows.level1),
-                      child: Icon(icon, size: 28, color: Colors.white),
-                    ),
-                    const SizedBox(width: 16),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text(subtitle,
-                            style: const TextStyle(
-                                fontSize: 13, color: Colors.white70)),
-                      ],
-                    ),
-                    const Spacer(),
-                    Icon(Icons.arrow_forward_ios_rounded,
-                        color: Colors.white.withOpacity(0.5), size: 18),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(16),
-                          boxShadow: AppShadows.level1),
-                      child: Icon(icon, size: 28, color: Colors.white),
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(title,
-                            style: theme.textTheme.titleLarge?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold)),
-                        const SizedBox(height: 4),
-                        Text(subtitle,
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.white70)),
-                      ],
-                    ),
-                  ],
-                ),
-        ),
+        child: Icon(widget.icon, size: 28, color: widget.iconColor),
       ),
     );
   }

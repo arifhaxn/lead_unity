@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/api%20services/api_services.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import
 import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
 
@@ -146,12 +147,13 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+
+    // 🟢 REPLACED: Show the Skeleton Loader instead of the spinner
+    if (_isLoading) {
+      return _buildSkeletonLoader(theme, themeProvider);
+    }
 
     // Config Loading Logic
     final config = _allSettings[_evaluationType] ?? {};
@@ -309,9 +311,91 @@ class _MarkingScreenState extends State<MarkingScreen> {
       ],
     );
   }
+
+  // 🟢 NEW: Custom Skeleton Layout for the Evaluation Board
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider) {
+    final isDark = themeProvider.isDarkMode;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      appBar: AppBar(
+        title: const Text("Evaluation Board",
+            style: TextStyle(fontWeight: FontWeight.w700)),
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        centerTitle: true,
+        actions: [
+          IconButton(
+            icon: Icon(
+              isDark ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+            onPressed: themeProvider.toggleTheme,
+          ),
+        ],
+      ),
+      body: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 20, 20, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Dummy Criteria Card
+              Container(
+                height: 110,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              const SizedBox(height: 32),
+
+              // Dummy "Team Members" Title
+              Container(
+                height: 24,
+                width: 140,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(height: 16),
+
+              // Dummy Student Marking Cards
+              ...List.generate(3, (index) => Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                height: 170, // Approximate height of the full marking card
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              )),
+              
+              const SizedBox(height: 20),
+
+              // Dummy Submit Button
+              Container(
+                height: 56, // Matches your 18px padding + text height
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(30),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 }
 
-// --- STUDENT MARKING CARD ---
+// --- STUDENT MARKING CARD (remains unchanged) ---
 class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;
@@ -471,7 +555,7 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   ),
                 ),
 
-                // 🟢 NEW: Animated Toggle Button
+                // 🟢 Animated Toggle Button
                 GestureDetector(
                   onTap: () {
                     setState(() {
@@ -482,7 +566,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // 🟢 Smoothly animates the background color and border
                       AnimatedContainer(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
@@ -499,7 +582,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                             width: 1.5,
                           ),
                         ),
-                        // 🟢 Smoothly scales/pops the icon when it changes
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           transitionBuilder: (Widget child, Animation<double> animation) {
@@ -509,7 +591,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                             _isAbsent 
                                 ? Icons.settings_backup_restore_rounded 
                                 : Icons.person_off_rounded,
-                            // The key is required so Flutter knows the icon actually changed!
                             key: ValueKey<bool>(_isAbsent), 
                             size: 18,
                             color: _isAbsent ? Colors.green : Colors.redAccent,
@@ -517,7 +598,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      // 🟢 Smoothly fades the text color
                       AnimatedDefaultTextStyle(
                         duration: const Duration(milliseconds: 300),
                         style: TextStyle(
