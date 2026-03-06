@@ -24,8 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
   final _api = ApiService();
 
   bool _isRegOpen = true;
-
   bool _isLoading = false;
+  
+  // 🟢 NEW: State variable to track password visibility
+  bool _obscurePassword = true; 
 
   @override
   void initState() {
@@ -100,11 +102,10 @@ class _LoginScreenState extends State<LoginScreen> {
     final prefixIcon = isStudent ? Icons.badge_outlined : Icons.short_text;
     final keyboardType = isStudent ? TextInputType.number : TextInputType.text;
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        color: theme.colorScheme.outline.withOpacity(0.2), 
         height: 1.0,
       ),
     );
@@ -112,10 +113,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-          backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+          backgroundColor: theme.scaffoldBackgroundColor, 
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, // 🟢 Add bottom line
+          bottom: appBarBottomLine, 
           iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
           actions: [
             IconButton(
@@ -140,7 +141,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 20), // Added a little top padding
+                  const SizedBox(height: 20),
                   Text(
                     isStudent ? 'Student Login' : 'Supervisor Login',
                     style: const TextStyle(
@@ -166,10 +167,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   const SizedBox(height: 20),
                   TextField(
                     controller: _passController,
-                    obscureText: true,
+                    obscureText: _obscurePassword, // 🟢 Links to state
                     decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline_rounded),
+                        // 🟢 NEW: Added Visibility Toggle Icon
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off_rounded
+                                : Icons.visibility_rounded,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
                         focusedBorder: OutlineInputBorder(
                             borderSide: BorderSide(color: themeColor))),
                   ),

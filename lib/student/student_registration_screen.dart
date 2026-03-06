@@ -21,17 +21,17 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   Future<void> _initiateRegistration() async {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
-      
+
       setState(() => _isLoading = true);
-      
+
       try {
-        await Provider.of<AuthProvider>(context, listen: false).sendOtp(_formData['email']);
-        
+        await Provider.of<AuthProvider>(context, listen: false)
+            .sendOtp(_formData['email']);
+
         if (!mounted) return;
-        
+
         setState(() => _isLoading = false);
         _showOTPDialog(); // Only show dialog if API succeeds
-        
       } catch (e) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -45,54 +45,59 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   void _showOTPDialog() {
     final otpController = TextEditingController();
     bool isVerifying = false;
-    
+
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (ctx) => StatefulBuilder(
-        builder: (context, setDialogState) {
-          return AlertDialog(
-            title: const Text("Verify Email"),
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("We have sent a verification code to ${_formData['email']}. It expires in 5 minutes."),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: otpController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
+      builder: (ctx) => StatefulBuilder(builder: (context, setDialogState) {
+        return AlertDialog(
+          title: const Text("Verify Email"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                  "We have sent a verification code to ${_formData['email']}. It expires in 5 minutes."),
+              const SizedBox(height: 20),
+              TextField(
+                controller: otpController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
                     labelText: "Enter 6-digit Code",
-                    border: OutlineInputBorder()
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              if (!isVerifying)
-                TextButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text("Cancel"),
-                ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                ),
-                onPressed: isVerifying ? null : () {
-                  if (otpController.text.isNotEmpty) {
-                    setDialogState(() => isVerifying = true); // Show loading in dialog
-                    // Call final registration with OTP
-                    _finalizeRegistration(otpController.text, ctx); 
-                  }
-                },
-                child: isVerifying 
-                  ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) 
-                  : const Text("Verify & Register"),
-              )
+                    border: OutlineInputBorder()),
+              ),
             ],
-          );
-        }
-      ),
+          ),
+          actions: [
+            if (!isVerifying)
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text("Cancel"),
+              ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              onPressed: isVerifying
+                  ? null
+                  : () {
+                      if (otpController.text.isNotEmpty) {
+                        setDialogState(
+                            () => isVerifying = true); // Show loading in dialog
+                        // Call final registration with OTP
+                        _finalizeRegistration(otpController.text, ctx);
+                      }
+                    },
+              child: isVerifying
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2))
+                  : const Text("Verify & Register"),
+            )
+          ],
+        );
+      }),
     );
   }
 
@@ -119,10 +124,11 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         (route) => false,
       );
     } catch (e) {
-      Navigator.pop(dialogContext); 
-      
+      Navigator.pop(dialogContext);
+
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text("Registration Failed: ${e.toString().replaceAll('Exception: ', '')}"),
+          content: Text(
+              "Registration Failed: ${e.toString().replaceAll('Exception: ', '')}"),
           backgroundColor: Colors.red));
     }
   }
@@ -133,7 +139,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       builder: (ctx) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.info_outline_rounded, color: Theme.of(context).colorScheme.primary),
+            Icon(Icons.info_outline_rounded,
+                color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
             const Text("How to Register"),
           ],
@@ -170,12 +177,14 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         height: 1.0,
       ),
     );
-    
+
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matched background color
+      backgroundColor:
+          theme.scaffoldBackgroundColor, // 🟢 Matched background color
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matched background color
+        backgroundColor:
+            theme.scaffoldBackgroundColor, // 🟢 Matched background color
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         bottom: appBarBottomLine, // 🟢 Added bottom line
@@ -320,7 +329,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
               ),
 
               const SizedBox(height: 40),
-              
+
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
