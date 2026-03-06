@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; // 🟢 Added Shimmer Import!
+import 'package:shimmer/shimmer.dart'; 
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -69,7 +69,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            "• Fill in the details for all team members (3 or 4). The first member listed will be designated as the Team Leader.\n\n"
+            // 🟢 Updated instructions to reflect new team sizes
+            "• Fill in the details for all team members (2 to 4 members). The first member listed will be designated as the Team Leader.\n\n"
             "• Note: You cannot submit a new proposal if you are already leading an active team.",
             style: TextStyle(height: 1.5),
           ),
@@ -89,7 +90,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 NEW: Custom Skeleton Loader for the Form!
     if (_isLoadingData) {
       final isDark = theme.brightness == Brightness.dark;
       final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
@@ -110,7 +110,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Dummy Course Selector Box
                 Container(
                   height: 90,
                   width: double.infinity,
@@ -120,18 +119,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                   ),
                 ),
                 const SizedBox(height: 30),
-                
-                // Dummy Text Fields (Title and Link)
                 Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
                 const SizedBox(height: 16),
                 Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
                 const SizedBox(height: 24),
-                
-                // Dummy Supervisors Title
                 Container(height: 20, width: 150, color: Colors.white),
                 const SizedBox(height: 10),
-                
-                // Dummy Supervisor Dropdown Row
                 Row(
                   children: [
                     Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
@@ -142,12 +135,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                   ],
                 ),
                 const SizedBox(height: 30),
-                
-                // Dummy Team Members Title
                 Container(height: 20, width: 120, color: Colors.white),
                 const SizedBox(height: 10),
-                
-                // Dummy Team Member Cards
                 Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
                 const SizedBox(height: 15),
                 Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
@@ -219,7 +208,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
         actions: [
-          
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -232,7 +220,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
                 ? 'Switch to light mode'
                 : 'Switch to dark mode',
           ),
-          
           IconButton(
             icon: Icon(
               Icons.info_outline_rounded,
@@ -282,7 +269,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
   final List<Map<String, TextEditingController>> _memberControllers =
       List.generate(
-          4,
+          4, // Still generates 4 in memory just in case
           (index) => {
                 'name': TextEditingController(),
                 'id': TextEditingController(),
@@ -292,7 +279,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               });
 
   bool _isSubmitting = false;
-  bool _hasFourthMember = false;
+  
+  // 🟢 NEW: Starts at 2 members instead of a boolean
+  int _memberCount = 2;
 
   String? _sup1, _sup2, _sup3;
 
@@ -301,7 +290,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     _titleController.dispose();
     _linkController.dispose();
     for (var map in _memberControllers) {
-      map.values.forEach((c) => c.dispose());
+      for (var c in map.values) {
+        c.dispose();
+      }
     }
     super.dispose();
   }
@@ -342,9 +333,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
-    int count = _hasFourthMember ? 4 : 3;
-
-    for (int i = 0; i < count; i++) {
+    
+    // 🟢 Uses the dynamic member count instead of hardcoded 3 or 4
+    for (int i = 0; i < _memberCount; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
       String cgpaRaw = _memberControllers[i]['cgpa']!.text.trim();
@@ -421,7 +412,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
-            
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -492,7 +482,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 ],
               ),
             ),
-
             const SizedBox(height: 30),
 
             TextFormField(
@@ -529,24 +518,39 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                     color: theme.colorScheme.primary)),
             const SizedBox(height: 10),
 
+            // 🟢 Dynamically generates the number of cards based on _memberCount
             ...List.generate(
-                _hasFourthMember ? 4 : 3, (index) => _buildMemberCard(index)),
+                _memberCount, (index) => _buildMemberCard(index)),
 
-            if (!_hasFourthMember)
-              TextButton.icon(
-                onPressed: () => setState(() => _hasFourthMember = true),
-                icon: const Icon(Icons.add, color: Color(0xFF245E63)),
-                label: const Text('Add 4th Member',
-                    style: TextStyle(color: Color(0xFF245E63))),
-              ),
+            // 🟢 Adaptive Buttons for Adding/Removing members
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                if (_memberCount < 4)
+                  TextButton.icon(
+                    onPressed: () => setState(() => _memberCount++),
+                    icon: const Icon(Icons.group_add_rounded, color: Color(0xFF245E63)),
+                    label: Text('Add Member ${_memberCount + 1}',
+                        style: const TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
+                  )
+                else
+                  const SizedBox.shrink(), // Keeps the remove button on the right if add is missing
 
-            if (_hasFourthMember)
-              TextButton.icon(
-                onPressed: () => setState(() => _hasFourthMember = false),
-                icon: Icon(Icons.remove, color: theme.colorScheme.error),
-                label: Text('Remove 4th Member',
-                    style: TextStyle(color: theme.colorScheme.error)),
-              ),
+                if (_memberCount > 2)
+                  TextButton.icon(
+                    onPressed: () => setState(() {
+                      // 🟢 Clears the data so if they add the slot back, it's empty
+                      for (var controller in _memberControllers[_memberCount - 1].values) {
+                        controller.clear();
+                      }
+                      _memberCount--;
+                    }),
+                    icon: Icon(Icons.person_remove_rounded, color: theme.colorScheme.error),
+                    label: Text('Remove Member',
+                        style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold)),
+                  ),
+              ],
+            ),
 
             const SizedBox(height: 30),
             SizedBox(
@@ -561,7 +565,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                         style: TextStyle(fontSize: 18, color: Colors.white)),
               ),
             ),
-            const SizedBox(height: 50), // Bottom padding
+            const SizedBox(height: 50),
           ],
         ),
       ),
