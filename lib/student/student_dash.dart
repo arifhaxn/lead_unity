@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
+import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
 
 import '../../api services/api_services.dart';
@@ -222,11 +223,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _openChatbot,
-        backgroundColor: accent,
-        child: const Icon(Icons.message, color: Colors.white),
-      ),
+      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 

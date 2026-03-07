@@ -29,95 +29,71 @@ class HomePage extends StatelessWidget {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     return Scaffold(
-      backgroundColor: theme.colorScheme.surface,
+      backgroundColor: theme.scaffoldBackgroundColor,
       body: Stack(
         children: [
-          Container(
-            color: theme.colorScheme.surface,
-            child: Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(32.0),
-                // The smooth Entrance Animation remains!
-                child: TweenAnimationBuilder(
-                  tween: Tween<double>(begin: 0, end: 1),
-                  duration: const Duration(milliseconds: 800),
-                  curve: Curves.easeOutQuart,
-                  builder: (context, double value, child) {
-                    return Opacity(
-                      opacity: value,
-                      child: Transform.translate(
-                        offset: Offset(0, 40 * (1 - value)),
-                        child: child,
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(32.0),
+              child: TweenAnimationBuilder(
+                tween: Tween<double>(begin: 0, end: 1),
+                duration: const Duration(milliseconds: 800),
+                curve: Curves.easeOutQuart,
+                builder: (context, double value, child) {
+                  return Opacity(
+                    opacity: value,
+                    child: Transform.translate(
+                      offset: Offset(0, 40 * (1 - value)),
+                      child: child,
+                    ),
+                  );
+                },
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    
+                    // 🟢 NEW: Integrated the specific Animated Logo Widget
+                    const Center(child: _AnimatedAppLogo()),
+                    
+                    const SizedBox(height: 24),
+                    Text(
+                      'LeadUnity',
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.8,
                       ),
-                    );
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      Center(
-                        child: Hero(
-                          tag: 'app_logo',
-                          child: Image.asset(
-                            'assets/logo/logo.png',
-                            height: 120,
-                            fit: BoxFit.contain,
-                            errorBuilder: (context, error, stackTrace) =>
-                                Container(
-                              height: 120,
-                              width: 120,
-                              decoration: BoxDecoration(
-                                color:
-                                    theme.colorScheme.primary.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(30),
-                              ),
-                              child: Icon(Icons.image_not_supported_rounded,
-                                  size: 40, color: theme.colorScheme.primary),
-                            ),
-                          ),
-                        ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Leading Innovations. Uniting Teams.',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                        fontWeight: FontWeight.w500,
                       ),
-                      const SizedBox(height: 24),
-                      Text(
-                        'LeadUnity',
-                        style: theme.textTheme.displaySmall?.copyWith(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: -0.8,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'The link between students and supervisors',
-                        style: theme.textTheme.bodyLarge?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 60),
-                      _buildLoginOptionCard(
-                        context: context,
-                        title: 'Student',
-                        subtitle: 'Submit proposals, build a team and connect.',
-                        icon: Icons.school_rounded,
-                        // 🟢 Back to your clean, flat Slate color
-                        bgColor: const Color(0xFF475569),
-                        onTap: () => _navigateToStudentLogin(context),
-                      ),
-                      const SizedBox(height: 24),
-                      _buildLoginOptionCard(
-                        context: context,
-                        title: 'Supervisor',
-                        subtitle:
-                            'Evaluate, review, and track student projects.',
-                        icon: Icons.security_rounded,
-                        // 🟢 Back to your clean, flat Deep Blue color
-                        bgColor: const Color(0xFF1E3A8A),
-                        onTap: () => _navigateToAdminLogin(context),
-                      ),
-                    ],
-                  ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 60),
+                    _buildLoginOptionCard(
+                      context: context,
+                      title: 'Student',
+                      subtitle: 'Submit proposals, build a team and connect.',
+                      icon: Icons.school_rounded,
+                      bgColor: const Color(0xFF475569),
+                      onTap: () => _navigateToStudentLogin(context),
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLoginOptionCard(
+                      context: context,
+                      title: 'Supervisor',
+                      subtitle:
+                          'Evaluate, review, and track student projects.',
+                      icon: Icons.security_rounded,
+                      bgColor: const Color(0xFF1E3A8A),
+                      onTap: () => _navigateToAdminLogin(context),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -182,7 +158,6 @@ class HomePage extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(24),
-        // We kept the colored glow! It makes the flat color pop off the screen.
         boxShadow: [
           BoxShadow(
             color: bgColor.withOpacity(0.3),
@@ -201,14 +176,13 @@ class HomePage extends StatelessWidget {
           highlightColor: Colors.white.withOpacity(0.1),
           child: Ink(
             decoration: BoxDecoration(
-              color: bgColor, // 🟢 Flat color applied here
+              color: bgColor,
               borderRadius: BorderRadius.circular(24),
             ),
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Row(
                 children: <Widget>[
-                  // Glass icon background
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
@@ -252,6 +226,78 @@ class HomePage extends StatelessWidget {
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// --- 🟢 NEW HELPER WIDGET FOR ANIMATING THE LOGO ---
+class _AnimatedAppLogo extends StatefulWidget {
+  const _AnimatedAppLogo({Key? key}) : super(key: key);
+
+  @override
+  State<_AnimatedAppLogo> createState() => _AnimatedAppLogoState();
+}
+
+class _AnimatedAppLogoState extends State<_AnimatedAppLogo>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _pulseAnimation;
+  late Animation<Offset> _hoverAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 4), // 🟢 Slow, premium full cycle
+    )..repeat(reverse: true);
+
+    // 🟢 Subtle Size Pulse (1.0 = normal, 1.05 = 5% larger)
+    _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeInOutSine)),
+    );
+
+    // 🟢 Very Slight Vertical Hover (moves up 4 pixels)
+    _hoverAnimation = Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.04)).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    // 🟢 Keep the Hero tag for standard transitions
+    return Hero(
+      tag: 'app_logo',
+      // Combine animations
+      child: SlideTransition(
+        position: _hoverAnimation,
+        child: ScaleTransition(
+          scale: _pulseAnimation,
+          child: Image.asset(
+            'assets/logo/logo.png',
+            height: 120,
+            fit: BoxFit.contain,
+            errorBuilder: (context, error, stackTrace) => Container(
+              height: 120,
+              width: 120,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Icon(Icons.image_not_supported_rounded,
+                  size: 40, color: theme.colorScheme.primary),
             ),
           ),
         ),

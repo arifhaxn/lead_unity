@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
+import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart'; 
 import '../../chatbot_screen.dart';
@@ -70,15 +72,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
     _courseTabs = _extractCourseTabs(_processedTeams);
   }
 
-  void _showInstructions() {
+void _showInstructions() {
     final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
     final content = widget.onlyMyTeams
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
 
-    showDialog(
+    // 🟢 REPLACED `showDialog` with our new custom animated function
+    showAnimatedDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      dialog: AlertDialog(
         title: Row(
           children: [
             Icon(Icons.info_outline_rounded,
@@ -93,7 +96,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(context), // 🟢 Uses main context to pop
             child: const Text("Got it!"),
           ),
         ],
@@ -168,7 +171,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 _buildCourseTabs(context, _courseTabs),
 
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10), // Slightly reduced top padding
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10), 
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) {
@@ -251,25 +254,36 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       return RefreshIndicator(
                         onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
                         color: theme.colorScheme.primary,
-                        child: ListView.builder(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                          itemCount: filteredWithCardId.length,
-                          itemBuilder: (context, index) {
-                            final team = filteredWithCardId[index];
-                            final teamMap = team as Map<String, dynamic>;
-                            final serial =
-                                serialByTeamKeyInCourse[_teamKey(teamMap)] ??
-                                    (index + 1);
+                        child: AnimationLimiter(
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                            itemCount: filteredWithCardId.length,
+                            itemBuilder: (context, index) {
+                              final team = filteredWithCardId[index];
+                              final teamMap = team as Map<String, dynamic>;
+                              final serial =
+                                  serialByTeamKeyInCourse[_teamKey(teamMap)] ??
+                                      (index + 1);
 
-                            return _buildTeamCard(
-                              context,
-                              serialNumber: serial,
-                              team: teamMap,
-                              myId: myId,
-                              dataProvider: dataProvider, 
-                            );
-                          },
+                              return AnimationConfiguration.staggeredList(
+                                position: index,
+                                duration: const Duration(milliseconds: 375),
+                                child: SlideAnimation(
+                                  verticalOffset: 50.0,
+                                  child: FadeInAnimation(
+                                    child: _buildTeamCard(
+                                      context,
+                                      serialNumber: serial,
+                                      team: teamMap,
+                                      myId: myId,
+                                      dataProvider: dataProvider, 
+                                    ),
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       );
                     }).toList(),
@@ -280,12 +294,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
-      ),
     );
   }
 
@@ -293,13 +301,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      // 🟢 Reduced vertical padding to 8 for a tighter look
       padding: const EdgeInsets.only(top: 8, bottom: 10), 
       color: theme.colorScheme.surface,
       child: TabBar(
         isScrollable: true,
         tabAlignment: TabAlignment.center, 
-        dividerColor: Colors.transparent, // Ensures it doesn't touch any line
+        dividerColor: Colors.transparent, 
         indicatorSize: TabBarIndicatorSize.label,
         labelPadding: const EdgeInsets.symmetric(horizontal: 10), 
         labelColor: theme.colorScheme.primary,
@@ -311,7 +318,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         tabs: courseTabs
             .map((c) => Tab(
-                  height: 34, // 🟢 Explicit height to keep the border away from edges
+                  height: 34, 
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Text(c,
@@ -331,7 +338,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), // Adjusted to match header
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), 
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -442,6 +449,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
     final assignedSupervisor = team['assignedSupervisor'];
     if (assignedSupervisor is Map) supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
     
+    // 🟢 NEW: Create a unique tag for the Hero animation
+    final uniqueTag = 'team_title_${team['_id'] ?? team['title']}';
+
     bool isMyTeam = false;
     if (myId != null) {
       final assigned = (team['assignedSupervisor'] is Map) ? team['assignedSupervisor']['_id'] : team['assignedSupervisor'];
@@ -467,7 +477,14 @@ class _TeamListScreenState extends State<TeamListScreen> {
               backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
               child: Text(serialNumber.toString(), style: TextStyle(color: theme.colorScheme.primary, fontWeight: FontWeight.bold)),
             ),
-            title: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+            // 🟢 NEW: Wrap the title in a Hero widget and Material widget
+            title: Hero(
+              tag: uniqueTag, 
+              child: Material(
+                color: Colors.transparent,
+                child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              ),
+            ),
             subtitle: Text("Supervisor: $supervisorName", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             trailing: Container(
               width: 24, height: 24,

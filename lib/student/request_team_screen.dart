@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 Added for animations
+import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 Added for the button
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../chatbot_screen.dart';
 import '../theme/theme_provider.dart';
+import '../providers/auth_provider.dart'; // 🟢 Added to access user info
 
 class RequestTeamScreen extends StatefulWidget {
   const RequestTeamScreen({super.key});
@@ -26,12 +30,10 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
   List<dynamic> _supervisors = [];
 
   String? _selectedCourseId;
-  String? _sup1;
-  String? _sup2;
-  String? _sup3;
+  String? _sup1, _sup2, _sup3;
 
   bool _isLoadingData = true;
-  bool _isSubmitting = false;
+  SubmitState _submitState = SubmitState.idle; // 🟢 Changed to SubmitState
   String? _errorMessage;
 
   @override
@@ -52,13 +54,25 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
   Future<void> _fetchData() async {
     try {
+      // 1. Fetch user data from AuthProvider
+      final user = Provider.of<AuthProvider>(context, listen: false).user;
+      
+      // 2. Fetch API data
       final results = await Future.wait([
         _apiService.getCourses(),
         _apiService.getSupervisors(),
       ]);
 
       if (!mounted) return;
+      
       setState(() {
+        // 🟢 AUTO-LOAD USER INFO
+        if (user != null) {
+          _nameController.text = user.name;
+          _idController.text = user.studentId ?? '';
+          _emailController.text = user.email;
+        }
+
         _courses = results[0];
         _supervisors = results[1];
         _isLoadingData = false;
@@ -67,8 +81,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       if (!mounted) return;
       setState(() {
         _isLoadingData = false;
-        _errorMessage =
-            "Failed to load form data: ${e.toString().replaceAll('Exception: ', '')}";
+        _errorMessage = "Failed to load form data: ${e.toString().replaceAll('Exception: ', '')}";
       });
     }
   }
@@ -86,19 +99,18 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    setState(() => _submitState = SubmitState.loading);
 
     try {
       final myProposals = await _apiService.getUserProposals();
       if (myProposals.isNotEmpty) {
-        _showError(
-            'Your account is already leading a team. Remove existing team first.');
-        if (mounted) setState(() => _isSubmitting = false);
+        _showError('Your account is already leading a team. Remove existing team first.');
+        if (mounted) setState(() => _submitState = SubmitState.idle);
         return;
       }
     } catch (_) {
       _showError('Could not verify existing teams. Please try again.');
-      if (mounted) setState(() => _isSubmitting = false);
+      if (mounted) setState(() => _submitState = SubmitState.idle);
       return;
     }
 
@@ -120,15 +132,20 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       });
 
       if (!mounted) return;
+      
+      // 🟢 Success Animation
+      setState(() => _submitState = SubmitState.success);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Team request submitted successfully.'),
           backgroundColor: Colors.green));
-      Navigator.pop(context);
+          
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) Navigator.pop(context);
+      
     } catch (e) {
       if (!mounted) return;
+      setState(() => _submitState = SubmitState.idle);
       _showError(e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -142,11 +159,10 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        color: theme.colorScheme.outline.withOpacity(0.2),
         height: 1.0,
       ),
     );
@@ -157,13 +173,13 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
     if (_errorMessage != null) {
       return Scaffold(
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        backgroundColor: theme.scaffoldBackgroundColor,
         appBar: AppBar(
           title: const Text('Request Team'),
-          backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+          backgroundColor: theme.scaffoldBackgroundColor,
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, // 🟢 Add bottom line
+          bottom: appBarBottomLine,
           actions: [
             IconButton(
               icon: Icon(themeProvider.isDarkMode
@@ -173,9 +189,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
             ),
           ],
         ),
-        body: Center(
-            child: Text(_errorMessage!,
-                style: const TextStyle(color: Colors.red))),
+        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
       );
     }
 
@@ -183,246 +197,186 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Request Team'),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Add bottom line
+        bottom: appBarBottomLine,
         actions: [
           IconButton(
             icon: Icon(
-              themeProvider.isDarkMode
-                  ? Icons.light_mode_rounded
-                  : Icons.dark_mode_rounded,
+              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode
-                ? 'Switch to light mode'
-                : 'Switch to dark mode',
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                    color: theme.colorScheme.primary.withOpacity(0.5),
-                    width: 2,
-                  ),
+      floatingActionButton: const BreathingChatbotFab(),
+      body: AnimationLimiter( // 🟢 Staggered animation wrap
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: AnimationConfiguration.toStaggeredList(
+                duration: const Duration(milliseconds: 400),
+                childAnimationBuilder: (widget) => SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(child: widget),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5), width: 2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.school_rounded,
-                            color: theme.colorScheme.primary),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Target Course',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: theme.colorScheme.primary,
+                        Row(
+                          children: [
+                            Icon(Icons.school_rounded, color: theme.colorScheme.primary),
+                            const SizedBox(width: 8),
+                            Text('Target Course', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCourseId,
+                          hint: const Text('Select a course...'),
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                           ),
+                          validator: (value) => value == null ? 'Required to submit' : null,
+                          items: _courses.map<DropdownMenuItem<String>>((course) {
+                            return DropdownMenuItem<String>(
+                              value: course['_id'],
+                              child: Text((course['courseCode'] ?? '').toString()),
+                            );
+                          }).toList(),
+                          onChanged: (value) => setState(() => _selectedCourseId = value),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    DropdownButtonFormField<String>(
-                      value: _selectedCourseId,
-                      hint: const Text('Select a course...'),
-                      isExpanded: true,
-                      decoration: InputDecoration(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        filled: true,
-                        fillColor: theme.colorScheme.surface,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      validator: (value) =>
-                          value == null ? 'Required to submit' : null,
-                      items: _courses.map<DropdownMenuItem<String>>((course) {
-                        return DropdownMenuItem<String>(
-                          value: course['_id'],
-                          child: Text((course['courseCode'] ?? '').toString()),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCourseId = value;
-                        });
-                      },
+                  ),
+                  const SizedBox(height: 24),
+                  Text('Prefered Supervisors', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      _buildSupDropdown(1, _sup1, (value) => setState(() => _sup1 = value)),
+                      const SizedBox(width: 8),
+                      _buildSupDropdown(2, _sup2, (value) => setState(() => _sup2 = value)),
+                      const SizedBox(width: 8),
+                      _buildSupDropdown(3, _sup3, (value) => setState(() => _sup3 = value)),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                  Text('My Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.35)),
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Select Supervisors',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Row(
-                children: [
-                  _buildSupDropdown(1, _sup1, (value) {
-                    setState(() => _sup1 = value);
-                  }),
-                  const SizedBox(width: 8),
-                  _buildSupDropdown(2, _sup2, (value) {
-                    setState(() => _sup2 = value);
-                  }),
-                  const SizedBox(width: 8),
-                  _buildSupDropdown(3, _sup3, (value) {
-                    setState(() => _sup3 = value);
-                  }),
+                    child: Column(
+                      children: [
+                        TextFormField(
+                          controller: _nameController,
+                          decoration: const InputDecoration(hintText: 'Name'),
+                          validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: TextFormField(
+                                controller: _idController,
+                                decoration: const InputDecoration(hintText: 'ID'),
+                                validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: TextFormField(
+                                controller: _cgpaController,
+                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                                decoration: const InputDecoration(hintText: 'CGPA'),
+                                validator: (value) {
+                                  if (value == null || value.trim().isEmpty) return 'Required';
+                                  return double.tryParse(value.trim()) == null ? 'Invalid' : null;
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(hintText: 'Email'),
+                          validator: (value) {
+                            final text = value?.trim() ?? '';
+                            if (text.isEmpty) return 'Required';
+                            if (!text.contains('@')) return 'Invalid';
+                            return null;
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        TextFormField(
+                          controller: _mobileController,
+                          keyboardType: TextInputType.phone,
+                          decoration: const InputDecoration(hintText: 'Mobile'),
+                          validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 28),
+                  
+                  // 🟢 Animated Submit Button
+                  SizedBox(
+                    height: 54,
+                    child: AnimatedSubmitButton(
+                      state: _submitState,
+                      title: "Submit Request",
+                      onPressed: _submitRequest,
+                      backgroundColor: const Color(0xFF245E63),
+                    ),
+                  ),
+                  const SizedBox(height: 60),
                 ],
               ),
-              const SizedBox(height: 24),
-              Text(
-                'Team Member',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: theme.colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 10),
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: theme.colorScheme.primary.withOpacity(0.35)),
-                ),
-                child: Column(
-                  children: [
-                    TextFormField(
-                      controller: _nameController,
-                      decoration: const InputDecoration(hintText: 'Name'),
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Required'
-                              : null,
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _idController,
-                            decoration: const InputDecoration(hintText: 'ID'),
-                            validator: (value) =>
-                                (value == null || value.trim().isEmpty)
-                                    ? 'Required'
-                                    : null,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cgpaController,
-                            keyboardType: const TextInputType.numberWithOptions(
-                                decimal: true),
-                            decoration: const InputDecoration(hintText: 'CGPA'),
-                            validator: (value) {
-                              if (value == null || value.trim().isEmpty) {
-                                return 'Required';
-                              }
-                              return double.tryParse(value.trim()) == null
-                                  ? 'Invalid'
-                                  : null;
-                            },
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      decoration: const InputDecoration(hintText: 'Email'),
-                      validator: (value) {
-                        final text = value?.trim() ?? '';
-                        if (text.isEmpty) return 'Required';
-                        if (!text.contains('@')) return 'Invalid';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: _mobileController,
-                      keyboardType: TextInputType.phone,
-                      decoration: const InputDecoration(hintText: 'Mobile'),
-                      validator: (value) =>
-                          (value == null || value.trim().isEmpty)
-                              ? 'Required'
-                              : null,
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 28),
-              SizedBox(
-                height: 50,
-                child: ElevatedButton(
-                  onPressed: _isSubmitting ? null : _submitRequest,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF245E63),
-                    foregroundColor: Colors.white,
-                  ),
-                  child: _isSubmitting
-                      ? const CircularProgressIndicator(color: Colors.white)
-                      : const Text('Submit', style: TextStyle(fontSize: 18)),
-                ),
-              ),
-              const SizedBox(height: 60),
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // 🟢 Modified to accept the appBarBottomLine variable
+  // Skeleton Loader and Dropdown Helper remain the same...
   Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Request Team'),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Add bottom line
+        bottom: appBarBottomLine,
       ),
       body: Shimmer.fromColors(
         baseColor: baseColor,
@@ -432,16 +386,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // Dummy Target Course Box
-              Container(
-                height: 100,
-                decoration: BoxDecoration(
-                    color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              ),
+              Container(height: 100, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
               const SizedBox(height: 24),
-              
-              // Dummy Supervisors row
-              Container(height: 20, width: 120, color: Colors.white), // label
+              Container(height: 20, width: 120, color: Colors.white),
               const SizedBox(height: 10),
               Row(
                 children: List.generate(3, (index) => Expanded(
@@ -453,23 +400,11 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                 )),
               ),
               const SizedBox(height: 24),
-
-              // Dummy Team Member details box
-              Container(height: 20, width: 120, color: Colors.white), // label
+              Container(height: 20, width: 120, color: Colors.white),
               const SizedBox(height: 10),
-              Container(
-                height: 240,
-                decoration: BoxDecoration(
-                    color: Colors.white, borderRadius: BorderRadius.circular(16)),
-              ),
+              Container(height: 240, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
               const SizedBox(height: 28),
-
-              // Dummy Button
-              Container(
-                height: 50,
-                decoration: BoxDecoration(
-                    color: Colors.white, borderRadius: BorderRadius.circular(12)),
-              ),
+              Container(height: 50, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
             ],
           ),
         ),
@@ -477,15 +412,19 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     );
   }
 
-  Widget _buildSupDropdown(
-      int index, String? value, ValueChanged<String?> onChanged) {
+// 🟢 Shortened and optimized Dropdown builder
+  Widget _buildSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
+        // 🟢 Limits the height of the open menu so it doesn't cover the whole screen
+        menuMaxHeight: 250, 
         decoration: InputDecoration(
           labelText: 'Sup $index',
-          contentPadding: const EdgeInsets.symmetric(horizontal: 10),
+          labelStyle: const TextStyle(fontSize: 12),
+          // 🟢 Tighter padding to make the row feel less crowded
+          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
         ),
         items: _supervisors.map<DropdownMenuItem<String>>((s) {
           final abbreviation = [
@@ -500,7 +439,11 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
           return DropdownMenuItem<String>(
             value: s['_id']?.toString(),
-            child: Text(abbreviation.isEmpty ? 'N/A' : abbreviation),
+            child: Text(
+              abbreviation.isEmpty ? 'N/A' : abbreviation.toUpperCase(), 
+              style: const TextStyle(fontSize: 11), // 🟢 Smaller font for compact look
+              overflow: TextOverflow.ellipsis,
+            ),
           );
         }).toList(),
         onChanged: onChanged,

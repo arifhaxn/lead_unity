@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
 import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
+import '../widgets/animated_submit_button.dart'; // 🟢 NEW IMPORT
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
@@ -19,7 +20,13 @@ class _MarkingScreenState extends State<MarkingScreen> {
   final ApiService _apiService = ApiService();
 
   Map<String, dynamic> _allSettings = {};
-  bool _isLoading = true;
+  
+  // 🟢 We keep this for the initial screen load skeleton
+  bool _isScreenLoading = true; 
+  
+  // 🟢 NEW: State variable specifically for the submit button
+  SubmitState _submitState = SubmitState.idle; 
+  
   String _evaluationType = 'defense';
 
   final Map<String, Map<String, dynamic>> _studentMarks = {};
@@ -32,11 +39,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
   _loadSettingsAndMarks() async {
     try {
-      //Fetch Settings
       final settings = await _apiService.getEvaluationSettings();
       final myId = Provider.of<AuthProvider>(context, listen: false).user?.id;
 
-      //Determine Type (Own vs Defense)
       String getId(dynamic obj) {
         if (obj is Map) return obj['_id']?.toString() ?? '';
         return obj?.toString() ?? '';
@@ -57,18 +62,15 @@ class _MarkingScreenState extends State<MarkingScreen> {
         _evaluationType = isMyTeam ? 'own' : 'defense';
       }
 
-      // 3. Load Existing Marks
       final List<dynamic> allMarksList = widget.team['marks'] ?? [];
       Map<String, dynamic> mySavedMarks = {};
 
       for (var m in allMarksList) {
-        // Filter: Marks created by ME for this specific TYPE
         if (m['supervisorId'] == myId && m['type'] == _evaluationType) {
           mySavedMarks[m['studentId']] = m;
         }
       }
 
-      // 4. Initialize Local State
       final members = [...widget.team['teamMembers'] ?? []];
 
       for (var student in members) {
@@ -95,7 +97,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
       if (mounted) {
         setState(() {
           _allSettings = settings;
-          _isLoading = false;
+          _isScreenLoading = false; // Initial load finished
         });
       }
     } catch (e) {
@@ -104,13 +106,15 @@ class _MarkingScreenState extends State<MarkingScreen> {
           SnackBar(
               content: Text("Error loading: $e"), backgroundColor: Colors.red),
         );
-        setState(() => _isLoading = false);
+        setState(() => _isScreenLoading = false);
       }
     }
   }
 
   void _submitMarks() async {
-    setState(() => _isLoading = true);
+    // 🟢 Set button state to loading
+    setState(() => _submitState = SubmitState.loading); 
+    
     List<Map<String, dynamic>> payload = [];
 
     _studentMarks.forEach((key, value) {
@@ -126,21 +130,25 @@ class _MarkingScreenState extends State<MarkingScreen> {
       await _apiService.saveTeamMarks(
           widget.team['_id'], payload, _evaluationType);
 
+      if (!mounted) return;
+      
+      // 🟢 Change button state to success to trigger the checkmark animation
+      setState(() => _submitState = SubmitState.success);
+
+      // 🟢 Wait 1 second so the user can actually see the success animation
+      await Future.delayed(const Duration(seconds: 1));
+
       if (mounted) {
-        Navigator.pop(context);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text("Evaluations Saved Successfully"),
-            backgroundColor: Colors.green,
-          ),
-        );
+        Navigator.pop(context); // Go back to previous screen
       }
+      
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
-        setState(() => _isLoading = false);
+        // 🟢 If it fails, revert the button back to idle so they can try again
+        setState(() => _submitState = SubmitState.idle);
       }
     }
   }
@@ -150,20 +158,18 @@ class _MarkingScreenState extends State<MarkingScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        color: theme.colorScheme.outline.withOpacity(0.2), 
         height: 1.0,
       ),
     );
 
-    if (_isLoading) {
+    if (_isScreenLoading) {
       return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
     }
 
-    // Config Loading Logic
     final config = _allSettings[_evaluationType] ?? {};
     final c1Name = config['c1']?['name'] ?? 'Criteria 1';
     final c1Max = config['c1']?['max'] ?? 30;
@@ -175,10 +181,10 @@ class _MarkingScreenState extends State<MarkingScreen> {
       appBar: AppBar(
         title: const Text("Evaluation Board",
             style: TextStyle(fontWeight: FontWeight.w700)),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        backgroundColor: theme.scaffoldBackgroundColor, 
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Add bottom line
+        bottom: appBarBottomLine, 
         centerTitle: true,
         actions: [
           IconButton(
@@ -248,27 +254,14 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
             const SizedBox(height: 20),
 
+            // 🟢 NEW: Replaced the standard ElevatedButton with our animated one
             SizedBox(
               width: double.infinity,
-              child: ElevatedButton(
+              child: AnimatedSubmitButton(
+                state: _submitState,
+                title: "Submit Scores",
                 onPressed: _submitMarks,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary,
-                  padding: const EdgeInsets.symmetric(vertical: 18),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30)),
-                  elevation: 6,
-                  shadowColor: theme.colorScheme.primary.withOpacity(0.4),
-                ),
-                child: const Text(
-                  "Submit Scores",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
-                    letterSpacing: 0.5,
-                  ),
-                ),
+                backgroundColor: theme.colorScheme.primary,
               ),
             ),
           ],
@@ -321,7 +314,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
   }
 
-  // 🟢 Modified to accept appBarBottomLine
   Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
@@ -332,10 +324,10 @@ class _MarkingScreenState extends State<MarkingScreen> {
       appBar: AppBar(
         title: const Text("Evaluation Board",
             style: TextStyle(fontWeight: FontWeight.w700)),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Match background
+        backgroundColor: theme.scaffoldBackgroundColor, 
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Add bottom line
+        bottom: appBarBottomLine, 
         centerTitle: true,
         actions: [
           IconButton(
@@ -355,7 +347,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Dummy Criteria Card
               Container(
                 height: 110,
                 decoration: BoxDecoration(
@@ -364,8 +355,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-
-              // Dummy "Team Members" Title
               Container(
                 height: 24,
                 width: 140,
@@ -375,22 +364,17 @@ class _MarkingScreenState extends State<MarkingScreen> {
                 ),
               ),
               const SizedBox(height: 16),
-
-              // Dummy Student Marking Cards
               ...List.generate(3, (index) => Container(
                 margin: const EdgeInsets.only(bottom: 20),
-                height: 170, // Approximate height of the full marking card
+                height: 170, 
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(20),
                 ),
               )),
-              
               const SizedBox(height: 20),
-
-              // Dummy Submit Button
               Container(
-                height: 56, // Matches your 18px padding + text height
+                height: 56, 
                 width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
@@ -519,7 +503,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
       ),
       child: Column(
         children: [
-          // --- Top Profile Section ---
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -565,11 +548,10 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   ),
                 ),
 
-                // 🟢 Animated Toggle Button
                 GestureDetector(
                   onTap: () {
                     setState(() {
-                      _isAbsent = !_isAbsent; // Toggle the state
+                      _isAbsent = !_isAbsent; 
                       _updateMarks();
                     });
                   },
@@ -626,7 +608,6 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
 
           const Divider(height: 1),
 
-          // --- Bottom Scoring Section ---
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(

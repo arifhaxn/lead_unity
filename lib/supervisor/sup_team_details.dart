@@ -24,7 +24,7 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
     final leader = members.isNotEmpty ? members.first : {};
     final restMembers = members.length > 1 ? members.sublist(1) : [];
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
+    // 🟢 A reusable 1-pixel subtle border line for the bottom of the AppBar
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
@@ -33,14 +33,17 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
       ),
     );
 
+    // 🟢 RE-CREATE THE EXACT SAME TAG AS THE PREVIOUS SCREEN
+    final uniqueTag = 'team_title_${team['_id'] ?? team['title']}';
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text("Project Details"),
-        backgroundColor: theme.scaffoldBackgroundColor, // 🟢 Matches Background
+        backgroundColor: theme.scaffoldBackgroundColor, // Matches Background
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Bottom border added here
+        bottom: appBarBottomLine, // Bottom border added here
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -97,11 +100,20 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
                     ],
                   ),
                   const SizedBox(height: 20),
-                  Text(
-                    title,
-                    style: theme.textTheme.headlineSmall?.copyWith(
-                        color: Colors.white, fontWeight: FontWeight.bold),
+                  
+                  // 🟢 NEW: Wrapped the Title in a Hero and Material widget
+                  Hero(
+                    tag: uniqueTag, 
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(
+                        title,
+                        style: theme.textTheme.headlineSmall?.copyWith(
+                            color: Colors.white, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ),
+
                   const SizedBox(height: 8),
                   Text(courseTitle,
                       style:

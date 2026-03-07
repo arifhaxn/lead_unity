@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
@@ -64,12 +65,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           )
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
-      ),
+      floatingActionButton: const BreathingChatbotFab(),
       body: FutureBuilder<List<dynamic>>(
         // 🟢 3. Use the stored variable here instead of calling the function
         future: _proposalFuture,

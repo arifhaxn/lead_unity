@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/widgets/animated_dialog.dart';
+import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 NEW IMPORT
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
 import '../api services/api_services.dart';
@@ -64,9 +67,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
   }
 
   void _showInstructions() {
-    showDialog(
+    showAnimatedDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      dialog: AlertDialog(
         title: Row(
           children: [
             Icon(Icons.info_outline_rounded,
@@ -87,7 +90,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(context), 
             child: const Text("Got it!"),
           ),
         ],
@@ -96,9 +99,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
   }
 
   void _showSoloStudentDialog() {
-    showDialog(
+    showAnimatedDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      dialog: AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: Row(
           children: [
@@ -113,12 +116,12 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx), 
+            onPressed: () => Navigator.pop(context), 
             child: const Text("Cancel"),
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(ctx); 
+              Navigator.pop(context); 
               Navigator.pushReplacement( 
                 context,
                 MaterialPageRoute(builder: (_) => const RequestTeamScreen()),
@@ -144,11 +147,10 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBars
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        color: theme.colorScheme.outline.withOpacity(0.2), 
         height: 1.0,
       ),
     );
@@ -165,7 +167,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           backgroundColor: theme.scaffoldBackgroundColor,
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, // 🟢 Added line
+          bottom: appBarBottomLine, 
         ),
         body: Shimmer.fromColors(
           baseColor: baseColor,
@@ -211,7 +213,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           backgroundColor: theme.scaffoldBackgroundColor,
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, // 🟢 Added line
+          bottom: appBarBottomLine, 
           actions: [
             IconButton(
               icon: Icon(
@@ -237,7 +239,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           backgroundColor: theme.scaffoldBackgroundColor,
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, // 🟢 Added line
+          bottom: appBarBottomLine, 
           actions: [
             IconButton(
               icon: Icon(
@@ -258,7 +260,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 Added line
+        bottom: appBarBottomLine, 
         actions: [
           IconButton(
             icon: Icon(
@@ -275,12 +277,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
-      ),
+      floatingActionButton: const BreathingChatbotFab(),
       body: SingleProposalForm(
         courses: _courses,
         supervisors: _supervisors,
@@ -329,7 +326,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 'mobile': TextEditingController(),
               });
 
-  bool _isSubmitting = false;
+  // 🟢 NEW: Switched boolean to our fancy SubmitState enum
+  SubmitState _submitState = SubmitState.idle;
+  
   bool _showFourthMember = false;
 
   String? _sup1, _sup2, _sup3;
@@ -364,7 +363,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       return;
     }
 
-    setState(() => _isSubmitting = true);
+    // 🟢 Set button state to loading
+    setState(() => _submitState = SubmitState.loading);
 
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
@@ -380,20 +380,20 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
       if (isCardPartiallyFilled) {
         if (id.isEmpty || name.isEmpty || cgpaRaw.isEmpty || email.isEmpty || mobile.isEmpty) {
-          setState(() => _isSubmitting = false);
+          setState(() => _submitState = SubmitState.idle);
           _showError('Please complete all fields for Member ${i + 1}.');
           return;
         }
 
         if (uniqueIds.contains(id)) {
-          setState(() => _isSubmitting = false);
+          setState(() => _submitState = SubmitState.idle);
           _showError('Duplicate Student ID: $id');
           return;
         }
 
         final cgpa = double.tryParse(cgpaRaw);
         if (cgpa == null) {
-          setState(() => _isSubmitting = false);
+          setState(() => _submitState = SubmitState.idle);
           _showError('Invalid CGPA for Member ${i + 1}.');
           return;
         }
@@ -410,7 +410,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     }
 
     if (members.length < 2) {
-      setState(() => _isSubmitting = false);
+      setState(() => _submitState = SubmitState.idle);
       widget.onSoloStudentDetected();
       return;
     }
@@ -430,16 +430,25 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       });
 
       if (mounted) {
+        // 🟢 Play the success animation
+        setState(() => _submitState = SubmitState.success);
+        
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text('Proposal Submitted Successfully!'),
             backgroundColor: Colors.green));
-        Navigator.pop(context); 
+            
+        // 🟢 Wait 1 second to let the user see the checkmark pop up!
+        await Future.delayed(const Duration(seconds: 1));
+        
+        if (mounted) Navigator.pop(context); 
       }
     } catch (e) {
-      if (mounted) _showError(e.toString().replaceAll('Exception: ', ''));
-    } finally {
-      if (mounted) setState(() => _isSubmitting = false);
-    }
+      if (mounted) {
+        _showError(e.toString().replaceAll('Exception: ', ''));
+        // 🟢 Reset button on failure
+        setState(() => _submitState = SubmitState.idle);
+      }
+    } 
   }
 
   void _showError(String msg) {
@@ -549,7 +558,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 validator: (v) => v!.isEmpty ? 'Required' : null),
             const SizedBox(height: 24),
 
-            Text('Select Supervisors',
+            Text('Prefered Supervisors',
                 style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -607,20 +616,15 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             ),
 
             const SizedBox(height: 30),
+            
+            // 🟢 NEW: Integrated the AnimatedSubmitButton
             SizedBox(
-              height: 50,
-              child: ElevatedButton(
-                onPressed: (_isSubmitting || isAlreadySubmitted) ? null : _submitProposal,
-                style: ElevatedButton.styleFrom(
-                    backgroundColor: isAlreadySubmitted ? Colors.grey : const Color(0xFF245E63),
-                    foregroundColor: Colors.white,
-                    disabledBackgroundColor: Colors.grey.withOpacity(0.5), 
-                ),
-                child: _isSubmitting
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : Text(
-                        isAlreadySubmitted ? 'Already Submitted' : 'Submit Proposal',
-                        style: TextStyle(fontSize: 18, color: isAlreadySubmitted ? Colors.white70 : Colors.white)),
+              height: 54, // Set explicit height to prevent UI jumps during transition
+              child: AnimatedSubmitButton(
+                state: _submitState,
+                title: isAlreadySubmitted ? 'Already Submitted' : 'Submit Proposal',
+                onPressed: isAlreadySubmitted ? null : _submitProposal,
+                backgroundColor: const Color(0xFF245E63),
               ),
             ),
             const SizedBox(height: 50),
@@ -669,7 +673,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
     
-    // Custom white text styles for inputs inside the dark teal card
     const whiteTextStyle = TextStyle(color: Colors.white);
     const whiteLabelStyle = TextStyle(color: Colors.white70);
 

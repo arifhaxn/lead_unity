@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../chatbot_screen.dart';
@@ -63,7 +64,7 @@ class SupervisorDashboard extends StatelessWidget {
               title: "My Teams",
               subtitle: "Personal Markings",
               icon: Icons.groups_rounded,
-              bgColor: const Color(0xFF1E3A8A),
+              bgColor: const Color(0xFF4338CA),
               iconColor: const Color.fromARGB(255, 24, 255, 143), // Royal Gold
               height: 120,
               horizontalLayout: true,
@@ -81,7 +82,7 @@ class SupervisorDashboard extends StatelessWidget {
                   // 🟢 Animated Card 2: Purple-Slate & Mint
                   child: _AnimatedDashboardCard(
                     title: "All Teams",
-                    subtitle: "Board Marking",
+                    subtitle: "Board Markings",
                     icon: Icons.format_list_bulleted_rounded,
                     bgColor: const Color.fromARGB(255, 74, 65, 91),
                     iconColor: const Color.fromARGB(255, 255, 156, 252), // Bright Mint
@@ -112,15 +113,7 @@ class SupervisorDashboard extends StatelessWidget {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ChatbotScreen()),
-        ),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
-        tooltip: 'Chat with Assistant',
-      ),
+      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 }
