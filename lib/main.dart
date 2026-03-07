@@ -1,18 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:link_unity/supervisor/sup_dashboard.dart';
+import 'package:flutter/services.dart';// 🟢 Import your new splash screen
+import 'package:link_unity/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
-import 'providers/data_provider.dart'; // 🟢 Added the DataProvider import
-import 'home_page.dart';
-import 'student/student_dash.dart';
+import 'providers/data_provider.dart'; 
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
 
-  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle( //for transparent status bar
+  SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
   ));
@@ -22,7 +20,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()..tryAutoLogin()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => DataProvider()), // 🟢 Registered the new provider here!
+        ChangeNotifierProvider(create: (_) => DataProvider()),
       ],
       child: const LeadUnityApp(),
     ),
@@ -42,19 +40,8 @@ class LeadUnityApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
-          home: Consumer<AuthProvider>(
-            builder: (context, auth, _) {
-              if (auth.isAuthenticated) {
-                // Check roles to send user to the right place
-                if (auth.user?.role.toLowerCase() == 'student') {
-                  return const StudentDashboard();
-                } else if (auth.user?.role.toLowerCase() == 'supervisor') {
-                  return const SupervisorDashboard();
-                }
-              }
-              return const HomePage();
-            },
-          ),
+          // 🟢 Initial entry point is now the SplashScreen
+          home: const SplashScreen(), 
         );
       },
     );

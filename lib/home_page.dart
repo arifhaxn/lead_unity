@@ -3,6 +3,9 @@ import 'package:link_unity/widgets/about_app_screen.dart';
 import 'package:provider/provider.dart';
 import 'login_screen.dart';
 import 'theme/theme_provider.dart';
+import 'providers/auth_provider.dart'; // 🟢 IMPORT ADDED
+import 'student/student_dash.dart';   // 🟢 IMPORT ADDED
+import 'supervisor/sup_dashboard.dart'; // 🟢 IMPORT ADDED
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -27,6 +30,18 @@ class HomePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    
+    // 🟢 NEW: Get Auth state to check for existing session
+    final auth = Provider.of<AuthProvider>(context);
+
+    // 🟢 REDIRECT LOGIC: If authenticated, skip the home page UI
+    if (auth.isAuthenticated) {
+      if (auth.user?.role.toLowerCase() == 'student') {
+        return const StudentDashboard();
+      } else if (auth.user?.role.toLowerCase() == 'supervisor') {
+        return const SupervisorDashboard();
+      }
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -52,10 +67,7 @@ class HomePage extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: <Widget>[
-                    
-                    // 🟢 NEW: Integrated the specific Animated Logo Widget
                     const Center(child: _AnimatedAppLogo()),
-                    
                     const SizedBox(height: 24),
                     Text(
                       'LeadUnity',
@@ -150,7 +162,6 @@ class HomePage extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     final theme = Theme.of(context);
-
     const Color textColor = Colors.white;
     const Color subtitleColor = Colors.white70;
     const Color iconColor = Colors.white;
@@ -234,7 +245,7 @@ class HomePage extends StatelessWidget {
   }
 }
 
-// --- 🟢 NEW HELPER WIDGET FOR ANIMATING THE LOGO ---
+// --- HELPER WIDGET FOR THE FLOATING/BREATHING LOGO ---
 class _AnimatedAppLogo extends StatefulWidget {
   const _AnimatedAppLogo({Key? key}) : super(key: key);
 
@@ -253,15 +264,16 @@ class _AnimatedAppLogoState extends State<_AnimatedAppLogo>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 4), // 🟢 Slow, premium full cycle
+      duration: const Duration(seconds: 4), 
     )..repeat(reverse: true);
 
-    // 🟢 Subtle Size Pulse (1.0 = normal, 1.05 = 5% larger)
     _pulseAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.5, curve: Curves.easeInOutSine)),
+      CurvedAnimation(
+        parent: _controller, 
+        curve: const Interval(0.0, 0.5, curve: Curves.easeInOutSine),
+      ),
     );
 
-    // 🟢 Very Slight Vertical Hover (moves up 4 pixels)
     _hoverAnimation = Tween<Offset>(begin: Offset.zero, end: const Offset(0, -0.04)).animate(
       CurvedAnimation(parent: _controller, curve: Curves.easeInOutSine),
     );
@@ -277,10 +289,8 @@ class _AnimatedAppLogoState extends State<_AnimatedAppLogo>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // 🟢 Keep the Hero tag for standard transitions
     return Hero(
       tag: 'app_logo',
-      // Combine animations
       child: SlideTransition(
         position: _hoverAnimation,
         child: ScaleTransition(
