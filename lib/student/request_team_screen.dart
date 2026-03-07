@@ -5,7 +5,6 @@ import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 Added f
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
-import '../chatbot_screen.dart';
 import '../theme/theme_provider.dart';
 import '../providers/auth_provider.dart'; // 🟢 Added to access user info
 

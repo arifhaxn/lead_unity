@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 NEW IMPORT
-import '../../chatbot_screen.dart';
 import '../providers/data_provider.dart'; 
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';

@@ -135,7 +135,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final accent = theme.colorScheme.primary;
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final String fullName = user?.name ?? 'Student';

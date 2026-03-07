@@ -6,7 +6,6 @@ import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
 import 'providers/auth_provider.dart';
 import 'api services/api_services.dart';
-import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';

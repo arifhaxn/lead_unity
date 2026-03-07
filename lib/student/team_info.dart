@@ -5,7 +5,6 @@ import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
-import '../chatbot_screen.dart';
 
 class TeamInfoScreen extends StatefulWidget {
   const TeamInfoScreen({super.key});
