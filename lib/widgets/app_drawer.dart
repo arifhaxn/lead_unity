@@ -38,7 +38,7 @@ class _AppDrawerState extends State<AppDrawer> {
           _profileImage = File(imagePath);
         }
         if (ident != null && ident.isNotEmpty) {
-          _savedIdentifier = ident.toUpperCase(); // E.g., sets "EBH"
+          _savedIdentifier = ident.toUpperCase(); 
         }
       });
     }
@@ -171,7 +171,6 @@ class _AppDrawerState extends State<AppDrawer> {
                 
                 const SizedBox(height: 20),
                 
-                // 1. The Name
                 Text(
                   name,
                   style: theme.textTheme.titleLarge?.copyWith(
@@ -182,10 +181,8 @@ class _AppDrawerState extends State<AppDrawer> {
                 
                 const SizedBox(height: 8), 
                 
-                // 2. 🟢 The Role Badges (Nudged left for Optical Alignment!)
                 if (user?.role == 'student')
                   Container(
-                    // 🟢 This line nudges the whole badge exactly 6 pixels left!
                     transform: Matrix4.translationValues(-6.0, 0.0, 0.0), 
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 6),
@@ -217,7 +214,6 @@ class _AppDrawerState extends State<AppDrawer> {
                   )
                 else if (user?.role == 'supervisor')
                   Container(
-                    // 🟢 Nudged left for Supervisor as well
                     transform: Matrix4.translationValues(-6.0, 0.0, 0.0),
                     padding: const EdgeInsets.symmetric(
                         horizontal: 10, vertical: 6),
@@ -250,7 +246,6 @@ class _AppDrawerState extends State<AppDrawer> {
 
                 const SizedBox(height: 8),
 
-                // 3. The Email / Designation
                 if (email.isNotEmpty && email.length > 4) ...[
                   Text(
                     email,
@@ -391,6 +386,7 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
+// 🟢 UPGRADED: Premium color tuning for both Light and Dark modes
   Widget _buildDrawerItem({
     required BuildContext context,
     required IconData icon,
@@ -400,21 +396,32 @@ class _AppDrawerState extends State<AppDrawer> {
     bool isDestructive = false,
   }) {
     final theme = Theme.of(context);
-    final color =
-        isDestructive ? Colors.redAccent : theme.colorScheme.onSurface;
-    final bgColor =
-        isDestructive ? Colors.redAccent.withOpacity(0.1) : Colors.transparent;
+    final isDark = theme.brightness == Brightness.dark;
+
+    // 1. Define the specific colors for the Destructive state
+    final destTextColor = isDark ? Colors.redAccent.shade200 : Colors.red.shade700;
+    final destBgColor = isDark ? Colors.redAccent.withOpacity(0.12) : Colors.red.shade50;
+    final destBorderColor = isDark ? Colors.redAccent.withOpacity(0.3) : Colors.red.shade200;
+
+    // 2. Apply them based on whether this item is destructive or normal
+    final color = isDestructive ? destTextColor : theme.colorScheme.onSurface;
+    final bgColor = isDestructive ? destBgColor : Colors.transparent;
 
     return ListTile(
       onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        // Apply the carefully tuned border color
+        side: isDestructive 
+            ? BorderSide(color: destBorderColor, width: 1.2) 
+            : BorderSide.none,
+      ),
       tileColor: bgColor,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       leading: Icon(icon, color: color),
       title: Text(
         title,
-        style:
-            TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 15),
+        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 15),
       ),
       trailing: trailing,
     );

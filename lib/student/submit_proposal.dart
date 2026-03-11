@@ -517,7 +517,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                     validator: (v) => v!.isEmpty ? 'Required' : null),
                 const SizedBox(height: 24),
 
-                Text('Prefered Supervisors',
+                Text('Preferred Supervisors',
                     style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
@@ -629,12 +629,13 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-  Widget _buildMemberCard(int index) {
+Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
     
-    const whiteTextStyle = TextStyle(color: Colors.white);
-    const whiteLabelStyle = TextStyle(color: Colors.white70);
+    // 🟢 FORCE PURE WHITE FOR EVERYTHING inside the dark green cards
+    const whiteTextStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.w500);
+    const whiteLabelStyle = TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500); // Solid White Labels!
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
@@ -660,10 +661,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            style: whiteTextStyle,
+            style: whiteTextStyle, 
             decoration: const InputDecoration(
               labelText: 'Name', 
-              labelStyle: whiteLabelStyle,
+              labelStyle: whiteLabelStyle, // Pure white when resting
+              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), // Pure white when typing
               isDense: true, 
               filled: true, 
               fillColor: Colors.white10, 
@@ -679,6 +681,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               decoration: const InputDecoration(
                 labelText: 'ID', 
                 labelStyle: whiteLabelStyle,
+                floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 isDense: true, 
                 filled: true, 
                 fillColor: Colors.white10, 
@@ -693,6 +696,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
               decoration: const InputDecoration(
                 labelText: 'CGPA', 
                 labelStyle: whiteLabelStyle,
+                floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
                 isDense: true, 
                 filled: true, 
                 fillColor: Colors.white10, 
@@ -707,6 +711,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             decoration: const InputDecoration(
               labelText: 'Email', 
               labelStyle: whiteLabelStyle,
+              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               isDense: true, 
               filled: true, 
               fillColor: Colors.white10, 
@@ -720,6 +725,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             decoration: const InputDecoration(
               labelText: 'Mobile', 
               labelStyle: whiteLabelStyle,
+              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
               isDense: true, 
               filled: true, 
               fillColor: Colors.white10, 
