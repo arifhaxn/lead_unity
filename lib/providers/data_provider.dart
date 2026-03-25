@@ -11,26 +11,41 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingTeams = false;
   bool get isLoadingTeams => _isLoadingTeams;
 
-  Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
-    // If we already have the data and aren't forcing a refresh, STOP!
-    if (!forceRefresh && _allTeams != null) {
-      return; 
-    }
+  
+Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
+  if (!forceRefresh && _allTeams != null) return;
 
-    _isLoadingTeams = true;
-    // 🟢 THE FIX: ALWAYS notify listeners when loading starts, so the Shimmer triggers!
+  _isLoadingTeams = true;
+  notifyListeners(); 
+
+  try {
+    List<dynamic> rawTeams = await _apiService.getAllProposals();
+
+    // --- 🟢 ADD THE SORTING LOGIC HERE ---
+    rawTeams.sort((a, b) {
+      // 1. If defenseDate is missing, move to the bottom
+      if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
+      if (a['defenseDate'] == null) return 1;
+      if (b['defenseDate'] == null) return -1;
+
+      // 2. Parse strings to DateTime (Dart's parse handles ISO 8601)
+      DateTime dateA = DateTime.parse(a['defenseDate']);
+      DateTime dateB = DateTime.parse(b['defenseDate']);
+
+      // 3. Chronological sort (Earliest first)
+      return dateA.compareTo(dateB);
+    });
+
+    _allTeams = rawTeams; // Save the sorted list to your cache
+    
+  } catch (e) {
+    debugPrint("Error fetching teams: $e");
+    _allTeams = []; 
+  } finally {
+    _isLoadingTeams = false;
     notifyListeners(); 
-
-    try {
-      _allTeams = await _apiService.getAllProposals();
-    } catch (e) {
-      debugPrint("Error fetching teams: $e");
-      _allTeams = []; // Prevent infinite loading loops on error
-    } finally {
-      _isLoadingTeams = false;
-      notifyListeners(); // Tell the UI to update with the new data
-    }
   }
+}
 
   // --- SUPERVISORS CACHE ---
   List<dynamic>? _allSupervisors;
@@ -57,5 +72,8 @@ class DataProvider with ChangeNotifier {
     }
   }
 }
+
+
+
 
 //Color.fromARGB(255, 74, 65, 91), 

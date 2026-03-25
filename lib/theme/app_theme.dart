@@ -144,7 +144,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme( 
+      cardTheme: const CardThemeData( 
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -252,7 +252,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardTheme( 
+      cardTheme: const CardThemeData( 
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,
