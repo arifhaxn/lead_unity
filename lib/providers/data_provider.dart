@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart'; 
 import '../api services/api_services.dart';
 
 class DataProvider with ChangeNotifier {
@@ -55,23 +57,47 @@ Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
   bool get isLoadingSupervisors => _isLoadingSupervisors;
 
   Future<void> fetchSupervisorsIfNeeded({bool forceRefresh = false}) async {
-    if (!forceRefresh && _allSupervisors != null) return;
+    // 1. 🟢 INSTANT CACHE LOAD
+    if (!forceRefresh && _allSupervisors == null) {
+      _isLoadingSupervisors = true;
+      notifyListeners();
 
-    _isLoadingSupervisors = true;
-    // 🟢 THE FIX: Same here for supervisors!
-    notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+      final cachedData = prefs.getString('cached_supervisors');
+      
+      if (cachedData != null) {
+        _allSupervisors = json.decode(cachedData);
+        _isLoadingSupervisors = false;
+        notifyListeners(); 
+      }
+    }
+
+    // 2. 🟢 THE BACKGROUND FETCH
+    if (forceRefresh) {
+      _isLoadingSupervisors = true;
+      notifyListeners();
+    }
 
     try {
-      _allSupervisors = await _apiService.getSupervisors();
+      final freshData = await _apiService.getSupervisors();
+      final prefs = await SharedPreferences.getInstance();
+      final freshDataString = json.encode(freshData);
+      final cachedData = prefs.getString('cached_supervisors');
+
+      // 3. 🟢 SILENT UI UPDATE
+      if (freshDataString != cachedData) {
+        _allSupervisors = freshData;
+        await prefs.setString('cached_supervisors', freshDataString);
+        notifyListeners();
+      }
     } catch (e) {
       debugPrint("Error fetching supervisors: $e");
-      _allSupervisors = [];
+      if (_allSupervisors == null) _allSupervisors = [];
     } finally {
       _isLoadingSupervisors = false;
       notifyListeners();
     }
   }
-}
 
 
 

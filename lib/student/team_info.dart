@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../providers/data_provider.dart'; // 🟢 NEW IMPORT
 
 class TeamInfoScreen extends StatefulWidget {
   const TeamInfoScreen({super.key});
@@ -14,28 +14,26 @@ class TeamInfoScreen extends StatefulWidget {
 }
 
 class _TeamInfoScreenState extends State<TeamInfoScreen> {
-  final ApiService _apiService = ApiService();
   
-  // 🟢 1. Create a variable to hold the Future
-  late Future<List<dynamic>> _proposalFuture;
-
   @override
   void initState() {
     super.initState();
-    // 🟢 2. Initialize the future ONLY ONCE when the screen is first created
-    _proposalFuture = _apiService.getUserProposals();
+    // 🟢 Trigger the background cache sync instantly upon opening
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<DataProvider>(context, listen: false).fetchMyProposalsIfNeeded();
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final dp = Provider.of<DataProvider>(context); // 🟢 Listens to the Cache
 
-    // 🟢 NEW: A reusable 1-pixel subtle border line for the bottom of the AppBar
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), // Subtle separation
+        color: theme.colorScheme.outline.withOpacity(0.2), 
         height: 1.0,
       ),
     );
@@ -44,11 +42,10 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('My Team & Proposal'),
-        // 🟢 MATCHES BACKGROUND AND REMOVES SHADOW
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, // 🟢 ADDED THE LINE HERE
+        bottom: appBarBottomLine, 
         actions: [
           IconButton(
             icon: Icon(
@@ -65,16 +62,16 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         ],
       ),
       floatingActionButton: const BreathingChatbotFab(),
-      body: FutureBuilder<List<dynamic>>(
-        // 🟢 3. Use the stored variable here instead of calling the function
-        future: _proposalFuture,
-        builder: (context, snapshot) {
-          
-          if (snapshot.connectionState == ConnectionState.waiting) {
+      // 🟢 REPLACED FutureBuilder with direct DataProvider logic
+      body: Builder(
+        builder: (context) {
+          // 1. Show Shimmer ONLY if cache is completely empty
+          if (dp.isLoadingMyProposals && dp.myProposals == null) {
             return _buildSkeletonLoader(theme);
           }
 
-          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          // 2. Empty State (No proposals)
+          if (dp.myProposals == null || dp.myProposals!.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -99,7 +96,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
             );
           }
 
-          final proposal = snapshot.data![0];
+          // 3. Success State (Instantly loaded from cache)
+          final proposal = dp.myProposals![0];
           final members = proposal['teamMembers'] as List? ?? [];
           final course = proposal['course'] ?? {};
 

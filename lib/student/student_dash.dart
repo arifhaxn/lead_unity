@@ -189,7 +189,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           iconColor: const Color.fromARGB(255, 255, 255, 255),
                           onTap: _navigateToTeamInfo,
                           isCompact: true,
-                          bgColor: const Color(0xFF6B7280),
+                          bgColor: const Color.fromARGB(255, 86, 75, 105),
                         ),
                       ),
                       const SizedBox(width: 16),
