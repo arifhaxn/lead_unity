@@ -13,41 +13,67 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingTeams = false;
   bool get isLoadingTeams => _isLoadingTeams;
 
-  
-Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
-  if (!forceRefresh && _allTeams != null) return;
+  Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
+    // 1. 🟢 INSTANT CACHE LOAD
+    if (!forceRefresh && _allTeams == null) {
+      _isLoadingTeams = true;
+      notifyListeners(); 
 
-  _isLoadingTeams = true;
-  notifyListeners(); 
+      final prefs = await SharedPreferences.getInstance();
+      final cachedTeams = prefs.getString('cached_teams');
+      
+      if (cachedTeams != null) {
+        List<dynamic> localData = json.decode(cachedTeams);
+        
+        // Apply defense sorting to cached data
+        localData.sort((a, b) {
+          if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
+          if (a['defenseDate'] == null) return 1;
+          if (b['defenseDate'] == null) return -1;
+          return DateTime.parse(a['defenseDate']).compareTo(DateTime.parse(b['defenseDate']));
+        });
 
-  try {
-    List<dynamic> rawTeams = await _apiService.getAllProposals();
+        _allTeams = localData;
+        _isLoadingTeams = false; 
+        notifyListeners(); 
+      }
+    }
 
-    // --- 🟢 ADD THE SORTING LOGIC HERE ---
-    rawTeams.sort((a, b) {
-      // 1. If defenseDate is missing, move to the bottom
-      if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
-      if (a['defenseDate'] == null) return 1;
-      if (b['defenseDate'] == null) return -1;
+    // 2. 🟢 THE BACKGROUND/PULL-TO-REFRESH FETCH
+    if (forceRefresh) {
+      _isLoadingTeams = true;
+      notifyListeners();
+    }
 
-      // 2. Parse strings to DateTime (Dart's parse handles ISO 8601)
-      DateTime dateA = DateTime.parse(a['defenseDate']);
-      DateTime dateB = DateTime.parse(b['defenseDate']);
+    try {
+      final freshTeams = await _apiService.getAllProposals();
+      
+      // Apply defense sorting to fresh data
+      freshTeams.sort((a, b) {
+        if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
+        if (a['defenseDate'] == null) return 1;
+        if (b['defenseDate'] == null) return -1;
+        return DateTime.parse(a['defenseDate']).compareTo(DateTime.parse(b['defenseDate']));
+      });
 
-      // 3. Chronological sort (Earliest first)
-      return dateA.compareTo(dateB);
-    });
+      final prefs = await SharedPreferences.getInstance();
+      final freshDataString = json.encode(freshTeams);
+      final cachedTeams = prefs.getString('cached_teams');
 
-    _allTeams = rawTeams; // Save the sorted list to your cache
-    
-  } catch (e) {
-    debugPrint("Error fetching teams: $e");
-    _allTeams = []; 
-  } finally {
-    _isLoadingTeams = false;
-    notifyListeners(); 
+      // 3. 🟢 SILENT UI UPDATE
+      if (freshDataString != cachedTeams) {
+        _allTeams = freshTeams;
+        await prefs.setString('cached_teams', freshDataString);
+        notifyListeners(); 
+      }
+    } catch (e) {
+      debugPrint("Error fetching teams: $e");
+      if (_allTeams == null) _allTeams = []; 
+    } finally {
+      _isLoadingTeams = false;
+      notifyListeners(); 
+    }
   }
-}
 
   // --- SUPERVISORS CACHE ---
   List<dynamic>? _allSupervisors;
@@ -57,7 +83,6 @@ Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
   bool get isLoadingSupervisors => _isLoadingSupervisors;
 
   Future<void> fetchSupervisorsIfNeeded({bool forceRefresh = false}) async {
-    // 1. 🟢 INSTANT CACHE LOAD
     if (!forceRefresh && _allSupervisors == null) {
       _isLoadingSupervisors = true;
       notifyListeners();
@@ -72,7 +97,6 @@ Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
       }
     }
 
-    // 2. 🟢 THE BACKGROUND FETCH
     if (forceRefresh) {
       _isLoadingSupervisors = true;
       notifyListeners();
@@ -84,7 +108,6 @@ Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
       final freshDataString = json.encode(freshData);
       final cachedData = prefs.getString('cached_supervisors');
 
-      // 3. 🟢 SILENT UI UPDATE
       if (freshDataString != cachedData) {
         _allSupervisors = freshData;
         await prefs.setString('cached_supervisors', freshDataString);
@@ -99,7 +122,87 @@ Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
     }
   }
 
+  // --- COURSES CACHE ---
+  List<dynamic>? _allCourses;
+  List<dynamic>? get allCourses => _allCourses;
+  
+  bool _isLoadingCourses = false;
+  bool get isLoadingCourses => _isLoadingCourses; 
 
+  Future<void> fetchCoursesIfNeeded({bool forceRefresh = false}) async {
+    if (!forceRefresh && _allCourses == null) {
+      _isLoadingCourses = true; 
+      notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString('cached_courses');
+      if (cached != null) { 
+        _allCourses = json.decode(cached); 
+        _isLoadingCourses = false; 
+        notifyListeners(); 
+      }
+    }
 
+    if (forceRefresh) { 
+      _isLoadingCourses = true; 
+      notifyListeners(); 
+    }
+    
+    try {
+      final fresh = await _apiService.getCourses();
+      final prefs = await SharedPreferences.getInstance();
+      final freshString = json.encode(fresh);
+      if (freshString != prefs.getString('cached_courses')) {
+        _allCourses = fresh;
+        await prefs.setString('cached_courses', freshString);
+        notifyListeners();
+      }
+    } catch (e) {
+      if (_allCourses == null) _allCourses = [];
+    } finally { 
+      _isLoadingCourses = false; 
+      notifyListeners(); 
+    }
+  }
 
-//Color.fromARGB(255, 74, 65, 91), 
+  // --- MY PROPOSALS CACHE ---
+  List<dynamic>? _myProposals;
+  List<dynamic>? get myProposals => _myProposals;
+  
+  bool _isLoadingMyProposals = false;
+  bool get isLoadingMyProposals => _isLoadingMyProposals; 
+
+  Future<void> fetchMyProposalsIfNeeded({bool forceRefresh = false}) async {
+    if (!forceRefresh && _myProposals == null) {
+      _isLoadingMyProposals = true; 
+      notifyListeners();
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString('cached_my_proposals');
+      if (cached != null) { 
+        _myProposals = json.decode(cached); 
+        _isLoadingMyProposals = false; 
+        notifyListeners(); 
+      }
+    }
+
+    if (forceRefresh) { 
+      _isLoadingMyProposals = true; 
+      notifyListeners(); 
+    }
+    
+    try {
+      final fresh = await _apiService.getUserProposals();
+      final prefs = await SharedPreferences.getInstance();
+      final freshString = json.encode(fresh);
+      if (freshString != prefs.getString('cached_my_proposals')) {
+        _myProposals = fresh;
+        await prefs.setString('cached_my_proposals', freshString);
+        notifyListeners();
+      }
+    } catch (e) {
+      if (_myProposals == null) _myProposals = [];
+    } finally { 
+      _isLoadingMyProposals = false; 
+      notifyListeners(); 
+    }
+  }
+}
