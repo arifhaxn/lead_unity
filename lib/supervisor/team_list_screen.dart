@@ -79,13 +79,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   void _showInstructions() {
-    final title =
-        widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
+    final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
     final content = widget.onlyMyTeams
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
 
-    showDialog(
+    showAnimatedDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Row(
@@ -102,7 +101,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(context), 
             child: const Text("Got it!"),
           ),
         ],
@@ -198,7 +197,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           () => setState(() => _searchQuery = v.trim()));
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search by supervisor, title, or ID',
+                      hintText: 'Search by title or ID',
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: theme.colorScheme.surface,
@@ -211,12 +210,52 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 Expanded(
                   child: TabBarView(
                     children: _courseTabs.map((courseCode) {
-                      final filtered = _filterTeams(
-                          teams: _processedTeams,
-                          courseCode: courseCode,
-                          query: _searchQuery);
+                      final courseOrdered = _getTeamsForCourse(_processedTeams, courseCode);
 
-                      if (filtered.isEmpty) {
+                      final serialByTeamKeyInCourse = <String, int>{
+                        for (int i = 0; i < courseOrdered.length; i++)
+                          _teamKey(courseOrdered[i] as Map<String, dynamic>): i + 1,
+                      };
+
+                      final normalizedQuery = _searchQuery.toLowerCase();
+                      
+                      // 🟢 THE CORRECTED GOD-MODE SEARCH LOGIC
+                      final filteredWithCardId = courseOrdered.where((team) {
+                        if (normalizedQuery.isEmpty) return true;
+
+                        final teamMap = team as Map<String, dynamic>;
+                        final serial = serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 0;
+                        
+                        // 1. Explicitly grab Title
+                        final title = (teamMap['title'] ?? '').toString().toLowerCase();
+                        
+                        // 2. Explicitly grab Assigned Supervisor
+                        String supName = '';
+                        if (teamMap['assignedSupervisor'] is Map) {
+                          supName = (teamMap['assignedSupervisor']['name'] ?? '').toString().toLowerCase();
+                        }
+                        
+                        // 3. Explicitly grab Secondary Supervisors
+                        String otherSups = '';
+                        if (teamMap['supervisors'] is List) {
+                          for (var s in teamMap['supervisors']) {
+                            if (s is Map) {
+                              otherSups += (s['name'] ?? '').toString().toLowerCase() + ' ';
+                            }
+                          }
+                        }
+
+                        // 4. Combine them perfectly into one giant searchable string
+                        final searchableString = "$title $supName $otherSups team $serial #$serial $serial".replaceAll(RegExp(r'\s+'), ' ');
+
+                        // 5. Split query by spaces to allow searching things like "John 3"
+                        final searchTerms = normalizedQuery.split(' ').where((t) => t.isNotEmpty).toList();
+                        
+                        // 6. Check if EVERY word the user typed exists in the searchable string
+                        return searchTerms.every((term) => searchableString.contains(term));
+                      }).toList();
+
+                      if (filteredWithCardId.isEmpty) {
                         return RefreshIndicator(
                           onRefresh: () => dataProvider.fetchTeamsIfNeeded(
                               forceRefresh: true),
@@ -400,28 +439,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return courseCodes.toList()..sort();
   }
 
-  List<dynamic> _filterTeams(
-      {required List<dynamic> teams,
-      required String courseCode,
-      required String query}) {
-    final normalizedQuery = query.toLowerCase();
+  List<dynamic> _getTeamsForCourse(List<dynamic> teams, String courseCode) {
     return teams.where((team) {
-      final code = (team['course'] is Map)
-          ? team['course']['courseCode']?.toString()
-          : null;
-      if (code != courseCode) return false;
-      if (normalizedQuery.isEmpty) return true;
-      final title = (team['title'] ?? '').toString().toLowerCase();
-      final assignedSupervisorName = (team['assignedSupervisor'] is Map)
-          ? (team['assignedSupervisor']['name'] ?? '').toString().toLowerCase()
-          : '';
-      final supervisors = team['supervisors'] as List? ?? [];
-      final supervisorMatch = supervisors.any((s) =>
-          s is Map &&
-          (s['name'] ?? '').toLowerCase().contains(normalizedQuery));
-      return title.contains(normalizedQuery) ||
-          supervisorMatch ||
-          assignedSupervisorName.contains(normalizedQuery);
+      final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
+      return code == courseCode;
     }).toList();
   }
 
@@ -449,8 +470,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
     final title = team['title'] ?? 'Untitled Team';
     String supervisorName = 'Not Assigned';
     final assignedSupervisor = team['assignedSupervisor'];
-    if (assignedSupervisor is Map)
-      supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
+    if (assignedSupervisor is Map) supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
+    
+    final uniqueTag = 'team_title_${team['_id'] ?? team['title']}';
 
     bool isMyTeam = false;
     if (myId != null) {
@@ -486,24 +508,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       color: isNext ? Colors.white : theme.colorScheme.primary,
                       fontWeight: FontWeight.bold)),
             ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text(title,
-                      style: theme.textTheme.titleMedium
-                          ?.copyWith(fontWeight: FontWeight.bold)),
-                ),
-                if (isNext)
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text("NEXT", 
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-                  ),
-              ],
+            title: Hero(
+              tag: uniqueTag, 
+              child: Material(
+                color: Colors.transparent,
+                child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+              ),
             ),
             subtitle: Text("Supervisor: $supervisorName",
                 style: TextStyle(

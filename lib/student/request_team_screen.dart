@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 Added for animations
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 Added for the button
+import 'package:link_unity/widgets/animated_submit_button.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../theme/theme_provider.dart';
-import '../providers/auth_provider.dart'; // 🟢 Added to access user info
+import '../providers/auth_provider.dart';
+import '../providers/data_provider.dart';
 
 class RequestTeamScreen extends StatefulWidget {
   const RequestTeamScreen({super.key});
@@ -25,20 +26,31 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
 
-  List<dynamic> _courses = [];
-  List<dynamic> _supervisors = [];
-
   String? _selectedCourseId;
   String? _sup1, _sup2, _sup3;
 
-  bool _isLoadingData = true;
-  SubmitState _submitState = SubmitState.idle; // 🟢 Changed to SubmitState
+  SubmitState _submitState = SubmitState.idle;
   String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
-    _fetchData();
+
+    // 1. 🟢 Auto-fill user data instantly from AuthProvider memory
+    final user = Provider.of<AuthProvider>(context, listen: false).user;
+    if (user != null) {
+      _nameController.text = user.name;
+      _idController.text = user.studentId ?? '';
+      _emailController.text = user.email;
+    }
+
+    // 2. 🟢 Trigger background fetches from DataProvider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      dp.fetchCoursesIfNeeded();
+      dp.fetchSupervisorsIfNeeded();
+      dp.fetchMyProposalsIfNeeded(); // Fetch this to check if they already have a team
+    });
   }
 
   @override
@@ -49,40 +61,6 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     _emailController.dispose();
     _mobileController.dispose();
     super.dispose();
-  }
-
-  Future<void> _fetchData() async {
-    try {
-      // 1. Fetch user data from AuthProvider
-      final user = Provider.of<AuthProvider>(context, listen: false).user;
-      
-      // 2. Fetch API data
-      final results = await Future.wait([
-        _apiService.getCourses(),
-        _apiService.getSupervisors(),
-      ]);
-
-      if (!mounted) return;
-      
-      setState(() {
-        // 🟢 AUTO-LOAD USER INFO
-        if (user != null) {
-          _nameController.text = user.name;
-          _idController.text = user.studentId ?? '';
-          _emailController.text = user.email;
-        }
-
-        _courses = results[0];
-        _supervisors = results[1];
-        _isLoadingData = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isLoadingData = false;
-        _errorMessage = "Failed to load form data: ${e.toString().replaceAll('Exception: ', '')}";
-      });
-    }
   }
 
   Future<void> _submitRequest() async {
@@ -100,16 +78,13 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
     setState(() => _submitState = SubmitState.loading);
 
-    try {
-      final myProposals = await _apiService.getUserProposals();
-      if (myProposals.isNotEmpty) {
-        _showError('Your account is already leading a team. Remove existing team first.');
-        if (mounted) setState(() => _submitState = SubmitState.idle);
-        return;
-      }
-    } catch (_) {
-      _showError('Could not verify existing teams. Please try again.');
-      if (mounted) setState(() => _submitState = SubmitState.idle);
+    final dp = Provider.of<DataProvider>(context, listen: false);
+
+    // 🟢 Instant Check: Use cached proposals instead of making a new API call
+    if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
+      _showError(
+          'Your account is already leading a team. Remove existing team first.');
+      setState(() => _submitState = SubmitState.idle);
       return;
     }
 
@@ -131,16 +106,19 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       });
 
       if (!mounted) return;
-      
+
+      // 🟢 Force a background refresh so the dashboard shows the new request immediately
+      dp.fetchMyProposalsIfNeeded(forceRefresh: true);
+      dp.fetchTeamsIfNeeded(forceRefresh: true);
+
       // 🟢 Success Animation
       setState(() => _submitState = SubmitState.success);
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('Team request submitted successfully.'),
           backgroundColor: Colors.green));
-          
+
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) Navigator.pop(context);
-      
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitState = SubmitState.idle);
@@ -149,14 +127,15 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
   }
 
   void _showError(String msg) {
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+    ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final dp = Provider.of<DataProvider>(context); // 🟢 Listens to the Cache
 
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
@@ -166,7 +145,11 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       ),
     );
 
-    if (_isLoadingData) {
+    // 🟢 Shows shimmer ONLY if cache is completely empty on first load
+    final isLoadingInitialData =
+        (dp.allCourses == null) || (dp.allSupervisors == null);
+
+    if (isLoadingInitialData) {
       return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
     }
 
@@ -188,7 +171,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
             ),
           ],
         ),
-        body: Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red))),
+        body: Center(
+            child: Text(_errorMessage!,
+                style: const TextStyle(color: Colors.red))),
       );
     }
 
@@ -203,7 +188,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
@@ -211,7 +198,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
         ],
       ),
       floatingActionButton: const BreathingChatbotFab(),
-      body: AnimationLimiter( // 🟢 Staggered animation wrap
+      body: AnimationLimiter(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: Form(
@@ -230,16 +217,23 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.5), width: 2),
+                      border: Border.all(
+                          color: theme.colorScheme.primary.withOpacity(0.5),
+                          width: 2),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.school_rounded, color: theme.colorScheme.primary),
+                            Icon(Icons.school_rounded,
+                                color: theme.colorScheme.primary),
                             const SizedBox(width: 8),
-                            Text('Target Course', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                            Text('Target Course',
+                                style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary)),
                           ],
                         ),
                         const SizedBox(height: 12),
@@ -248,51 +242,75 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                           hint: const Text('Select a course...'),
                           isExpanded: true,
                           decoration: InputDecoration(
-                            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
                             filled: true,
                             fillColor: theme.colorScheme.surface,
-                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none),
                           ),
-                          validator: (value) => value == null ? 'Required to submit' : null,
-                          items: _courses.map<DropdownMenuItem<String>>((course) {
+                          validator: (value) =>
+                              value == null ? 'Required to submit' : null,
+                          // 🟢 Uses courses directly from DataProvider
+                          items: dp.allCourses!
+                              .map<DropdownMenuItem<String>>((course) {
                             return DropdownMenuItem<String>(
                               value: course['_id'],
-                              child: Text((course['courseCode'] ?? '').toString()),
+                              child:
+                                  Text((course['courseCode'] ?? '').toString()),
                             );
                           }).toList(),
-                          onChanged: (value) => setState(() => _selectedCourseId = value),
+                          onChanged: (value) =>
+                              setState(() => _selectedCourseId = value),
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 24),
-                  Text('Prefered Supervisors', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                  Text('Preferred Supervisors',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      _buildSupDropdown(1, _sup1, (value) => setState(() => _sup1 = value)),
+                      // 🟢 Passed dp.allSupervisors to the helper widget
+                      _buildSupDropdown(1, _sup1, dp.allSupervisors!,
+                          (value) => setState(() => _sup1 = value)),
                       const SizedBox(width: 8),
-                      _buildSupDropdown(2, _sup2, (value) => setState(() => _sup2 = value)),
+                      _buildSupDropdown(2, _sup2, dp.allSupervisors!,
+                          (value) => setState(() => _sup2 = value)),
                       const SizedBox(width: 8),
-                      _buildSupDropdown(3, _sup3, (value) => setState(() => _sup3 = value)),
+                      _buildSupDropdown(3, _sup3, dp.allSupervisors!,
+                          (value) => setState(() => _sup3 = value)),
                     ],
                   ),
                   const SizedBox(height: 24),
-                  Text('My Details', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: theme.colorScheme.primary)),
+                  Text('My Details',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
                   const SizedBox(height: 10),
                   Container(
                     padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: theme.colorScheme.primary.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: theme.colorScheme.primary.withOpacity(0.35)),
+                      border: Border.all(
+                          color: theme.colorScheme.primary.withOpacity(0.35)),
                     ),
                     child: Column(
                       children: [
                         TextFormField(
                           controller: _nameController,
                           decoration: const InputDecoration(hintText: 'Name'),
-                          validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                          validator: (value) =>
+                              (value == null || value.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
                         ),
                         const SizedBox(height: 10),
                         Row(
@@ -300,19 +318,29 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                             Expanded(
                               child: TextFormField(
                                 controller: _idController,
-                                decoration: const InputDecoration(hintText: 'ID'),
-                                validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                                decoration:
+                                    const InputDecoration(hintText: 'ID'),
+                                validator: (value) =>
+                                    (value == null || value.trim().isEmpty)
+                                        ? 'Required'
+                                        : null,
                               ),
                             ),
                             const SizedBox(width: 10),
                             Expanded(
                               child: TextFormField(
                                 controller: _cgpaController,
-                                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                                decoration: const InputDecoration(hintText: 'CGPA'),
+                                keyboardType:
+                                    const TextInputType.numberWithOptions(
+                                        decimal: true),
+                                decoration:
+                                    const InputDecoration(hintText: 'CGPA'),
                                 validator: (value) {
-                                  if (value == null || value.trim().isEmpty) return 'Required';
-                                  return double.tryParse(value.trim()) == null ? 'Invalid' : null;
+                                  if (value == null || value.trim().isEmpty)
+                                    return 'Required';
+                                  return double.tryParse(value.trim()) == null
+                                      ? 'Invalid'
+                                      : null;
                                 },
                               ),
                             ),
@@ -335,14 +363,15 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                           controller: _mobileController,
                           keyboardType: TextInputType.phone,
                           decoration: const InputDecoration(hintText: 'Mobile'),
-                          validator: (value) => (value == null || value.trim().isEmpty) ? 'Required' : null,
+                          validator: (value) =>
+                              (value == null || value.trim().isEmpty)
+                                  ? 'Required'
+                                  : null,
                         ),
                       ],
                     ),
                   ),
                   const SizedBox(height: 28),
-                  
-                  // 🟢 Animated Submit Button
                   SizedBox(
                     height: 54,
                     child: AnimatedSubmitButton(
@@ -362,8 +391,8 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     );
   }
 
-  // Skeleton Loader and Dropdown Helper remain the same...
-  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider,
+      PreferredSizeWidget appBarBottomLine) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
@@ -385,25 +414,41 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Container(height: 100, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+              Container(
+                  height: 100,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16))),
               const SizedBox(height: 24),
               Container(height: 20, width: 120, color: Colors.white),
               const SizedBox(height: 10),
               Row(
-                children: List.generate(3, (index) => Expanded(
-                  child: Container(
-                    height: 50,
-                    margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
-                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)),
-                  ),
-                )),
+                children: List.generate(
+                    3,
+                    (index) => Expanded(
+                          child: Container(
+                            height: 50,
+                            margin: EdgeInsets.only(right: index == 2 ? 0 : 8),
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8)),
+                          ),
+                        )),
               ),
               const SizedBox(height: 24),
               Container(height: 20, width: 120, color: Colors.white),
               const SizedBox(height: 10),
-              Container(height: 240, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+              Container(
+                  height: 240,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16))),
               const SizedBox(height: 28),
-              Container(height: 50, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+              Container(
+                  height: 50,
+                  decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12))),
             ],
           ),
         ),
@@ -411,21 +456,21 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     );
   }
 
-// 🟢 Shortened and optimized Dropdown builder
-  Widget _buildSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
+  // 🟢 Updated to accept the cached supervisors list dynamically
+  Widget _buildSupDropdown(int index, String? value, List<dynamic> supervisors,
+      ValueChanged<String?> onChanged) {
     return Expanded(
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
-        // 🟢 Limits the height of the open menu so it doesn't cover the whole screen
-        menuMaxHeight: 250, 
+        menuMaxHeight: 250,
         decoration: InputDecoration(
           labelText: 'Sup $index',
           labelStyle: const TextStyle(fontSize: 12),
-          // 🟢 Tighter padding to make the row feel less crowded
-          contentPadding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
         ),
-        items: _supervisors.map<DropdownMenuItem<String>>((s) {
+        items: supervisors.map<DropdownMenuItem<String>>((s) {
           final abbreviation = [
             s['abbreviation'],
             s['abbr'],
@@ -439,8 +484,8 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
           return DropdownMenuItem<String>(
             value: s['_id']?.toString(),
             child: Text(
-              abbreviation.isEmpty ? 'N/A' : abbreviation.toUpperCase(), 
-              style: const TextStyle(fontSize: 11), // 🟢 Smaller font for compact look
+              abbreviation.isEmpty ? 'N/A' : abbreviation.toUpperCase(),
+              style: const TextStyle(fontSize: 11),
               overflow: TextOverflow.ellipsis,
             ),
           );

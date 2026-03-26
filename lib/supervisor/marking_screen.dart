@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
 import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
-import '../widgets/animated_submit_button.dart'; // 🟢 NEW IMPORT
+import '../widgets/animated_submit_button.dart'; 
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
@@ -20,15 +20,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
   final ApiService _apiService = ApiService();
 
   Map<String, dynamic> _allSettings = {};
-  
-  // 🟢 We keep this for the initial screen load skeleton
   bool _isScreenLoading = true; 
-  
-  // 🟢 NEW: State variable specifically for the submit button
   SubmitState _submitState = SubmitState.idle; 
-  
   String _evaluationType = 'defense';
-
   final Map<String, Map<String, dynamic>> _studentMarks = {};
 
   @override
@@ -97,7 +91,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
       if (mounted) {
         setState(() {
           _allSettings = settings;
-          _isScreenLoading = false; // Initial load finished
+          _isScreenLoading = false; 
         });
       }
     } catch (e) {
@@ -112,7 +106,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
   }
 
   void _submitMarks() async {
-    // 🟢 Set button state to loading
     setState(() => _submitState = SubmitState.loading); 
     
     List<Map<String, dynamic>> payload = [];
@@ -132,14 +125,11 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
       if (!mounted) return;
       
-      // 🟢 Change button state to success to trigger the checkmark animation
       setState(() => _submitState = SubmitState.success);
-
-      // 🟢 Wait 1 second so the user can actually see the success animation
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
-        Navigator.pop(context); // Go back to previous screen
+        Navigator.pop(context); 
       }
       
     } catch (e) {
@@ -147,7 +137,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
         );
-        // 🟢 If it fails, revert the button back to idle so they can try again
         setState(() => _submitState = SubmitState.idle);
       }
     }
@@ -158,6 +147,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
+    // 🟢 Extract the team title for the AppBar
+    final String teamTitle = widget.team['title']?.toString() ?? "Evaluation Board";
+
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
@@ -167,7 +159,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
 
     if (_isScreenLoading) {
-      return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
+      return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine, teamTitle);
     }
 
     final config = _allSettings[_evaluationType] ?? {};
@@ -179,8 +171,13 @@ class _MarkingScreenState extends State<MarkingScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Evaluation Board",
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        // 🟢 Replaced static text with the dynamic team title
+        title: Text(
+          teamTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: theme.scaffoldBackgroundColor, 
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
@@ -254,7 +251,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
 
             const SizedBox(height: 20),
 
-            // 🟢 NEW: Replaced the standard ElevatedButton with our animated one
             SizedBox(
               width: double.infinity,
               child: AnimatedSubmitButton(
@@ -314,7 +310,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
   }
 
-  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine) {
+  // 🟢 Passed teamTitle to the skeleton loader so it matches during load
+  Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine, String teamTitle) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
@@ -322,8 +319,12 @@ class _MarkingScreenState extends State<MarkingScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Evaluation Board",
-            style: TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          teamTitle,
+          style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
         backgroundColor: theme.scaffoldBackgroundColor, 
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
@@ -389,7 +390,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
   }
 }
 
-// --- STUDENT MARKING CARD (remains unchanged) ---
+// --- STUDENT MARKING CARD ---
 class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;

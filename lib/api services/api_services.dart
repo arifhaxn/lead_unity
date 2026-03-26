@@ -32,6 +32,7 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Login failed';
     }
   }
+  
   Future<Map<String, dynamic>> getUserByEmail(String email) async {
     try {
       final response = await _dio.get('/users');
@@ -132,7 +133,8 @@ class ApiService {
       final response = await _dio.get('/proposals/my');
       return response.data;
     } catch (e) {
-      return [];
+      // 🟢 Throws error so the DataProvider doesn't wipe your local cache
+      throw Exception('Failed to load user proposals: $e'); 
     }
   }
 
@@ -141,7 +143,8 @@ class ApiService {
       final response = await _dio.get('/proposals');
       return response.data;
     } catch (e) {
-      return [];
+      // 🟢 Throws error so the DataProvider doesn't wipe your local cache
+      throw Exception('Failed to load all proposals: $e'); 
     }
   }
 

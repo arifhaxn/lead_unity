@@ -48,6 +48,7 @@ dependencies:
   intl: ^0.20.2
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -58,7 +59,7 @@ flutter_icons:
   android: true
   ios: true
   image_path: "assets/logo/logo.png"
-  adaptive_icon_background: "#ffffff"
+  adaptive_icon_background: "#222733"
   adaptive_icon_foreground: "assets/logo/logo_foreground.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to

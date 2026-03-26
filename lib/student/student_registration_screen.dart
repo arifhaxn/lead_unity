@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 IMPORT ADDED
 import 'package:provider/provider.dart';
@@ -19,11 +19,11 @@ class StudentRegistrationScreen extends StatefulWidget {
 class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, dynamic> _formData = {};
-  
+
   // 🟢 NEW: Switched from boolean to SubmitState
-  SubmitState _submitState = SubmitState.idle; 
-  
-  bool _obscurePassword = true; 
+  SubmitState _submitState = SubmitState.idle;
+
+  bool _obscurePassword = true;
 
   Future<void> _initiateRegistration() async {
     if (_formKey.currentState!.validate()) {
@@ -43,12 +43,12 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         await Future.delayed(const Duration(milliseconds: 800));
 
         if (!mounted) return;
-        
+
         // Reset the button back to normal in the background
-        setState(() => _submitState = SubmitState.idle); 
-        
+        setState(() => _submitState = SubmitState.idle);
+
         // Now open the dialog
-        _showOTPDialog(); 
+        _showOTPDialog();
       } catch (e) {
         // 🟢 Reset on error
         setState(() => _submitState = SubmitState.idle);
@@ -63,7 +63,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     final otpController = TextEditingController();
     bool isVerifying = false;
 
-    showAnimatedDialog( // 🟢 Let's use our animated dialog here too!
+    showAnimatedDialog(
+      // 🟢 Let's use our animated dialog here too!
       context: context,
       barrierDismissible: false,
       dialog: StatefulBuilder(builder: (context, setDialogState) {
@@ -99,8 +100,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   ? null
                   : () {
                       if (otpController.text.isNotEmpty) {
-                        setDialogState(
-                            () => isVerifying = true); 
+                        setDialogState(() => isVerifying = true);
                         _finalizeRegistration(otpController.text, context);
                       }
                     },
@@ -126,7 +126,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         _formData['studentId'],
         _formData['batch'],
         _formData['section'],
-        otp, 
+        otp,
       );
 
       if (!mounted) return;
@@ -170,7 +170,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
+            onPressed: () => Navigator.pop(context),
             child: const Text("Got it!"),
           ),
         ],
@@ -186,19 +186,19 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), 
+        color: theme.colorScheme.outline.withOpacity(0.2),
         height: 1.0,
       ),
     );
 
     return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor, 
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
         title: const Text('Create Account'),
-        backgroundColor: theme.scaffoldBackgroundColor, 
+        backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, 
+        bottom: appBarBottomLine,
         iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
         actions: [
           IconButton(
@@ -231,7 +231,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: AnimationConfiguration.toStaggeredList(
-                duration: const Duration(milliseconds: 400), 
+                duration: const Duration(milliseconds: 400),
                 childAnimationBuilder: (widget) => SlideAnimation(
                   verticalOffset: 40.0,
                   child: FadeInAnimation(
@@ -247,7 +247,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   Text(
                     'Fill in your details to get started with your research journey.',
                     style: TextStyle(
-                        fontSize: 14, color: theme.colorScheme.onSurfaceVariant),
+                        fontSize: 14,
+                        color: theme.colorScheme.onSurfaceVariant),
                   ),
                   const SizedBox(height: 30),
 
@@ -305,7 +306,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                           decoration: const InputDecoration(
                               labelText: 'Section',
                               prefixIcon: Icon(Icons.class_outlined),
-                          border: OutlineInputBorder()),
+                              border: OutlineInputBorder()),
                           onSaved: (v) => _formData['section'] = v,
                           validator: (v) => v!.isEmpty ? 'Required' : null,
                         ),
@@ -316,7 +317,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                   _buildLabel('Security'),
 
                   TextFormField(
-                    obscureText: _obscurePassword, 
+                    obscureText: _obscurePassword,
                     decoration: InputDecoration(
                         labelText: 'Password',
                         prefixIcon: const Icon(Icons.lock_outline),
@@ -354,7 +355,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
                       if (!RegExp(r'(?=.*?[!@#\$&*~])').hasMatch(value)) {
                         return 'Must contain at least one special character (!@#\$&*~)';
                       }
-                      return null; 
+                      return null;
                     },
                   ),
 
