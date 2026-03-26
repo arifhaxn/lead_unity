@@ -244,12 +244,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             final isNext = teamMap['_id'] == nextTeamId;
 
                             // Calculate serial within this course tab
-                            final serialInTab = courseTeams.indexWhere((t) => t['_id'] == teamMap['_id']) + 1;
+                            final int dbSerial = teamMap['serialNumber'] ?? (index + 1);
 
                             return _buildTeamCard(
                               context,
-                              serialNumber: serialInTab,
                               team: teamMap,
+                              serialNumber: dbSerial,
                               myId: myId,
                               dataProvider: dataProvider,
                               isNext: isNext,
