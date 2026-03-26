@@ -1,4 +1,4 @@
-import 'dart:async'; 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
@@ -22,8 +22,8 @@ class StudentDashboard extends StatefulWidget {
 
 class _StudentDashboardState extends State<StudentDashboard> {
   final ApiService _api = ApiService();
-  DateTime? _deadline; 
-  Timer? _timer; 
+  DateTime? _deadline;
+  Timer? _timer;
 
   @override
   void initState() {
@@ -33,7 +33,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   @override
   void dispose() {
-    _timer?.cancel(); 
+    _timer?.cancel();
     super.dispose();
   }
 
@@ -44,7 +44,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       setState(() {
         _deadline = deadlineDate;
       });
-      
+
       if (_deadline != null) {
         _startTickingClock();
       }
@@ -54,13 +54,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
   void _startTickingClock() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (mounted) {
-        setState(() {}); 
+        setState(() {});
       }
     });
   }
 
   bool get _canSubmit {
-    if (_deadline != null && DateTime.now().isAfter(_deadline!)) return false; 
+    if (_deadline != null && DateTime.now().isAfter(_deadline!)) return false;
     return true;
   }
 
@@ -68,27 +68,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
   String _getSubmissionStatusText() {
     if (_deadline != null) {
       final now = DateTime.now();
-      
+
       if (now.isAfter(_deadline!)) {
-        _timer?.cancel(); 
+        _timer?.cancel();
         return '🚨 Deadline Passed';
       }
-      
+
       final diff = _deadline!.difference(now);
-      
+
       if (diff.inDays > 0) {
         final hours = diff.inHours.remainder(24);
         final minutes = diff.inMinutes.remainder(60);
         return 'Closes in ${diff.inDays}d ${hours}h ${minutes}m';
       } else {
         final hours = diff.inHours;
-        final minutesStr = diff.inMinutes.remainder(60).toString().padLeft(2, '0');
-        final secondsStr = diff.inSeconds.remainder(60).toString().padLeft(2, '0');
-        
+        final minutesStr =
+            diff.inMinutes.remainder(60).toString().padLeft(2, '0');
+        final secondsStr =
+            diff.inSeconds.remainder(60).toString().padLeft(2, '0');
+
         return 'Closes in ${hours}h ${minutesStr}m ${secondsStr}s';
       }
     }
-    
+
     return 'Upload your team project proposal';
   }
 
@@ -96,14 +98,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Color _getSubmissionStatusColor() {
     if (_deadline != null) {
       final now = DateTime.now();
-      if (now.isAfter(_deadline!)) return Colors.redAccent; 
-      
+      if (now.isAfter(_deadline!)) return Colors.redAccent;
+
       final diff = _deadline!.difference(now);
       if (diff.inHours < 24) return Colors.redAccent; // Urgent (Red)
-      
+
       return Colors.amberAccent; // Normal Ticking (Bright Gold)
     }
-    return Colors.white70; 
+    return Colors.white70;
   }
 
   void _navigateToSubmitProposal() {
@@ -120,16 +122,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   void _navigateToTeamInfo() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
   }
+
   void _navigateToRequestTeam() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const RequestTeamScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const RequestTeamScreen()));
   }
+
   void _downloadTemplate() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+    Navigator.push(
+        context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
   }
+
   void _openChatbot() {
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const ChatbotScreen()));
+    Navigator.push(context,
+        MaterialPageRoute(builder: (context) => const ChatbotScreen()));
   }
 
   @override
@@ -138,13 +147,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
     final String fullName = user?.name ?? 'Student';
-    final String displayName = fullName.trim().split(RegExp(r'\s+')).where((part) => part.isNotEmpty).take(2).join(' ');
+    final String displayName = fullName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .join(' ');
     final bool hasTeam = false;
     final String? currentTeamId = null;
 
     final canSubmit = _canSubmit;
     final statusText = _getSubmissionStatusText();
-    final statusColor = _getSubmissionStatusColor(); 
+    final statusColor = _getSubmissionStatusColor();
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -163,18 +177,22 @@ class _StudentDashboardState extends State<StudentDashboard> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                
                 // Submit Proposal Card
                 _AnimatedStudentCard(
-                  icon: canSubmit ? Icons.upload_file_rounded : Icons.lock_clock_rounded,
+                  icon: canSubmit
+                      ? Icons.upload_file_rounded
+                      : Icons.lock_clock_rounded,
                   title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
-                  action: statusText, 
+                  action: statusText,
                   actionColor: statusColor, // 🟢 Now passes the vibrant colors
-                  iconColor: canSubmit ? const Color.fromARGB(255, 255, 255, 255) : Colors.grey,
-                  onTap: canSubmit ? _navigateToSubmitProposal : () {}, 
+                  iconColor: canSubmit
+                      ? const Color.fromARGB(255, 255, 255, 255)
+                      : Colors.grey,
+                  onTap: canSubmit ? _navigateToSubmitProposal : () {},
                   isProminent: true,
-                  isDisabled: !canSubmit, 
-                  bgColor: canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800]!,
+                  isDisabled: !canSubmit,
+                  bgColor:
+                      canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800]!,
                 ),
                 const SizedBox(height: 16),
 
@@ -228,16 +246,33 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Widget _buildStatusBanner(bool hasTeam, String? teamId) {
     final theme = Theme.of(context);
-    final Color bannerColor = hasTeam ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surfaceVariant;
-    final Color textColor = hasTeam ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant;
+    final Color bannerColor = hasTeam
+        ? theme.colorScheme.primary.withOpacity(0.08)
+        : theme.colorScheme.surfaceVariant;
+    final Color textColor = hasTeam
+        ? theme.colorScheme.primary
+        : theme.colorScheme.onSurfaceVariant;
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(color: bannerColor, borderRadius: BorderRadius.circular(12), border: Border.all(color: textColor.withOpacity(0.3))),
+      decoration: BoxDecoration(
+          color: bannerColor,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: textColor.withOpacity(0.3))),
       child: Row(
         children: [
-          Icon(hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined, color: textColor),
+          Icon(
+              hasTeam
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber_outlined,
+              color: textColor),
           const SizedBox(width: 12),
-          Expanded(child: Text(hasTeam ? 'You are part of Team $teamId.' : 'You are not yet on a team.', style: TextStyle(color: textColor, fontWeight: FontWeight.w600))),
+          Expanded(
+              child: Text(
+                  hasTeam
+                      ? 'You are part of Team $teamId.'
+                      : 'You are not yet on a team.',
+                  style: TextStyle(
+                      color: textColor, fontWeight: FontWeight.w600))),
         ],
       ),
     );
@@ -285,23 +320,27 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
     return Opacity(
       opacity: opacity,
       child: GestureDetector(
-        onTapDown: widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
-        onTapUp: widget.isDisabled ? null : (_) {
-          setState(() => _isPressed = false);
-          widget.onTap();
-        },
+        onTapDown:
+            widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
+        onTapUp: widget.isDisabled
+            ? null
+            : (_) {
+                setState(() => _isPressed = false);
+                widget.onTap();
+              },
         onTapCancel: () => setState(() => _isPressed = false),
-        
         child: AnimatedScale(
-          scale: _isPressed ? 0.95 : 1.0, 
+          scale: _isPressed ? 0.95 : 1.0,
           duration: const Duration(milliseconds: 150),
           curve: Curves.easeOutCubic,
           child: Container(
             decoration: BoxDecoration(
-              color: widget.bgColor, 
-              borderRadius: AppRadii.card, 
-              boxShadow: widget.isDisabled || _isPressed ? [] : AppShadows.level1,
-              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+              color: widget.bgColor,
+              borderRadius: AppRadii.card,
+              boxShadow:
+                  widget.isDisabled || _isPressed ? [] : AppShadows.level1,
+              border:
+                  Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
             ),
             padding: EdgeInsets.all(widget.isProminent ? 24.0 : 20.0),
             child: widget.isCompact
@@ -310,9 +349,16 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
                     children: [
                       _buildAnimatedIcon(),
                       const SizedBox(height: 16),
-                      Text(widget.title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
+                      Text(widget.title,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold)),
                       const SizedBox(height: 4),
-                      Text(widget.action, style: TextStyle(fontSize: 12, color: widget.actionColor ?? Colors.white70)),
+                      Text(widget.action,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: widget.actionColor ?? Colors.white70)),
                     ],
                   )
                 : Row(
@@ -320,25 +366,30 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
                       _buildAnimatedIcon(),
                       const SizedBox(width: 20),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start, 
-                          children: [
-                            Text(widget.title, style: TextStyle(fontSize: widget.isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)), 
-                            const SizedBox(height: 6), 
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                            Text(widget.title,
+                                style: TextStyle(
+                                    fontSize: widget.isProminent ? 20 : 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                            const SizedBox(height: 6),
                             // 🟢 Increased font size, letter spacing, and weight for Prominent cards
-                            Text(
-                              widget.action, 
-                              style: TextStyle(
-                                fontSize: widget.isProminent ? 15 : 14, 
-                                color: widget.actionColor ?? Colors.white70, 
-                                fontWeight: widget.isProminent || widget.actionColor != null ? FontWeight.w800 : FontWeight.normal,
-                                letterSpacing: widget.isProminent ? 0.3 : 0,
-                              )
-                            )
-                          ]
-                        )
-                      ),
-                      if (!widget.isDisabled) const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
+                            Text(widget.action,
+                                style: TextStyle(
+                                  fontSize: widget.isProminent ? 15 : 14,
+                                  color: widget.actionColor ?? Colors.white70,
+                                  fontWeight: widget.isProminent ||
+                                          widget.actionColor != null
+                                      ? FontWeight.w800
+                                      : FontWeight.normal,
+                                  letterSpacing: widget.isProminent ? 0.3 : 0,
+                                ))
+                          ])),
+                      if (!widget.isDisabled)
+                        const Icon(Icons.arrow_forward_ios_rounded,
+                            size: 16, color: Colors.white70),
                     ],
                   ),
           ),
@@ -349,20 +400,21 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
 
   Widget _buildAnimatedIcon() {
     return AnimatedScale(
-      scale: _isPressed ? 1.25 : 1.0, 
+      scale: _isPressed ? 1.25 : 1.0,
       duration: const Duration(milliseconds: 250),
-      curve: Curves.elasticOut, 
+      curve: Curves.elasticOut,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: EdgeInsets.all(widget.isCompact ? 10 : 12),
         decoration: BoxDecoration(
-          color: _isPressed 
-              ? widget.iconColor.withOpacity(0.3) 
+          color: _isPressed
+              ? widget.iconColor.withOpacity(0.3)
               : widget.iconColor.withOpacity(0.15),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: widget.iconColor.withOpacity(0.3)),
         ),
-        child: Icon(widget.icon, size: widget.isCompact ? 28 : 30, color: widget.iconColor),
+        child: Icon(widget.icon,
+            size: widget.isCompact ? 28 : 30, color: widget.iconColor),
       ),
     );
   }
