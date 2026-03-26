@@ -63,7 +63,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       return status == 'approved';
     }).toList();
 
-    // Updated Sorting Logic: Sort by Defense Schedule
+    // Sorting Logic: Sort by Defense Schedule
     teams.sort((a, b) {
       if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
       if (a['defenseDate'] == null) return 1;
@@ -84,7 +84,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
 
-    showAnimatedDialog(
+    showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
         title: Row(
@@ -101,7 +101,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
+            onPressed: () => Navigator.pop(ctx),
             child: const Text("Got it!"),
           ),
         ],
@@ -210,52 +210,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 Expanded(
                   child: TabBarView(
                     children: _courseTabs.map((courseCode) {
-                      final courseOrdered = _getTeamsForCourse(_processedTeams, courseCode);
-
-                      final serialByTeamKeyInCourse = <String, int>{
-                        for (int i = 0; i < courseOrdered.length; i++)
-                          _teamKey(courseOrdered[i] as Map<String, dynamic>): i + 1,
-                      };
-
-                      final normalizedQuery = _searchQuery.toLowerCase();
+                      // Logic to filter teams by course AND apply advanced search
+                      final courseTeams = _getTeamsByCourse(_processedTeams, courseCode);
                       
-                      // 🟢 THE CORRECTED GOD-MODE SEARCH LOGIC
-                      final filteredWithCardId = courseOrdered.where((team) {
-                        if (normalizedQuery.isEmpty) return true;
+                      final filtered = _applyAdvancedSearch(courseTeams, _searchQuery);
 
-                        final teamMap = team as Map<String, dynamic>;
-                        final serial = serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 0;
-                        
-                        // 1. Explicitly grab Title
-                        final title = (teamMap['title'] ?? '').toString().toLowerCase();
-                        
-                        // 2. Explicitly grab Assigned Supervisor
-                        String supName = '';
-                        if (teamMap['assignedSupervisor'] is Map) {
-                          supName = (teamMap['assignedSupervisor']['name'] ?? '').toString().toLowerCase();
-                        }
-                        
-                        // 3. Explicitly grab Secondary Supervisors
-                        String otherSups = '';
-                        if (teamMap['supervisors'] is List) {
-                          for (var s in teamMap['supervisors']) {
-                            if (s is Map) {
-                              otherSups += (s['name'] ?? '').toString().toLowerCase() + ' ';
-                            }
-                          }
-                        }
-
-                        // 4. Combine them perfectly into one giant searchable string
-                        final searchableString = "$title $supName $otherSups team $serial #$serial $serial".replaceAll(RegExp(r'\s+'), ' ');
-
-                        // 5. Split query by spaces to allow searching things like "John 3"
-                        final searchTerms = normalizedQuery.split(' ').where((t) => t.isNotEmpty).toList();
-                        
-                        // 6. Check if EVERY word the user typed exists in the searchable string
-                        return searchTerms.every((term) => searchableString.contains(term));
-                      }).toList();
-
-                      if (filteredWithCardId.isEmpty) {
+                      if (filtered.isEmpty) {
                         return RefreshIndicator(
                           onRefresh: () => dataProvider.fetchTeamsIfNeeded(
                               forceRefresh: true),
@@ -280,13 +240,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                           itemCount: filtered.length,
                           itemBuilder: (context, index) {
-                            final team = filtered[index];
-                            final teamMap = team as Map<String, dynamic>;
+                            final teamMap = filtered[index] as Map<String, dynamic>;
                             final isNext = teamMap['_id'] == nextTeamId;
+
+                            // Calculate serial within this course tab
+                            final serialInTab = courseTeams.indexWhere((t) => t['_id'] == teamMap['_id']) + 1;
 
                             return _buildTeamCard(
                               context,
-                              serialNumber: teamMap['serialNumber'] ?? (index + 1),
+                              serialNumber: serialInTab,
                               team: teamMap,
                               myId: myId,
                               dataProvider: dataProvider,
@@ -312,121 +274,46 @@ class _TeamListScreenState extends State<TeamListScreen> {
     );
   }
 
-  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 8, bottom: 10),
-      color: theme.colorScheme.surface,
-      child: TabBar(
-        isScrollable: true,
-        tabAlignment: TabAlignment.center,
-        dividerColor: Colors.transparent,
-        indicatorSize: TabBarIndicatorSize.label,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-        labelColor: theme.colorScheme.primary,
-        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        indicator: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-        ),
-        tabs: courseTabs
-            .map((c) => Tab(
-                height: 34,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Text(c,
-                      style: const TextStyle(
-                          fontSize: 13, fontWeight: FontWeight.w600)),
-                )))
-            .toList(),
-      ),
-    );
+  // --- HELPER METHODS ---
+
+  List<dynamic> _getTeamsByCourse(List<dynamic> teams, String courseCode) {
+    return teams.where((t) {
+      final code = (t['course'] is Map) ? t['course']['courseCode']?.toString() : null;
+      return code == courseCode;
+    }).toList();
   }
 
-  Widget _buildSkeletonLoader(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+  List<dynamic> _applyAdvancedSearch(List<dynamic> teams, String query) {
+    final normalizedQuery = query.toLowerCase();
+    if (normalizedQuery.isEmpty) return teams;
 
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Shimmer.fromColors(
-                baseColor: baseColor,
-                highlightColor: highlightColor,
-                child: Container(
-                    height: 30,
-                    width: 80,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10))),
-              ),
-              const SizedBox(width: 10),
-              Shimmer.fromColors(
-                baseColor: baseColor,
-                highlightColor: highlightColor,
-                child: Container(
-                    height: 30,
-                    width: 80,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(10))),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: Shimmer.fromColors(
-            baseColor: baseColor,
-            highlightColor: highlightColor,
-            child: Container(
-              height: 50,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                  color: Colors.white, borderRadius: BorderRadius.circular(12)),
-            ),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-            itemCount: 5,
-            itemBuilder: (context, index) {
-              return Shimmer.fromColors(
-                baseColor: baseColor,
-                highlightColor: highlightColor,
-                child: Container(
-                  margin: const EdgeInsets.only(bottom: 14),
-                  height: 120,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-      ],
-    );
-  }
+    final searchTerms = normalizedQuery.split(' ').where((t) => t.isNotEmpty).toList();
 
-  String _teamKey(Map<String, dynamic> team) {
-    final key =
-        (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
-    if (key.isNotEmpty) return key;
-    final title = (team['title'] ?? '').toString();
-    final createdAt =
-        (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
-    return '$title|$createdAt';
+    return teams.where((team) {
+      final teamMap = team as Map<String, dynamic>;
+      
+      // Calculate serial number for search (relative to entire sorted list for that tab)
+      final serial = _processedTeams.indexOf(team) + 1;
+
+      final title = (teamMap['title'] ?? '').toString().toLowerCase();
+      String supName = '';
+      if (teamMap['assignedSupervisor'] is Map) {
+        supName = (teamMap['assignedSupervisor']['name'] ?? '').toString().toLowerCase();
+      }
+      
+      String otherSups = '';
+      if (teamMap['supervisors'] is List) {
+        for (var s in teamMap['supervisors']) {
+          if (s is Map) {
+            otherSups += (s['name'] ?? '').toString().toLowerCase() + ' ';
+          }
+        }
+      }
+
+      final searchableString = "$title $supName $otherSups team $serial #$serial $serial".replaceAll(RegExp(r'\s+'), ' ');
+
+      return searchTerms.every((term) => searchableString.contains(term));
+    }).toList();
   }
 
   List<String> _extractCourseTabs(List<dynamic> teams) {
@@ -439,21 +326,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return courseCodes.toList()..sort();
   }
 
-  List<dynamic> _getTeamsForCourse(List<dynamic> teams, String courseCode) {
-    return teams.where((team) {
-      final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
-      return code == courseCode;
-    }).toList();
-  }
-
-  bool _hasSubmittedEvaluation(
-      Map<String, dynamic> team, String? myId, String evaluationType) {
+  bool _hasSubmittedEvaluation(Map<String, dynamic> team, String? myId, String evaluationType) {
     if (myId == null || myId.isEmpty) return false;
     final marks = team['marks'] as List? ?? [];
     for (final mark in marks) {
       if (mark is! Map) continue;
-      final supervisorId =
-          (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
+      final supervisorId = (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
       final type = (mark['type'] ?? '').toString().toLowerCase().trim();
       if (supervisorId == myId && type == evaluationType) return true;
     }
@@ -476,9 +354,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
     bool isMyTeam = false;
     if (myId != null) {
-      final assigned = (team['assignedSupervisor'] is Map)
-          ? team['assignedSupervisor']['_id']
-          : team['assignedSupervisor'];
+      final assigned = (team['assignedSupervisor'] is Map) ? team['assignedSupervisor']['_id'] : team['assignedSupervisor'];
       isMyTeam = assigned == myId;
     }
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
@@ -499,8 +375,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       child: Column(
         children: [
           ListTile(
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: isNext ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.1),
               child: Text(serialNumber.toString(),
@@ -508,31 +383,42 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       color: isNext ? Colors.white : theme.colorScheme.primary,
                       fontWeight: FontWeight.bold)),
             ),
-            title: Hero(
-              tag: uniqueTag, 
-              child: Material(
-                color: Colors.transparent,
-                child: Text(title, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-              ),
+            title: Row(
+              children: [
+                Expanded(
+                  child: Hero(
+                    tag: uniqueTag,
+                    child: Material(
+                      color: Colors.transparent,
+                      child: Text(title,
+                          style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                ),
+                if (isNext)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: const Text("NEXT", 
+                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                  ),
+              ],
             ),
             subtitle: Text("Supervisor: $supervisorName",
-                style: TextStyle(
-                    fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             trailing: Container(
-              width: 24,
-              height: 24,
+              width: 24, height: 24,
               decoration: BoxDecoration(
                 color: hasSubmitted ? const Color(0xFF16A34A) : null,
                 borderRadius: BorderRadius.circular(7),
                 border: Border.all(
-                    color: hasSubmitted
-                        ? const Color(0xFF16A34A)
-                        : theme.colorScheme.outline.withOpacity(0.8),
+                    color: hasSubmitted ? const Color(0xFF16A34A) : theme.colorScheme.outline.withOpacity(0.8),
                     width: 1.6),
               ),
-              child: hasSubmitted
-                  ? const Icon(Icons.check, size: 16, color: Colors.white)
-                  : null,
+              child: hasSubmitted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
             ),
           ),
           const Divider(height: 1),
@@ -542,35 +428,20 @@ class _TeamListScreenState extends State<TeamListScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) =>
-                              SupervisorTeamDetailsScreen(team: team))),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SupervisorTeamDetailsScreen(team: team))),
                   child: const Text("Details"),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: isActionDisabled
-                      ? null
-                      : () async {
-                          await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => MarkingScreen(
-                                      team: team,
-                                      evaluationType: evaluationType)));
-                          dataProvider.fetchTeamsIfNeeded(forceRefresh: true);
-                        },
-                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note,
-                      size: 16),
+                  onPressed: isActionDisabled ? null : () async {
+                    await Navigator.push(context, MaterialPageRoute(builder: (_) => MarkingScreen(team: team, evaluationType: evaluationType)));
+                    dataProvider.fetchTeamsIfNeeded(forceRefresh: true);
+                  },
+                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note, size: 16),
                   label: Text(isActionDisabled ? "Your Team" : "Evaluate"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isActionDisabled
-                        ? Colors.grey[300]
-                        : const Color(0xFFF59E0B),
-                    foregroundColor:
-                        isActionDisabled ? Colors.grey[600] : Colors.white,
+                    backgroundColor: isActionDisabled ? Colors.grey[300] : const Color(0xFFF59E0B),
+                    foregroundColor: isActionDisabled ? Colors.grey[600] : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     elevation: isActionDisabled ? 0 : 2,
                   ),
@@ -580,6 +451,82 @@ class _TeamListScreenState extends State<TeamListScreen> {
           )
         ],
       ),
+    );
+  }
+
+  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 8, bottom: 10),
+      color: theme.colorScheme.surface,
+      child: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.center,
+        dividerColor: Colors.transparent,
+        indicatorSize: TabBarIndicatorSize.label,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 10),
+        labelColor: theme.colorScheme.primary,
+        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+        indicator: BoxDecoration(
+          color: theme.colorScheme.primary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+        ),
+        tabs: courseTabs.map((c) => Tab(
+          height: 34,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10.0),
+            child: Text(c, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+          ),
+        )).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSkeletonLoader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
+
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Shimmer.fromColors(
+                baseColor: baseColor, highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              ),
+              const SizedBox(width: 10),
+              Shimmer.fromColors(
+                baseColor: baseColor, highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Shimmer.fromColors(
+            baseColor: baseColor, highlightColor: highlightColor,
+            child: Container(height: 50, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            itemCount: 5,
+            itemBuilder: (context, index) => Shimmer.fromColors(
+              baseColor: baseColor, highlightColor: highlightColor,
+              child: Container(margin: const EdgeInsets.only(bottom: 14), height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
