@@ -6,6 +6,7 @@ class FadeScaleRoute extends PageRouteBuilder {
   FadeScaleRoute({required this.page})
       : super(
           pageBuilder: (context, animation, secondaryAnimation) => page,
+          
           // 🟢 Speed of the animation
           transitionDuration: const Duration(milliseconds: 350), 
           reverseTransitionDuration: const Duration(milliseconds: 250),

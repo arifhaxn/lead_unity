@@ -12,6 +12,7 @@ import '../chatbot_screen.dart';
 import 'team_info.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/network_overlay.dart'; // 🟢 Added Network Overlay Import
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -160,87 +161,90 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final statusText = _getSubmissionStatusText();
     final statusColor = _getSubmissionStatusColor();
 
-    return Scaffold(
-      backgroundColor: theme.scaffoldBackgroundColor,
-      drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Student Dashboard')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text('Hello,', style: theme.textTheme.titleLarge),
-            Text(displayName, style: theme.textTheme.displaySmall),
-            const SizedBox(height: 10),
-            _buildStatusBanner(hasTeam, currentTeamId),
-            const SizedBox(height: 30),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
-                // Submit Proposal Card
-                _AnimatedStudentCard(
-                  icon: canSubmit
-                      ? Icons.upload_file_rounded
-                      : Icons.lock_clock_rounded,
-                  title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
-                  action: statusText,
-                  actionColor: statusColor, // 🟢 Now passes the vibrant colors
-                  iconColor: canSubmit
-                      ? const Color.fromARGB(255, 255, 255, 255)
-                      : Colors.grey,
-                  onTap: canSubmit ? _navigateToSubmitProposal : () {},
-                  isProminent: true,
-                  isDisabled: !canSubmit,
-                  bgColor:
-                      canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800]!,
-                ),
-                const SizedBox(height: 16),
-
-                IntrinsicHeight(
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: _AnimatedStudentCard(
-                          icon: Icons.groups_2_rounded,
-                          title: 'Team Info',
-                          action: 'Submitted Info',
-                          iconColor: const Color.fromARGB(255, 255, 255, 255),
-                          onTap: _navigateToTeamInfo,
-                          isCompact: true,
-                          bgColor: const Color.fromARGB(255, 86, 75, 105),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: _AnimatedStudentCard(
-                          icon: Icons.person_add_alt_1_rounded,
-                          title: 'Request Team',
-                          action: 'If not in a group',
-                          iconColor: const Color.fromARGB(255, 255, 255, 255),
-                          onTap: _navigateToRequestTeam,
-                          isCompact: true,
-                          bgColor: const Color(0xFF0E7490),
-                        ),
-                      ),
-                    ],
+    // 🟢 WRAPPED THE ENTIRE SCAFFOLD IN THE NETWORK OVERLAY
+    return NetworkOverlay(
+      child: Scaffold(
+        backgroundColor: theme.scaffoldBackgroundColor,
+        drawer: const AppDrawer(),
+        appBar: AppBar(title: const Text('Student Dashboard')),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              Text('Hello,', style: theme.textTheme.titleLarge),
+              Text(displayName, style: theme.textTheme.displaySmall),
+              const SizedBox(height: 10),
+              _buildStatusBanner(hasTeam, currentTeamId),
+              const SizedBox(height: 30),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  // Submit Proposal Card
+                  _AnimatedStudentCard(
+                    icon: canSubmit
+                        ? Icons.upload_file_rounded
+                        : Icons.lock_clock_rounded,
+                    title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
+                    action: statusText,
+                    actionColor: statusColor, 
+                    iconColor: canSubmit
+                        ? const Color.fromARGB(255, 255, 255, 255)
+                        : Colors.grey,
+                    onTap: canSubmit ? _navigateToSubmitProposal : () {},
+                    isProminent: true,
+                    isDisabled: !canSubmit,
+                    bgColor:
+                        canSubmit ? const Color(0xFF1E3A8A) : Colors.grey[800]!,
                   ),
-                ),
-                const SizedBox(height: 16),
-
-                _AnimatedStudentCard(
-                  icon: Icons.download_for_offline_rounded,
-                  title: 'Get Template',
-                  action: 'Preview and Download',
-                  iconColor: const Color.fromARGB(255, 255, 255, 255),
-                  onTap: _downloadTemplate,
-                  bgColor: const Color(0xFF4338CA),
-                ),
-              ],
-            ),
-          ],
+                  const SizedBox(height: 16),
+      
+                  IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _AnimatedStudentCard(
+                            icon: Icons.groups_2_rounded,
+                            title: 'Team Info',
+                            action: 'Submitted Info',
+                            iconColor: const Color.fromARGB(255, 255, 255, 255),
+                            onTap: _navigateToTeamInfo,
+                            isCompact: true,
+                            bgColor: const Color.fromARGB(255, 86, 75, 105),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _AnimatedStudentCard(
+                            icon: Icons.person_add_alt_1_rounded,
+                            title: 'Request Team',
+                            action: 'If not in a group',
+                            iconColor: const Color.fromARGB(255, 255, 255, 255),
+                            onTap: _navigateToRequestTeam,
+                            isCompact: true,
+                            bgColor: const Color(0xFF0E7490),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+      
+                  _AnimatedStudentCard(
+                    icon: Icons.download_for_offline_rounded,
+                    title: 'Get Template',
+                    action: 'Preview and Download',
+                    iconColor: const Color.fromARGB(255, 255, 255, 255),
+                    onTap: _downloadTemplate,
+                    bgColor: const Color(0xFF4338CA),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
+        floatingActionButton: const BreathingChatbotFab(),
       ),
-      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 
@@ -375,7 +379,6 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
                                     fontWeight: FontWeight.bold,
                                     color: Colors.white)),
                             const SizedBox(height: 6),
-                            // 🟢 Increased font size, letter spacing, and weight for Prominent cards
                             Text(widget.action,
                                 style: TextStyle(
                                   fontSize: widget.isProminent ? 15 : 14,

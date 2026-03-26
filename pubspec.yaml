@@ -49,6 +49,7 @@ dependencies:
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
   shared_preferences: ^2.5.3
+  connectivity_plus: ^6.1.0
 
 dev_dependencies:
   flutter_test:

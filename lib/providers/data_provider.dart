@@ -205,4 +205,59 @@ class DataProvider with ChangeNotifier {
       notifyListeners(); 
     }
   }
+
+  // --- DEADLINE CACHE ---
+  DateTime? _deadline;
+  DateTime? get deadline => _deadline;
+
+  bool _isLoadingDeadline = false;
+  bool get isLoadingDeadline => _isLoadingDeadline;
+
+  Future<void> fetchDeadlineIfNeeded({bool forceRefresh = false}) async {
+    // 1. 🟢 INSTANT CACHE LOAD
+    if (!forceRefresh && _deadline == null) {
+      _isLoadingDeadline = true;
+      notifyListeners();
+      
+      final prefs = await SharedPreferences.getInstance();
+      final cachedDateString = prefs.getString('cached_deadline');
+      
+      if (cachedDateString != null && cachedDateString.isNotEmpty) {
+        _deadline = DateTime.tryParse(cachedDateString);
+        _isLoadingDeadline = false;
+        notifyListeners();
+      }
+    }
+
+    // 2. 🟢 BACKGROUND FETCH
+    if (forceRefresh) {
+      _isLoadingDeadline = true;
+      notifyListeners();
+    }
+
+    try {
+      final freshDeadline = await _apiService.getSubmissionDeadline();
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Convert to ISO-8601 string for comparison/storage, or use empty string if null
+      final freshString = freshDeadline?.toIso8601String() ?? '';
+      final cachedString = prefs.getString('cached_deadline') ?? '';
+
+      // 3. 🟢 SILENT UI UPDATE
+      if (freshString != cachedString) {
+        _deadline = freshDeadline;
+        if (freshDeadline != null) {
+          await prefs.setString('cached_deadline', freshString);
+        } else {
+          await prefs.remove('cached_deadline'); // Clear cache if backend returns null
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching deadline: $e");
+    } finally {
+      _isLoadingDeadline = false;
+      notifyListeners();
+    }
+  }
 }
