@@ -13,6 +13,7 @@ import '../chatbot_screen.dart';
 import 'team_info.dart';
 import '../theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
+import '../widgets/network_overlay.dart'; // 🟢 Added Network Overlay Import
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -159,8 +160,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
             ],
           ),
         ),
+        floatingActionButton: const BreathingChatbotFab(),
       ),
-      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 
@@ -329,11 +330,14 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
     return Opacity(
       opacity: widget.isDisabled ? 0.6 : 1.0,
       child: GestureDetector(
-        onTapDown: widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
-        onTapUp: widget.isDisabled ? null : (_) {
-          setState(() => _isPressed = false);
-          widget.onTap();
-        },
+        onTapDown:
+            widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
+        onTapUp: widget.isDisabled
+            ? null
+            : (_) {
+                setState(() => _isPressed = false);
+                widget.onTap();
+              },
         onTapCancel: () => setState(() => _isPressed = false),
         child: AnimatedScale(
           scale: _isPressed ? 0.95 : 1.0,
@@ -406,7 +410,8 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: widget.iconColor.withOpacity(0.3)),
         ),
-        child: Icon(widget.icon, size: widget.isCompact ? 28 : 30, color: widget.iconColor),
+        child: Icon(widget.icon,
+            size: widget.isCompact ? 28 : 30, color: widget.iconColor),
       ),
     );
   }

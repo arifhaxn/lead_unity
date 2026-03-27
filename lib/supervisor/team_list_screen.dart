@@ -1,11 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
+import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:shimmer/shimmer.dart'; 
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
 import '../providers/auth_provider.dart';
-import '../providers/data_provider.dart';
-import '../../chatbot_screen.dart';
+import '../providers/data_provider.dart'; 
 import 'marking_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -23,7 +24,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   String _searchQuery = '';
   Timer? _searchDebounce;
 
-  List<dynamic>? _cachedRawTeams;
+  List<dynamic>? _cachedRawTeams; 
   List<dynamic> _processedTeams = [];
   List<String> _courseTabs = [];
 
@@ -96,9 +97,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
 
-    showDialog(
+    showAnimatedDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
+      dialog: AlertDialog(
         title: Row(
           children: [
             Icon(Icons.info_outline_rounded,
@@ -113,7 +114,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () => Navigator.pop(context), 
             child: const Text("Got it!"),
           ),
         ],
@@ -124,14 +125,14 @@ class _TeamListScreenState extends State<TeamListScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final dataProvider = Provider.of<DataProvider>(context);
+    final dataProvider = Provider.of<DataProvider>(context); 
     final myId = authProvider.user?.id;
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     _processDataIfNeeded(dataProvider.allTeams, myId);
 
-    // Identify Next Team ID
+    // Identify Next Team ID based on current time
     final now = DateTime.now();
     String? nextTeamId;
     try {
@@ -175,16 +176,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
       body: Builder(
         builder: (context) {
           if (dataProvider.isLoadingTeams && dataProvider.allTeams == null) {
-            return _buildSkeletonLoader(theme);
+            return _buildSkeletonLoader(theme); 
           }
 
           if (_processedTeams.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () =>
-                  dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+              onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
               color: theme.colorScheme.primary,
               child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(),
+                physics: const AlwaysScrollableScrollPhysics(), 
                 children: const [
                   SizedBox(height: 200),
                   Center(child: Text("No approved teams found.")),
@@ -199,8 +199,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCourseTabs(context, _courseTabs),
+
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10), 
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) {
@@ -219,33 +220,79 @@ class _TeamListScreenState extends State<TeamListScreen> {
                     ),
                   ),
                 ),
+
                 Expanded(
                   child: TabBarView(
                     children: _courseTabs.map((courseCode) {
-                      // Logic to filter teams by course AND apply advanced search
-                      final courseTeams = _getTeamsByCourse(_processedTeams, courseCode);
-                      
-                      final filtered = _applyAdvancedSearch(courseTeams, _searchQuery);
+                      final courseOrdered = _getTeamsForCourse(_processedTeams, courseCode);
 
-                      if (filtered.isEmpty) {
+                      final serialByTeamKeyInCourse = <String, int>{
+                        for (int i = 0; i < courseOrdered.length; i++)
+                          _teamKey(courseOrdered[i] as Map<String, dynamic>): i + 1,
+                      };
+
+                      final normalizedQuery = _searchQuery.toLowerCase();
+                      
+                      final filteredWithCardId = courseOrdered.where((team) {
+                        if (normalizedQuery.isEmpty) return true;
+
+                        final teamMap = team as Map<String, dynamic>;
+                        
+                        // Constant Serial Logic
+                        final int serial = teamMap['serialNumber'] ?? serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 0;
+                        
+                        String displayTitle = (teamMap['title'] ?? 'Untitled Team').toString();
+                        String displaySupName = 'Not Assigned';
+                        if (teamMap['assignedSupervisor'] is Map) {
+                          displaySupName = (teamMap['assignedSupervisor']['name'] ?? '').toString().trim();
+                        }
+                        
+                        // 🟢 Safely extract secondary supervisors
+                        String otherSups = '';
+                        if (teamMap['supervisors'] is List) {
+                          for (var s in teamMap['supervisors']) {
+                            if (s is Map) {
+                              otherSups += (s['name'] ?? '').toString() + ' ';
+                            }
+                          }
+                        }
+
+                        // 🟢 Safely extract student names and IDs (allows searching by student ID)
+                        String membersData = '';
+                        if (teamMap['teamMembers'] is List) {
+                          for (var m in teamMap['teamMembers']) {
+                            if (m is Map) {
+                              membersData += (m['studentId'] ?? '').toString() + ' ' + (m['name'] ?? '').toString() + ' ';
+                            }
+                          }
+                        }
+
+                        // 🟢 Rebuilt clean string (NO MORE .toString() dumps)
+                        final searchableString = "$displayTitle $displaySupName $otherSups $membersData team $serial #$serial serial $serial".toLowerCase();
+                        
+                        final cleanSearchable = searchableString.replaceAll(RegExp(r'[^\w\s]'), '');
+                        final cleanQuery = normalizedQuery.replaceAll(RegExp(r'[^\w\s]'), '');
+                        final searchTerms = cleanQuery.split(' ').where((t) => t.isNotEmpty).toList();
+                        
+                        return searchTerms.every((term) => cleanSearchable.contains(term));
+                      }).toList();
+
+                      if (filteredWithCardId.isEmpty) {
                         return RefreshIndicator(
-                          onRefresh: () => dataProvider.fetchTeamsIfNeeded(
-                              forceRefresh: true),
+                          onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
                           color: theme.colorScheme.primary,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: const [
                               SizedBox(height: 100),
-                              Center(
-                                  child: Text("No teams match your filter.")),
+                              Center(child: Text("No teams match your filter.")),
                             ],
                           ),
                         );
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () =>
-                            dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+                        onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
                         color: theme.colorScheme.primary,
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -277,55 +324,116 @@ class _TeamListScreenState extends State<TeamListScreen> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.push(
-            context, MaterialPageRoute(builder: (_) => const ChatbotScreen())),
-        backgroundColor: theme.colorScheme.primary,
-        child: const Icon(Icons.message, color: Colors.white),
+    );
+  }
+
+  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.only(top: 8, bottom: 10), 
+      color: theme.colorScheme.surface,
+      child: TabBar(
+        isScrollable: true,
+        tabAlignment: TabAlignment.center, 
+        dividerColor: Colors.transparent, 
+        indicatorSize: TabBarIndicatorSize.label,
+        labelPadding: const EdgeInsets.symmetric(horizontal: 10), 
+        labelColor: theme.colorScheme.primary,
+        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
+        indicator: BoxDecoration(
+          color: theme.colorScheme.primary.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
+        ),
+        tabs: courseTabs
+            .map((c) => Tab(
+                  height: 34, 
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                    child: Text(c,
+                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  ),
+                ))
+            .toList(),
       ),
     );
   }
 
-  // --- HELPER METHODS ---
+  Widget _buildSkeletonLoader(ThemeData theme) {
+    final isDark = theme.brightness == Brightness.dark;
+    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
+    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
-  List<dynamic> _getTeamsByCourse(List<dynamic> teams, String courseCode) {
-    return teams.where((t) {
-      final code = (t['course'] is Map) ? t['course']['courseCode']?.toString() : null;
-      return code == courseCode;
-    }).toList();
+    return Column(
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), 
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              ),
+              const SizedBox(width: 10),
+              Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+          child: Shimmer.fromColors(
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+            child: Container(
+              height: 50,
+              width: double.infinity,
+              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
+        Expanded(
+          child: ListView.builder(
+            physics: const NeverScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            itemCount: 5,
+            itemBuilder: (context, index) {
+              return Shimmer.fromColors(
+                baseColor: baseColor,
+                highlightColor: highlightColor,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  height: 120, 
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 
-  List<dynamic> _applyAdvancedSearch(List<dynamic> teams, String query) {
-    final normalizedQuery = query.toLowerCase();
-    if (normalizedQuery.isEmpty) return teams;
+  String _teamKey(Map<String, dynamic> team) {
+    final key = (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
+    if (key.isNotEmpty) return key;
+    final title = (team['title'] ?? '').toString();
+    final createdAt = (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
+    return '$title|$createdAt';
+  }
 
-    final searchTerms = normalizedQuery.split(' ').where((t) => t.isNotEmpty).toList();
-
-    return teams.where((team) {
-      final teamMap = team as Map<String, dynamic>;
-      
-      // Calculate serial number for search (relative to entire sorted list for that tab)
-      final serial = _processedTeams.indexOf(team) + 1;
-
-      final title = (teamMap['title'] ?? '').toString().toLowerCase();
-      String supName = '';
-      if (teamMap['assignedSupervisor'] is Map) {
-        supName = (teamMap['assignedSupervisor']['name'] ?? '').toString().toLowerCase();
-      }
-      
-      String otherSups = '';
-      if (teamMap['supervisors'] is List) {
-        for (var s in teamMap['supervisors']) {
-          if (s is Map) {
-            otherSups += (s['name'] ?? '').toString().toLowerCase() + ' ';
-          }
-        }
-      }
-
-      final searchableString = "$title $supName $otherSups team $serial #$serial $serial".replaceAll(RegExp(r'\s+'), ' ');
-
-      return searchTerms.every((term) => searchableString.contains(term));
-    }).toList();
+  DateTime _submissionTime(Map<String, dynamic> team) {
+    final raw = (team['createdAt'] ?? team['submittedAt'] ?? team['created_at'] ?? '').toString();
+    return DateTime.tryParse(raw) ?? DateTime.fromMillisecondsSinceEpoch(0);
   }
 
   List<String> _extractCourseTabs(List<dynamic> teams) {
@@ -336,6 +444,13 @@ class _TeamListScreenState extends State<TeamListScreen> {
       }
     }
     return courseCodes.toList()..sort();
+  }
+
+  List<dynamic> _getTeamsForCourse(List<dynamic> teams, String courseCode) {
+    return teams.where((team) {
+      final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
+      return code == courseCode;
+    }).toList();
   }
 
   bool _hasSubmittedEvaluation(Map<String, dynamic> team, String? myId, String evaluationType) {
@@ -350,17 +465,23 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return false;
   }
 
-  Widget _buildTeamCard(BuildContext context,
-      {required int serialNumber,
-      required Map<String, dynamic> team,
-      required String? myId,
-      required DataProvider dataProvider,
-      required bool isNext}) {
+  Widget _buildTeamCard(BuildContext context, {required int serialNumber, required Map<String, dynamic> team, required String? myId, required DataProvider dataProvider, required bool isNext}) { 
     final theme = Theme.of(context);
     final title = team['title'] ?? 'Untitled Team';
     String supervisorName = 'Not Assigned';
     final assignedSupervisor = team['assignedSupervisor'];
-    if (assignedSupervisor is Map) supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
+    
+    if (assignedSupervisor is Map) {
+      supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
+    } else if (assignedSupervisor != null && dataProvider.allSupervisors != null) {
+      final found = dataProvider.allSupervisors!.firstWhere(
+        (s) => s['_id']?.toString() == assignedSupervisor.toString(), 
+        orElse: () => null
+      );
+      if (found != null) {
+        supervisorName = (found['name'] ?? found['abbreviation'] ?? '').toString().trim();
+      }
+    }
     
     final uniqueTag = 'team_title_${team['_id'] ?? team['title']}';
 
@@ -390,10 +511,11 @@ class _TeamListScreenState extends State<TeamListScreen> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: isNext ? theme.colorScheme.primary : theme.colorScheme.primary.withOpacity(0.1),
-              child: Text(serialNumber.toString(),
-                  style: TextStyle(
-                      color: isNext ? Colors.white : theme.colorScheme.primary,
-                      fontWeight: FontWeight.bold)),
+              child: Text(serialNumber.toString(), 
+                style: TextStyle(
+                  color: isNext ? Colors.white : theme.colorScheme.primary, 
+                  fontWeight: FontWeight.bold)
+              ),
             ),
             title: Row(
               children: [
@@ -419,16 +541,13 @@ class _TeamListScreenState extends State<TeamListScreen> {
                   ),
               ],
             ),
-            subtitle: Text("Supervisor: $supervisorName",
-                style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+            subtitle: Text("Supervisor: $supervisorName", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
             trailing: Container(
               width: 24, height: 24,
               decoration: BoxDecoration(
                 color: hasSubmitted ? const Color(0xFF16A34A) : null,
                 borderRadius: BorderRadius.circular(7),
-                border: Border.all(
-                    color: hasSubmitted ? const Color(0xFF16A34A) : theme.colorScheme.outline.withOpacity(0.8),
-                    width: 1.6),
+                border: Border.all(color: hasSubmitted ? const Color(0xFF16A34A) : theme.colorScheme.outline.withOpacity(0.8), width: 1.6),
               ),
               child: hasSubmitted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
             ),
@@ -463,82 +582,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
           )
         ],
       ),
-    );
-  }
-
-  Widget _buildCourseTabs(BuildContext context, List<String> courseTabs) {
-    final theme = Theme.of(context);
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.only(top: 8, bottom: 10),
-      color: theme.colorScheme.surface,
-      child: TabBar(
-        isScrollable: true,
-        tabAlignment: TabAlignment.center,
-        dividerColor: Colors.transparent,
-        indicatorSize: TabBarIndicatorSize.label,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 10),
-        labelColor: theme.colorScheme.primary,
-        unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
-        indicator: BoxDecoration(
-          color: theme.colorScheme.primary.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: theme.colorScheme.primary.withOpacity(0.3)),
-        ),
-        tabs: courseTabs.map((c) => Tab(
-          height: 34,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10.0),
-            child: Text(c, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-          ),
-        )).toList(),
-      ),
-    );
-  }
-
-  Widget _buildSkeletonLoader(ThemeData theme) {
-    final isDark = theme.brightness == Brightness.dark;
-    final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
-    final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Shimmer.fromColors(
-                baseColor: baseColor, highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
-              ),
-              const SizedBox(width: 10),
-              Shimmer.fromColors(
-                baseColor: baseColor, highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
-          child: Shimmer.fromColors(
-            baseColor: baseColor, highlightColor: highlightColor,
-            child: Container(height: 50, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12))),
-          ),
-        ),
-        Expanded(
-          child: ListView.builder(
-            physics: const NeverScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-            itemCount: 5,
-            itemBuilder: (context, index) => Shimmer.fromColors(
-              baseColor: baseColor, highlightColor: highlightColor,
-              child: Container(margin: const EdgeInsets.only(bottom: 14), height: 120, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
-            ),
-          ),
-        ),
-      ],
     );
   }
 }
