@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 NEW IMPORT
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
 import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/animated_submit_button.dart';
@@ -10,6 +10,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../providers/data_provider.dart'; 
 import 'request_team_screen.dart'; 
+import '../widgets/custom_snackbar.dart'; // 🟢 NEW IMPORT
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -299,17 +300,17 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
-      _showError('Please select a course at the top of the form.');
+      CustomSnackBar.showError('Please select a course at the top of the form.');
       return;
     }
 
     if (widget.submittedCourseIds.contains(_selectedCourseId)) {
-      _showError('You have already submitted a proposal for this course.');
+      CustomSnackBar.showError('You have already submitted a proposal for this course.');
       return;
     }
 
     if (_sup1 == null || _sup2 == null || _sup3 == null) {
-      _showError('Please select all 3 supervisor preferences.');
+      CustomSnackBar.showError('Please select all 3 supervisor preferences.');
       return;
     }
 
@@ -330,20 +331,20 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       if (isCardPartiallyFilled) {
         if (id.isEmpty || name.isEmpty || cgpaRaw.isEmpty || email.isEmpty || mobile.isEmpty) {
           setState(() => _submitState = SubmitState.idle);
-          _showError('Please complete all fields for Member ${i + 1}.');
+          CustomSnackBar.showError('Please complete all fields for Member ${i + 1}.');
           return;
         }
 
         if (uniqueIds.contains(id)) {
           setState(() => _submitState = SubmitState.idle);
-          _showError('Duplicate Student ID: $id');
+          CustomSnackBar.showError('Duplicate Student ID: $id');
           return;
         }
 
         final cgpa = double.tryParse(cgpaRaw);
         if (cgpa == null) {
           setState(() => _submitState = SubmitState.idle);
-          _showError('Invalid CGPA for Member ${i + 1}.');
+          CustomSnackBar.showError('Invalid CGPA for Member ${i + 1}.');
           return;
         }
 
@@ -385,9 +386,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
         setState(() => _submitState = SubmitState.success);
         
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text('Proposal Submitted Successfully!'),
-            backgroundColor: Colors.green));
+        // 🟢 Replaced with CustomSnackBar
+        CustomSnackBar.showSuccess('Proposal Submitted Successfully!');
             
         await Future.delayed(const Duration(seconds: 1));
         
@@ -395,15 +395,11 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     } catch (e) {
       if (mounted) {
-        _showError(e.toString().replaceAll('Exception: ', ''));
+        // 🟢 Replaced with CustomSnackBar
+        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
     } 
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
@@ -412,7 +408,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     final bool isAlreadySubmitted = _selectedCourseId != null && 
                                     widget.submittedCourseIds.contains(_selectedCourseId);
 
-    // 🟢 ADDED ANIMATION LIMITER HERE
     return AnimationLimiter(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
@@ -420,7 +415,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           key: _formKey,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
-            // 🟢 ADDED STAGGERED LIST CONFIGURATION HERE
             children: AnimationConfiguration.toStaggeredList(
               duration: const Duration(milliseconds: 400),
               childAnimationBuilder: (widget) => SlideAnimation(
@@ -633,7 +627,7 @@ Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
     
-    // 🟢 FORCE PURE WHITE FOR EVERYTHING inside the dark green cards
+    // FORCE PURE WHITE FOR EVERYTHING inside the dark green cards
     const whiteTextStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.w500);
     const whiteLabelStyle = TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500); // Solid White Labels!
 

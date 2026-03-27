@@ -4,16 +4,12 @@ import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; // Ensure intl is in your pubspec.yaml
-
-import '../../api services/api_services.dart';
+import 'package:intl/intl.dart'; 
 import '../providers/auth_provider.dart';
+import '../providers/data_provider.dart'; 
 import 'view_template.dart';
-import '../chatbot_screen.dart';
 import 'team_info.dart';
-import '../theme/app_theme.dart';
 import '../widgets/app_drawer.dart';
-import '../widgets/network_overlay.dart'; // 🟢 Added Network Overlay Import
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -23,19 +19,21 @@ class StudentDashboard extends StatefulWidget {
 }
 
 class _StudentDashboardState extends State<StudentDashboard> {
-  final ApiService _api = ApiService();
-  DateTime? _deadline;
   Timer? _timer;
-  
-  // Dynamic Team Data
-  Map<String, dynamic>? _myProposal;
-  bool _isLoadingTeam = true;
 
   @override
   void initState() {
     super.initState();
-    _checkDeadline();
-    _fetchStudentTeamStatus();
+    
+    // 🟢 Instantly trigger the background cache fetches on load
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      dp.fetchDeadlineIfNeeded();
+      dp.fetchMyProposalsIfNeeded();
+      dp.fetchSupervisorsIfNeeded();
+    });
+
+    _startTickingClock();
   }
 
   @override
@@ -44,56 +42,39 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.dispose();
   }
 
-  // --- Data Fetching ---
-  void _checkDeadline() async {
-    DateTime? deadlineDate = await _api.getSubmissionDeadline();
-    if (mounted) {
-      setState(() {
-        _deadline = deadlineDate;
-      });
-      if (_deadline != null) {
-        _startTickingClock();
-      }
-    }
-  }
-
-  Future<void> _fetchStudentTeamStatus() async {
-    try {
-      // Calls your backend (e.g., GET /proposals/my-proposal)
-      final data = await _api.getMyProposal(); 
-      if (mounted) {
-        setState(() {
-          _myProposal = data;
-          _isLoadingTeam = false;
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isLoadingTeam = false);
-    }
-  }
-
   // --- Clock Logic ---
   void _startTickingClock() {
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (mounted) {
-        setState(() {});
-      }
+      if (mounted) setState(() {});
     });
   }
 
-  bool get _canSubmit {
-    if (_deadline != null && DateTime.now().isAfter(_deadline!)) return false;
+  // 🟢 Sorts the cached proposals and grabs the newest one
+  Map<String, dynamic>? _getNewestProposal(DataProvider dp) {
+    if (dp.myProposals == null || dp.myProposals!.isEmpty) return null;
+    
+    final list = List<dynamic>.from(dp.myProposals!);
+    list.sort((a, b) {
+      final dateA = DateTime.tryParse((a['createdAt'] ?? a['updatedAt'] ?? '').toString()) ?? DateTime(2000);
+      final dateB = DateTime.tryParse((b['createdAt'] ?? b['updatedAt'] ?? '').toString()) ?? DateTime(2000);
+      return dateB.compareTo(dateA); 
+    });
+    return list.first as Map<String, dynamic>;
+  }
+
+  // --- Status & Navigation Logic ---
+  bool _canSubmit(DateTime? deadline) {
+    if (deadline != null && DateTime.now().isAfter(deadline)) return false;
     return true;
   }
 
-  String _getSubmissionStatusText() {
-    if (_deadline != null) {
+  String _getSubmissionStatusText(DateTime? deadline) {
+    if (deadline != null) {
       final now = DateTime.now();
-      if (now.isAfter(_deadline!)) {
-        _timer?.cancel();
+      if (now.isAfter(deadline)) {
         return '🚨 Deadline Passed';
       }
-      final diff = _deadline!.difference(now);
+      final diff = deadline.difference(now);
       if (diff.inDays > 0) {
         return 'Closes in ${diff.inDays}d ${diff.inHours.remainder(24)}h ${diff.inMinutes.remainder(60)}m';
       } else {
@@ -103,26 +84,29 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return 'Upload your team project proposal';
   }
 
-  Color _getSubmissionStatusColor() {
-    if (_deadline != null) {
+  Color _getSubmissionStatusColor(DateTime? deadline) {
+    if (deadline != null) {
       final now = DateTime.now();
-      if (now.isAfter(_deadline!)) return Colors.redAccent;
-      final diff = _deadline!.difference(now);
+      if (now.isAfter(deadline)) return Colors.redAccent;
+      final diff = deadline.difference(now);
       if (diff.inHours < 24) return Colors.redAccent;
       return Colors.amberAccent;
     }
     return Colors.white70;
   }
 
-  // --- Navigation ---
   void _navigateToSubmitProposal() {
-    if (!_canSubmit) {
+    final dp = Provider.of<DataProvider>(context, listen: false);
+    if (!_canSubmit(dp.deadline)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Submission deadline has passed.'), backgroundColor: Colors.red),
       );
       return;
     }
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const SubmitProposalScreen())).then((_) => _fetchStudentTeamStatus());
+    Navigator.push(context, MaterialPageRoute(builder: (context) => const SubmitProposalScreen())).then((_) {
+      // Refresh cache when returning from submission
+      dp.fetchMyProposalsIfNeeded(forceRefresh: true);
+    });
   }
 
   void _navigateToTeamInfo() => Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
@@ -133,8 +117,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final dp = Provider.of<DataProvider>(context); 
+    
     final user = authProvider.user;
     final String displayName = (user?.name ?? 'Student').trim().split(RegExp(r'\s+')).take(2).join(' ');
+
+    final proposal = _getNewestProposal(dp);
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -142,8 +130,11 @@ class _StudentDashboardState extends State<StudentDashboard> {
       appBar: AppBar(title: const Text('Student Dashboard')),
       body: RefreshIndicator(
         onRefresh: () async {
-          _checkDeadline();
-          await _fetchStudentTeamStatus();
+          await Future.wait([
+            dp.fetchDeadlineIfNeeded(forceRefresh: true),
+            dp.fetchMyProposalsIfNeeded(forceRefresh: true),
+            dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+          ]);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
@@ -151,97 +142,265 @@ class _StudentDashboardState extends State<StudentDashboard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              Text('Hello,', style: theme.textTheme.titleLarge),
-              Text(displayName, style: theme.textTheme.displaySmall),
-              const SizedBox(height: 10),
-              _buildStatusBanner(_myProposal),
-              const SizedBox(height: 30),
-              _buildActionCards(),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Hello,', style: theme.textTheme.titleLarge),
+                        Text(
+                          displayName, 
+                          style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)
+                        ),
+                      ],
+                    ),
+                  ),
+                  _buildTeamStatusBadge(proposal, dp),
+                ],
+              ),
+              const SizedBox(height: 20),
+              
+              if (proposal != null) ...[
+                _buildStatusBanner(proposal, dp),
+                const SizedBox(height: 30),
+              ],
+              
+              _buildActionCards(dp.deadline),
             ],
           ),
         ),
-        floatingActionButton: const BreathingChatbotFab(),
       ),
+      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 
-  Widget _buildStatusBanner(Map<String, dynamic>? proposal) {
-    final theme = Theme.of(context);
-    if (_isLoadingTeam) return const LinearProgressIndicator();
+  Widget _buildTeamStatusBadge(Map<String, dynamic>? proposal, DataProvider dp) {
+    final isLoadingTeam = dp.isLoadingMyProposals && dp.myProposals == null;
+    if (isLoadingTeam) return const SizedBox.shrink();
 
     final bool hasTeam = proposal != null;
     final String status = (proposal?['status'] ?? '').toString().toLowerCase();
-    final String? courseCode = proposal?['course']?['courseCode'];
-    final Map<String, dynamic>? supervisor = proposal?['assignedSupervisor'];
-    final String? defenseDate = proposal?['defenseDate'];
+    
+    final bool isApproved = status == 'approved';
+    final bool isPending = status == 'pending';
+    final bool isRejected = status == 'rejected';
 
-    // Visual Styling - Replacing 'emerald' with Hex or Teal
-    final isApproved = status == 'approved';
+    final Color emeraldGreen = const Color(0xFF10B981);
+    final Color pendingGold = Colors.orange.shade700;
+    final Color rejectedRed = Colors.red.shade600;
     
-    // Using Color(0xFF10B981) for a true Emerald Green
-    final Color approvedGreen = const Color(0xFF10B981); 
+    final Color statusColor = isApproved 
+        ? emeraldGreen 
+        : (isPending 
+            ? pendingGold 
+            : (isRejected ? rejectedRed : Theme.of(context).colorScheme.primary));
     
-    final Color bannerColor = isApproved 
-        ? approvedGreen.withOpacity(0.1) 
-        : (hasTeam ? theme.colorScheme.primary.withOpacity(0.08) : theme.colorScheme.surfaceVariant);
-    
-    final Color textColor = isApproved 
-        ? const Color(0xFF065F46) // Darker emerald for text
-        : (hasTeam ? theme.colorScheme.primary : theme.colorScheme.onSurfaceVariant);
+    String label = "No Team";
+    IconData icon = Icons.warning_amber_rounded;
 
-    String message = 'You are not yet on a team.';
     if (hasTeam) {
-      if (isApproved && supervisor != null) {
-        final supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Assigned';
-        message = 'Approved for $courseCode.\nSupervisor: $supName';
-        if (defenseDate != null) {
-          final localDate = DateTime.parse(defenseDate).toLocal();
-          final formattedDate = DateFormat('dd MMM, hh:mm a').format(localDate);
-          message += '\nDefense: $formattedDate';
-        }
-      } else if (status == 'pending') {
-        message = 'Proposal Pending for ${courseCode ?? "Course"}. Waiting for approval.';
+      if (isApproved) {
+        label = "Registered";
+        icon = Icons.verified_user_rounded;
+      } else if (isPending) {
+        label = "Pending";
+        icon = Icons.lock_clock_rounded;
+      } else if (isRejected) {
+        label = "Rejected";
+        icon = Icons.cancel_rounded;
       } else {
-        message = 'Team Formed for ${courseCode ?? "Course"}. Status: ${status.toUpperCase()}';
+        label = "Formed";
+        icon = Icons.group_add_rounded;
       }
     }
 
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: bannerColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: textColor.withOpacity(0.3)),
+        color: statusColor.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(20), 
+        border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            isApproved ? Icons.verified_user_rounded : (hasTeam ? Icons.check_circle_outline : Icons.warning_amber_outlined), 
-            color: textColor
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              message, 
-              style: TextStyle(color: textColor, fontWeight: FontWeight.w600, height: 1.4)
-            )
+          Icon(icon, color: statusColor, size: 16),
+          const SizedBox(width: 6),
+          Text(
+            label.toUpperCase(),
+            style: TextStyle(
+              color: statusColor,
+              fontSize: 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.5,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildActionCards() {
-    final canSubmit = _canSubmit;
+  Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
+    final theme = Theme.of(context);
+    
+    final isLoadingTeam = dp.isLoadingMyProposals && dp.myProposals == null;
+    if (isLoadingTeam) return const LinearProgressIndicator();
+
+    final String status = (proposal?['status'] ?? '').toString().toLowerCase();
+    final bool isApproved = status == 'approved';
+    final bool isPending = status == 'pending';
+    final bool isRejected = status == 'rejected';
+
+    final Color emeraldGreen = const Color(0xFF10B981);
+    final Color pendingGold = Colors.orange.shade700;
+    final Color rejectedRed = Colors.red.shade600;
+    
+    final Color statusColor = isApproved 
+        ? emeraldGreen 
+        : (isPending 
+            ? pendingGold 
+            : (isRejected ? rejectedRed : theme.colorScheme.primary));
+    
+    final Color bgColor = theme.brightness == Brightness.dark 
+        ? theme.colorScheme.surfaceVariant.withOpacity(0.5) 
+        : Colors.white;
+
+    String? courseCode;
+    if (proposal?['course'] is Map) courseCode = proposal!['course']['courseCode'];
+
+    final dynamic supervisor = proposal?['assignedSupervisor'];
+    final String? defenseDate = proposal?['defenseDate'];
+
+    String supName = 'Assigned';
+    if (supervisor is Map) {
+      supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Assigned';
+    } else if (supervisor != null && dp.allSupervisors != null) {
+      final foundSup = dp.allSupervisors!.firstWhere((s) => s['_id']?.toString() == supervisor.toString(), orElse: () => null);
+      if (foundSup != null) supName = (foundSup['name'] ?? foundSup['abbreviation'] ?? 'Assigned').toString();
+    }
+
+    String formattedDate = "TBA";
+    if (defenseDate != null) {
+      final localDate = DateTime.parse(defenseDate).toLocal();
+      formattedDate = DateFormat('dd MMM, hh:mm a').format(localDate);
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: statusColor.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: _buildInfoChip(
+                  context: context,
+                  icon: Icons.book_rounded,
+                  label: "Course",
+                  value: courseCode ?? "N/A",
+                  color: const Color(0xFF2563EB), 
+                ),
+              ),
+              if (isApproved || defenseDate != null) ...[
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: _buildInfoChip(
+                    context: context,
+                    icon: Icons.event_available_rounded,
+                    label: "Defense",
+                    value: formattedDate,
+                    color: const Color(0xFFEA580C), 
+                  ),
+                ),
+              ]
+            ],
+          ),
+          const SizedBox(height: 12),
+          _buildInfoChip(
+            context: context,
+            icon: Icons.person_pin_rounded,
+            label: "Supervisor",
+            value: supName,
+            color: const Color(0xFF7C3AED), 
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoChip({required BuildContext context, required IconData icon, required String label, required String value, required Color color}) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Icon(icon, size: 16, color: color),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                value,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: isDark ? Colors.white : Colors.black87,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis, 
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionCards(DateTime? deadline) {
+    final canSubmit = _canSubmit(deadline);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _AnimatedStudentCard(
           icon: canSubmit ? Icons.upload_file_rounded : Icons.lock_clock_rounded,
           title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
-          action: _getSubmissionStatusText(),
-          actionColor: _getSubmissionStatusColor(),
+          action: _getSubmissionStatusText(deadline),
+          actionColor: _getSubmissionStatusColor(deadline),
           iconColor: Colors.white,
           onTap: canSubmit ? _navigateToSubmitProposal : () {},
           isProminent: true,

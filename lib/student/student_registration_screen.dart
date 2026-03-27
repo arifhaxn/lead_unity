@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
-import 'package:link_unity/widgets/animated_submit_button.dart'; // 🟢 IMPORT ADDED
+import 'package:link_unity/widgets/animated_submit_button.dart'; 
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'student_dash.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
+import '../widgets/custom_snackbar.dart'; // 🟢 Added import
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({Key? key}) : super(key: key);
@@ -20,7 +21,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, dynamic> _formData = {};
 
-  // 🟢 NEW: Switched from boolean to SubmitState
   SubmitState _submitState = SubmitState.idle;
 
   bool _obscurePassword = true;
@@ -29,7 +29,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     if (_formKey.currentState!.validate()) {
       _formKey.currentState!.save();
 
-      // 🟢 Change state to loading
+      // Change state to loading
       setState(() => _submitState = SubmitState.loading);
 
       try {
@@ -38,7 +38,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
         if (!mounted) return;
 
-        // 🟢 Show the green success checkmark briefly!
+        // Show the green success checkmark briefly!
         setState(() => _submitState = SubmitState.success);
         await Future.delayed(const Duration(milliseconds: 800));
 
@@ -50,11 +50,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
         // Now open the dialog
         _showOTPDialog();
       } catch (e) {
-        // 🟢 Reset on error
+        // Reset on error
         setState(() => _submitState = SubmitState.idle);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red));
+        // 🟢 Use the custom snackbar
+        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -64,7 +63,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     bool isVerifying = false;
 
     showAnimatedDialog(
-      // 🟢 Let's use our animated dialog here too!
       context: context,
       barrierDismissible: false,
       dialog: StatefulBuilder(builder: (context, setDialogState) {
@@ -140,11 +138,10 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       );
     } catch (e) {
       Navigator.pop(dialogContext);
-
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text(
-              "Registration Failed: ${e.toString().replaceAll('Exception: ', '')}"),
-          backgroundColor: Colors.red));
+      
+      // 🟢 Use the custom snackbar
+      CustomSnackBar.showError(
+          "Registration Failed: ${e.toString().replaceAll('Exception: ', '')}");
     }
   }
 
@@ -361,9 +358,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
                   const SizedBox(height: 40),
 
-                  // 🟢 NEW: Animated Submit Button
                   SizedBox(
-                    height: 54, // Prevents height jumping
+                    height: 54, 
                     width: double.infinity,
                     child: AnimatedSubmitButton(
                       state: _submitState,

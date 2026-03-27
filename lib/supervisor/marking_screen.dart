@@ -5,6 +5,7 @@ import 'package:shimmer/shimmer.dart';
 import '../providers/auth_provider.dart';
 import '../theme/theme_provider.dart';
 import '../widgets/animated_submit_button.dart'; 
+import '../widgets/custom_snackbar.dart'; // 🟢 Added CustomSnackBar Import
 
 class MarkingScreen extends StatefulWidget {
   final Map<String, dynamic> team;
@@ -96,10 +97,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text("Error loading: $e"), backgroundColor: Colors.red),
-        );
+        // 🟢 Replaced with CustomSnackBar
+        CustomSnackBar.showError("Error loading evaluation data: ${e.toString().replaceAll('Exception: ', '')}");
         setState(() => _isScreenLoading = false);
       }
     }
@@ -126,6 +125,10 @@ class _MarkingScreenState extends State<MarkingScreen> {
       if (!mounted) return;
       
       setState(() => _submitState = SubmitState.success);
+      
+      // 🟢 Replaced with CustomSnackBar Success
+      CustomSnackBar.showSuccess("Marks submitted successfully!");
+
       await Future.delayed(const Duration(seconds: 1));
 
       if (mounted) {
@@ -134,9 +137,8 @@ class _MarkingScreenState extends State<MarkingScreen> {
       
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString()), backgroundColor: Colors.red),
-        );
+        // 🟢 Replaced with CustomSnackBar Error
+        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
     }
@@ -147,7 +149,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
 
-    // 🟢 Extract the team title for the AppBar
     final String teamTitle = widget.team['title']?.toString() ?? "Evaluation Board";
 
     final appBarBottomLine = PreferredSize(
@@ -171,7 +172,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        // 🟢 Replaced static text with the dynamic team title
         title: Text(
           teamTitle,
           style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 18),
@@ -310,7 +310,6 @@ class _MarkingScreenState extends State<MarkingScreen> {
     );
   }
 
-  // 🟢 Passed teamTitle to the skeleton loader so it matches during load
   Widget _buildSkeletonLoader(ThemeData theme, ThemeProvider themeProvider, PreferredSizeWidget appBarBottomLine, String teamTitle) {
     final isDark = themeProvider.isDarkMode;
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
@@ -390,7 +389,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
   }
 }
 
-// --- STUDENT MARKING CARD ---
+// --- STUDENT MARKING CARD remains consistent as it only handles local state changes ---
 class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;

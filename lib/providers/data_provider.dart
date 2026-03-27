@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api services/api_services.dart';
+import '../widgets/custom_snackbar.dart'; // 🟢 Added CustomSnackBar Import
 
 class DataProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
@@ -14,7 +15,7 @@ class DataProvider with ChangeNotifier {
   bool get isLoadingTeams => _isLoadingTeams;
 
   Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
-    // 1. 🟢 INSTANT CACHE LOAD
+    // 1. INSTANT CACHE LOAD
     if (!forceRefresh && _allTeams == null) {
       _isLoadingTeams = true;
       notifyListeners();
@@ -38,7 +39,7 @@ class DataProvider with ChangeNotifier {
       }
     }
 
-    // 2. 🟢 THE BACKGROUND/PULL-TO-REFRESH FETCH
+    // 2. THE BACKGROUND/PULL-TO-REFRESH FETCH
     if (forceRefresh) {
       _isLoadingTeams = true;
       notifyListeners();
@@ -60,7 +61,7 @@ class DataProvider with ChangeNotifier {
       final freshDataString = json.encode(freshTeams);
       final cachedTeams = prefs.getString('cached_teams');
 
-      // 3. 🟢 SILENT UI UPDATE
+      // 3. SILENT UI UPDATE
       if (freshDataString != cachedTeams) {
         _allTeams = freshTeams;
         await prefs.setString('cached_teams', freshDataString);
@@ -69,6 +70,8 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching teams: $e");
       if (_allTeams == null) _allTeams = [];
+      // 🟢 Show error ONLY if user manually pulled to refresh
+      if (forceRefresh) CustomSnackBar.showError('Failed to refresh teams list.');
     } finally {
       _isLoadingTeams = false;
       notifyListeners();
@@ -116,6 +119,8 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching supervisors: $e");
       if (_allSupervisors == null) _allSupervisors = [];
+      // 🟢 Error handling
+      if (forceRefresh) CustomSnackBar.showError('Failed to refresh supervisors.');
     } finally {
       _isLoadingSupervisors = false;
       notifyListeners();
@@ -158,6 +163,8 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_allCourses == null) _allCourses = [];
+      // 🟢 Error handling
+      if (forceRefresh) CustomSnackBar.showError('Failed to refresh courses.');
     } finally {
       _isLoadingCourses = false;
       notifyListeners();
@@ -200,8 +207,67 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_myProposals == null) _myProposals = [];
+      // 🟢 Error handling
+      if (forceRefresh) CustomSnackBar.showError('Failed to refresh your proposals.');
     } finally {
       _isLoadingMyProposals = false;
+      notifyListeners();
+    }
+  }
+
+  // --- DEADLINE CACHE ---
+  DateTime? _deadline;
+  DateTime? get deadline => _deadline;
+
+  bool _isLoadingDeadline = false;
+  bool get isLoadingDeadline => _isLoadingDeadline;
+
+  Future<void> fetchDeadlineIfNeeded({bool forceRefresh = false}) async {
+    // 1. INSTANT CACHE LOAD
+    if (!forceRefresh && _deadline == null) {
+      _isLoadingDeadline = true;
+      notifyListeners();
+      
+      final prefs = await SharedPreferences.getInstance();
+      final cachedDateString = prefs.getString('cached_deadline');
+      
+      if (cachedDateString != null && cachedDateString.isNotEmpty) {
+        _deadline = DateTime.tryParse(cachedDateString);
+        _isLoadingDeadline = false;
+        notifyListeners();
+      }
+    }
+
+    // 2. BACKGROUND FETCH
+    if (forceRefresh) {
+      _isLoadingDeadline = true;
+      notifyListeners();
+    }
+
+    try {
+      final freshDeadline = await _apiService.getSubmissionDeadline();
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Convert to ISO-8601 string for comparison/storage, or use empty string if null
+      final freshString = freshDeadline?.toIso8601String() ?? '';
+      final cachedString = prefs.getString('cached_deadline') ?? '';
+
+      // 3. SILENT UI UPDATE
+      if (freshString != cachedString) {
+        _deadline = freshDeadline;
+        if (freshDeadline != null) {
+          await prefs.setString('cached_deadline', freshString);
+        } else {
+          await prefs.remove('cached_deadline'); // Clear cache if backend returns null
+        }
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint("Error fetching deadline: $e");
+      // 🟢 Error handling
+      if (forceRefresh) CustomSnackBar.showError('Failed to refresh submission deadline.');
+    } finally {
+      _isLoadingDeadline = false;
       notifyListeners();
     }
   }

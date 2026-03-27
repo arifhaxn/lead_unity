@@ -8,6 +8,7 @@ import '../api services/api_services.dart';
 import '../theme/theme_provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
+import '../widgets/custom_snackbar.dart'; // 🟢 Added import
 
 class RequestTeamScreen extends StatefulWidget {
   const RequestTeamScreen({super.key});
@@ -36,7 +37,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
   void initState() {
     super.initState();
 
-    // 1. 🟢 Auto-fill user data instantly from AuthProvider memory
+    // 1. Auto-fill user data instantly from AuthProvider memory
     final user = Provider.of<AuthProvider>(context, listen: false).user;
     if (user != null) {
       _nameController.text = user.name;
@@ -44,7 +45,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       _emailController.text = user.email;
     }
 
-    // 2. 🟢 Trigger background fetches from DataProvider
+    // 2. Trigger background fetches from DataProvider
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchCoursesIfNeeded();
@@ -67,12 +68,12 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
-      _showError('Please select a target course.');
+      CustomSnackBar.showError('Please select a target course.');
       return;
     }
 
     if (_sup1 == null || _sup2 == null || _sup3 == null) {
-      _showError('Please select all 3 supervisors.');
+      CustomSnackBar.showError('Please select all 3 supervisors.');
       return;
     }
 
@@ -80,10 +81,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
     final dp = Provider.of<DataProvider>(context, listen: false);
 
-    // 🟢 Instant Check: Use cached proposals instead of making a new API call
+    // Instant Check: Use cached proposals instead of making a new API call
     if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
-      _showError(
-          'Your account is already leading a team. Remove existing team first.');
+      CustomSnackBar.showError('Your account is already leading a team. Remove existing team first.');
       setState(() => _submitState = SubmitState.idle);
       return;
     }
@@ -107,35 +107,30 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
       if (!mounted) return;
 
-      // 🟢 Force a background refresh so the dashboard shows the new request immediately
+      // Force a background refresh so the dashboard shows the new request immediately
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
       dp.fetchTeamsIfNeeded(forceRefresh: true);
 
-      // 🟢 Success Animation
+      // Success Animation
       setState(() => _submitState = SubmitState.success);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text('Team request submitted successfully.'),
-          backgroundColor: Colors.green));
+      
+      CustomSnackBar.showSuccess('Team request submitted successfully.');
 
       await Future.delayed(const Duration(seconds: 1));
       if (mounted) Navigator.pop(context);
+      
     } catch (e) {
       if (!mounted) return;
       setState(() => _submitState = SubmitState.idle);
-      _showError(e.toString().replaceAll('Exception: ', ''));
+      CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
     }
-  }
-
-  void _showError(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(msg), backgroundColor: Colors.red));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final dp = Provider.of<DataProvider>(context); // 🟢 Listens to the Cache
+    final dp = Provider.of<DataProvider>(context); 
 
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
@@ -145,9 +140,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
       ),
     );
 
-    // 🟢 Shows shimmer ONLY if cache is completely empty on first load
-    final isLoadingInitialData =
-        (dp.allCourses == null) || (dp.allSupervisors == null);
+    final isLoadingInitialData = (dp.allCourses == null) || (dp.allSupervisors == null);
 
     if (isLoadingInitialData) {
       return _buildSkeletonLoader(theme, themeProvider, appBarBottomLine);
@@ -252,7 +245,6 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                           ),
                           validator: (value) =>
                               value == null ? 'Required to submit' : null,
-                          // 🟢 Uses courses directly from DataProvider
                           items: dp.allCourses!
                               .map<DropdownMenuItem<String>>((course) {
                             return DropdownMenuItem<String>(
@@ -276,7 +268,6 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
                   const SizedBox(height: 10),
                   Row(
                     children: [
-                      // 🟢 Passed dp.allSupervisors to the helper widget
                       _buildSupDropdown(1, _sup1, dp.allSupervisors!,
                           (value) => setState(() => _sup1 = value)),
                       const SizedBox(width: 8),
@@ -456,7 +447,6 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
     );
   }
 
-  // 🟢 Updated to accept the cached supervisors list dynamically
   Widget _buildSupDropdown(int index, String? value, List<dynamic> supervisors,
       ValueChanged<String?> onChanged) {
     return Expanded(

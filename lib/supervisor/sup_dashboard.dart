@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/registration_status_badge.dart';
-import 'package:link_unity/widgets/network_overlay.dart'; // 🟢 Added Network Overlay Import
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
-import '../providers/data_provider.dart'; 
+import '../providers/data_provider.dart';
 import 'team_list_screen.dart';
 import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
@@ -45,108 +44,104 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), 
+        color: theme.colorScheme.outline.withOpacity(0.2),
         height: 1.0,
       ),
     );
 
     // 🟢 WRAPPED THE ENTIRE SCAFFOLD IN THE NETWORK OVERLAY
-    return NetworkOverlay(
-      child: Scaffold(
+    return Scaffold(
+      backgroundColor: theme.scaffoldBackgroundColor,
+      drawer: const AppDrawer(),
+      appBar: AppBar(
+        title: const Text('Supervisor Portal'),
         backgroundColor: theme.scaffoldBackgroundColor,
-        drawer: const AppDrawer(),
-        appBar: AppBar(
-          title: const Text('Supervisor Portal'),
-          backgroundColor: theme.scaffoldBackgroundColor, 
-          foregroundColor: theme.colorScheme.onSurface,
-          elevation: 0,
-          bottom: appBarBottomLine, 
-        ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Welcome Back,',
-                            style: TextStyle(
-                                fontSize: 14, color: theme.colorScheme.onSurfaceVariant)),
-                        Text(
-                          displayName,
-                          style: theme.textTheme.displaySmall
-                              ?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ],
-                    ),
-                  ),
-                  // 🟢 Only hide if we have NO data AND it's currently loading.
-                  // Otherwise, show the badge immediately!
-                  if (!(dp.deadline == null && dp.isLoadingDeadline))
-                    RegistrationStatusBadge(deadline: dp.deadline),
-                ],
-              ),
-              const SizedBox(height: 30),
-      
-              _AnimatedDashboardCard(
-                title: "My Teams",
-                subtitle: "Personal Markings",
-                icon: Icons.groups_rounded,
-                bgColor: const Color(0xFF4338CA),
-                iconColor: const Color.fromARGB(255, 24, 255, 143), 
-                height: 120,
-                horizontalLayout: true,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const TeamListScreen(onlyMyTeams: true))),
-              ),
-      
-              const SizedBox(height: 16),
-      
-              Row(
-                children: [
-                  Expanded(
-                    child: _AnimatedDashboardCard(
-                      title: "All Teams",
-                      subtitle: "Board Markings",
-                      icon: Icons.format_list_bulleted_rounded,
-                      bgColor: const Color.fromARGB(255, 74, 65, 91),
-                      iconColor: const Color.fromARGB(255, 255, 156, 252), 
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) =>
-                                  const TeamListScreen(onlyMyTeams: false))),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _AnimatedDashboardCard(
-                      title: "Supervisors",
-                      subtitle: "Colleagues",
-                      icon: Icons.person_pin_circle_rounded,
-                      bgColor: const Color(0xFF0E7490),
-                      iconColor: Colors.cyanAccent, 
-                      onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const SupervisorListScreen())),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        floatingActionButton: const BreathingChatbotFab(),
+        foregroundColor: theme.colorScheme.onSurface,
+        elevation: 0,
+        bottom: appBarBottomLine,
       ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Welcome Back,',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: theme.colorScheme.onSurfaceVariant)),
+                      Text(
+                        displayName,
+                        style: theme.textTheme.displaySmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
+                // 🟢 Only hide if we have NO data AND it's currently loading.
+                // Otherwise, show the badge immediately!
+                if (!(dp.deadline == null && dp.isLoadingDeadline))
+                  RegistrationStatusBadge(deadline: dp.deadline),
+              ],
+            ),
+            const SizedBox(height: 30),
+            _AnimatedDashboardCard(
+              title: "My Teams",
+              subtitle: "Personal Markings",
+              icon: Icons.groups_rounded,
+              bgColor: const Color(0xFF4338CA),
+              iconColor: const Color.fromARGB(255, 24, 255, 143),
+              height: 120,
+              horizontalLayout: true,
+              onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (_) => const TeamListScreen(onlyMyTeams: true))),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _AnimatedDashboardCard(
+                    title: "All Teams",
+                    subtitle: "Board Markings",
+                    icon: Icons.format_list_bulleted_rounded,
+                    bgColor: const Color.fromARGB(255, 74, 65, 91),
+                    iconColor: const Color.fromARGB(255, 255, 156, 252),
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) =>
+                                const TeamListScreen(onlyMyTeams: false))),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: _AnimatedDashboardCard(
+                    title: "Supervisors",
+                    subtitle: "Colleagues",
+                    icon: Icons.person_pin_circle_rounded,
+                    bgColor: const Color(0xFF0E7490),
+                    iconColor: Colors.cyanAccent,
+                    onTap: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                            builder: (_) => const SupervisorListScreen())),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+      floatingActionButton: const BreathingChatbotFab(),
     );
   }
 }
@@ -178,7 +173,7 @@ class _AnimatedDashboardCard extends StatefulWidget {
 }
 
 class _AnimatedDashboardCardState extends State<_AnimatedDashboardCard> {
-  bool _isPressed = false; 
+  bool _isPressed = false;
 
   @override
   Widget build(BuildContext context) {
@@ -191,9 +186,8 @@ class _AnimatedDashboardCardState extends State<_AnimatedDashboardCard> {
         widget.onTap();
       },
       onTapCancel: () => setState(() => _isPressed = false),
-      
       child: AnimatedScale(
-        scale: _isPressed ? 0.95 : 1.0, 
+        scale: _isPressed ? 0.95 : 1.0,
         duration: const Duration(milliseconds: 150),
         curve: Curves.easeOutCubic,
         child: Container(
@@ -201,8 +195,9 @@ class _AnimatedDashboardCardState extends State<_AnimatedDashboardCard> {
           decoration: BoxDecoration(
             color: widget.bgColor,
             borderRadius: AppRadii.card,
-            boxShadow: _isPressed ? [] : AppShadows.level1, 
-            border: Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
+            boxShadow: _isPressed ? [] : AppShadows.level1,
+            border:
+                Border.all(color: theme.colorScheme.outline.withOpacity(0.6)),
           ),
           child: Padding(
             padding: const EdgeInsets.all(20.0),
@@ -260,15 +255,15 @@ class _AnimatedDashboardCardState extends State<_AnimatedDashboardCard> {
 
   Widget _buildAnimatedIcon() {
     return AnimatedScale(
-      scale: _isPressed ? 1.25 : 1.0, 
+      scale: _isPressed ? 1.25 : 1.0,
       duration: const Duration(milliseconds: 250),
-      curve: Curves.elasticOut, 
+      curve: Curves.elasticOut,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: _isPressed 
-              ? widget.iconColor.withOpacity(0.3) 
+          color: _isPressed
+              ? widget.iconColor.withOpacity(0.3)
               : widget.iconColor.withOpacity(0.15),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(color: widget.iconColor.withOpacity(0.3)),

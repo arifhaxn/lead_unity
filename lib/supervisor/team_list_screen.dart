@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:provider/provider.dart';
-import 'package:shimmer/shimmer.dart'; 
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
+import 'package:shimmer/shimmer.dart';  
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart'; 
 import 'marking_screen.dart';
@@ -297,9 +296,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
                         child: ListView.builder(
                           physics: const AlwaysScrollableScrollPhysics(),
                           padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                          itemCount: filtered.length,
+                          itemCount: filteredWithCardId.length,
                           itemBuilder: (context, index) {
-                            final teamMap = filtered[index] as Map<String, dynamic>;
+                            final teamMap = filteredWithCardId[index] as Map<String, dynamic>;
                             final isNext = teamMap['_id'] == nextTeamId;
 
                             // Calculate serial within this course tab

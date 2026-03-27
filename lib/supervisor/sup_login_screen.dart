@@ -4,6 +4,8 @@ import '../chatbot_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import 'package:provider/provider.dart';
+import '../widgets/custom_snackbar.dart'; // 🟢 Added
+import '../widgets/animated_submit_button.dart'; // 🟢 Added
 
 class SupervisorFirstLoginScreen extends StatefulWidget {
   const SupervisorFirstLoginScreen({Key? key}) : super(key: key);
@@ -22,31 +24,34 @@ class _SupervisorFirstLoginScreenState
   final _newPassCtrl = TextEditingController();
 
   final ApiService _apiService = ApiService();
-  bool _isLoading = false;
+  SubmitState _submitState = SubmitState.idle; // 🟢 Switched to SubmitState
 
   void _submit() async {
     if (_formKey.currentState!.validate()) {
-      setState(() => _isLoading = true);
+      setState(() => _submitState = SubmitState.loading);
 
       try {
-
         await _apiService.changePasswordFirstLogin(
             _abbrevCtrl.text.trim(), 
             _tempPassCtrl.text,
             _newPassCtrl.text);
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-            content: Text("Password Updated! Please Login."),
-            backgroundColor: Colors.green));
-        Navigator.pop(context); // Go back to login screen
+
+        setState(() => _submitState = SubmitState.success);
+        
+        // 🟢 Using CustomSnackBar Success
+        CustomSnackBar.showSuccess("Password Updated! Please Login.");
+        
+        await Future.delayed(const Duration(milliseconds: 1000));
+        if (mounted) Navigator.pop(context); 
+        
       } catch (e) {
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-            content: Text(e.toString().replaceAll('Exception: ', '')),
-            backgroundColor: Colors.red));
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
+        setState(() => _submitState = SubmitState.idle);
+        
+        // 🟢 Using CustomSnackBar Error
+        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
       }
     }
   }
@@ -55,6 +60,7 @@ class _SupervisorFirstLoginScreenState
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
       backgroundColor: theme.colorScheme.surface,
       appBar: AppBar(
@@ -123,24 +129,15 @@ class _SupervisorFirstLoginScreenState
                   validator: (v) => v!.length < 6 ? "Min 6 chars" : null),
               const SizedBox(height: 40),
               
+              // 🟢 Replaced with AnimatedSubmitButton
               SizedBox(
                 width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _submit,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    padding: const EdgeInsets.symmetric(vertical: 15),
-                    shape: const RoundedRectangleBorder(
-                        borderRadius: AppRadii.button),
-                  ),
-                  child: _isLoading
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(
-                              color: Colors.white, strokeWidth: 2))
-                      : const Text("Update & Activate",
-                          style: TextStyle(fontSize: 16, color: Colors.white)),
+                height: 54,
+                child: AnimatedSubmitButton(
+                  state: _submitState,
+                  title: "Update & Activate",
+                  onPressed: _submit,
+                  backgroundColor: AppColors.primary,
                 ),
               )
             ],

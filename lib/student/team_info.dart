@@ -4,7 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
-import '../providers/data_provider.dart'; // 🟢 NEW IMPORT
+import '../providers/data_provider.dart'; 
 
 class TeamInfoScreen extends StatefulWidget {
   const TeamInfoScreen({super.key});
@@ -20,7 +20,9 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     super.initState();
     // 🟢 Trigger the background cache sync instantly upon opening
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DataProvider>(context, listen: false).fetchMyProposalsIfNeeded();
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      dp.fetchMyProposalsIfNeeded();
+      dp.fetchSupervisorsIfNeeded(); // 🟢 Fetch supervisors for the name lookup!
     });
   }
 
@@ -28,7 +30,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final dp = Provider.of<DataProvider>(context); // 🟢 Listens to the Cache
+    final dp = Provider.of<DataProvider>(context); 
 
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
@@ -62,7 +64,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         ],
       ),
       floatingActionButton: const BreathingChatbotFab(),
-      // 🟢 REPLACED FutureBuilder with direct DataProvider logic
       body: Builder(
         builder: (context) {
           // 1. Show Shimmer ONLY if cache is completely empty
@@ -72,166 +73,217 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
 
           // 2. Empty State (No proposals)
           if (dp.myProposals == null || dp.myProposals!.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+            return RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  dp.fetchMyProposalsIfNeeded(forceRefresh: true),
+                  dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+                ]);
+              },
+              child: ListView(
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: [
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
                   Icon(Icons.diversity_3_outlined,
                       size: 80,
                       color: theme.brightness == Brightness.dark
                           ? Colors.white38
                           : Colors.grey[300]),
                   const SizedBox(height: 16),
-                  const Text("No Team Found",
-                      style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey)),
+                  const Center(
+                    child: Text("No Team Found",
+                        style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey)),
+                  ),
                   const SizedBox(height: 8),
-                  Text("Submit a proposal to form a team.",
-                      style:
-                          TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                  Center(
+                    child: Text("Submit a proposal to form a team.",
+                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                  ),
                 ],
               ),
             );
           }
 
-          // 3. Success State (Instantly loaded from cache)
-          final proposal = dp.myProposals![0];
-          final members = proposal['teamMembers'] as List? ?? [];
-          final course = proposal['course'] ?? {};
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF245E63),
-                    borderRadius: AppRadii.card,
-                    boxShadow: AppShadows.level1,
-                  ),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Chip(
-                              label: Text(course['courseCode'] ?? 'N/A'),
-                              backgroundColor: const Color(0xFF1A4A4F),
-                              labelStyle: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                              side: BorderSide.none,
-                            ),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 5),
-                              decoration: BoxDecoration(
-                                  color: _getStatusColor(proposal['status']),
-                                  borderRadius: BorderRadius.circular(12)),
-                              child: Text(
-                                (proposal['status'] ?? 'PENDING')
-                                    .toString()
-                                    .toUpperCase(),
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                            )
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        const Text("Project Title",
-                            style:
-                                TextStyle(fontSize: 12, color: Colors.white70)),
-                        Text(proposal['title'] ?? 'Untitled Project',
-                            style: theme.textTheme.headlineSmall
-                                ?.copyWith(color: Colors.white)),
-                        const SizedBox(height: 8),
-                        const Divider(),
-                        const SizedBox(height: 8),
-                        _buildInfoRow('Description/Link',
-                            proposal['description'] ?? 'No link provided'),
-                      ],
-                    ),
-                  ),
+          // 3. Success State (Scrollable list of all proposals)
+          return RefreshIndicator(
+            onRefresh: () async {
+              await Future.wait([
+                dp.fetchMyProposalsIfNeeded(forceRefresh: true),
+                dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+              ]);
+            },
+            color: theme.colorScheme.primary,
+            child: ListView.separated(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(20),
+              itemCount: dp.myProposals!.length,
+              separatorBuilder: (context, index) => Padding(
+                padding: const EdgeInsets.symmetric(vertical: 30),
+                child: Divider(
+                  thickness: 2,
+                  color: theme.colorScheme.outline.withOpacity(0.3),
                 ),
-                const SizedBox(height: 24),
-                Text("Team Members", style: theme.textTheme.titleLarge),
-                const SizedBox(height: 12),
-                ...members.map((m) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      padding: const EdgeInsets.all(16),
+              ),
+              itemBuilder: (context, index) {
+                final proposal = dp.myProposals![index];
+                final members = proposal['teamMembers'] as List? ?? [];
+                final course = proposal['course'] ?? {};
+                
+                // 🟢 ID-to-Name Lookup Logic for Supervisor
+                final dynamic supervisor = proposal['assignedSupervisor'];
+                String supName = 'Not Assigned';
+                
+                if (supervisor is Map) {
+                  supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Not Assigned';
+                } else if (supervisor != null && dp.allSupervisors != null) {
+                  final foundSup = dp.allSupervisors!.firstWhere(
+                    (s) => s['_id']?.toString() == supervisor.toString(), 
+                    orElse: () => null
+                  );
+                  if (foundSup != null) {
+                    supName = (foundSup['name'] ?? foundSup['abbreviation'] ?? 'Not Assigned').toString();
+                  }
+                }
+
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
                       decoration: const BoxDecoration(
                         color: Color(0xFF245E63),
                         borderRadius: AppRadii.card,
                         boxShadow: AppShadows.level1,
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          CircleAvatar(
-                            backgroundColor: Colors.white.withOpacity(0.15),
-                            child: Text(
-                              (m['name']?[0] ?? 'U')
-                                  .toString()
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                          const SizedBox(width: 14),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
-                                Text(m['name'] ?? 'Unknown',
+                                Chip(
+                                  label: Text(course['courseCode'] ?? 'N/A'),
+                                  backgroundColor: const Color(0xFF1A4A4F),
+                                  labelStyle: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                  side: BorderSide.none,
+                                ),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 5),
+                                  decoration: BoxDecoration(
+                                      color: _getStatusColor(proposal['status']),
+                                      borderRadius: BorderRadius.circular(12)),
+                                  child: Text(
+                                    (proposal['status'] ?? 'PENDING')
+                                        .toString()
+                                        .toUpperCase(),
                                     style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white)),
-                                const SizedBox(height: 6),
-                                _memberDetailRow(Icons.badge_outlined, 'ID',
-                                    m['studentId'] ?? 'N/A'),
-                                const SizedBox(height: 4),
-                                _memberDetailRow(Icons.email_outlined,
-                                    'Email', m['email'] ?? 'N/A'),
-                                const SizedBox(height: 4),
-                                _memberDetailRow(Icons.phone_outlined,
-                                    'Mobile', m['mobile'] ?? 'N/A'),
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                )
                               ],
                             ),
+                            const SizedBox(height: 12),
+                            const Text("Project Title",
+                                style:
+                                    TextStyle(fontSize: 12, color: Colors.white70)),
+                            Text(proposal['title'] ?? 'Untitled Project',
+                                style: theme.textTheme.headlineSmall
+                                    ?.copyWith(color: Colors.white)),
+                            const SizedBox(height: 8),
+                            const Divider(color: Colors.white24),
+                            const SizedBox(height: 8),
+                            
+                            // 🟢 DISPLAY THE SUPERVISOR HERE
+                            _buildInfoRow('Assigned Supervisor', supName),
+                            const SizedBox(height: 12),
+                            
+                            _buildInfoRow('Description/Link',
+                                proposal['description'] ?? 'No link provided'),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    Text("Team Members", style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    ...members.map((m) => Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFF245E63),
+                            borderRadius: AppRadii.card,
+                            boxShadow: AppShadows.level1,
                           ),
-                          Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text("CGPA",
-                                  style: TextStyle(
-                                      fontSize: 10, color: Colors.white70)),
-                              Text(
-                                  m['cgpa'] != null
-                                      ? double.tryParse(m['cgpa'].toString())
-                                              ?.toStringAsFixed(2) ??
-                                          m['cgpa'].toString()
-                                      : 'N/A',
+                              CircleAvatar(
+                                backgroundColor: Colors.white.withOpacity(0.15),
+                                child: Text(
+                                  (m['name']?[0] ?? 'U')
+                                      .toString()
+                                      .toUpperCase(),
                                   style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                      color: Colors.white)),
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(m['name'] ?? 'Unknown',
+                                        style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white)),
+                                    const SizedBox(height: 6),
+                                    _memberDetailRow(Icons.badge_outlined, 'ID',
+                                        m['studentId'] ?? 'N/A'),
+                                    const SizedBox(height: 4),
+                                    _memberDetailRow(Icons.email_outlined,
+                                        'Email', m['email'] ?? 'N/A'),
+                                    const SizedBox(height: 4),
+                                    _memberDetailRow(Icons.phone_outlined,
+                                        'Mobile', m['mobile'] ?? 'N/A'),
+                                  ],
+                                ),
+                              ),
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
+                                children: [
+                                  const Text("CGPA",
+                                      style: TextStyle(
+                                          fontSize: 10, color: Colors.white70)),
+                                  Text(
+                                      m['cgpa'] != null
+                                          ? double.tryParse(m['cgpa'].toString())
+                                                  ?.toStringAsFixed(2) ??
+                                              m['cgpa'].toString()
+                                          : 'N/A',
+                                      style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 14,
+                                          color: Colors.white)),
+                                ],
+                              ),
                             ],
                           ),
-                        ],
-                      ),
-                    )),
-              ],
+                        )),
+                  ],
+                );
+              },
             ),
           );
         },
