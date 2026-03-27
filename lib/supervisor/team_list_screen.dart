@@ -43,40 +43,52 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   void _processDataIfNeeded(List<dynamic>? rawTeams, String? myId) {
-    if (rawTeams == null) return;
-    if (_cachedRawTeams == rawTeams) return;
+  if (rawTeams == null) return;
+  if (_cachedRawTeams == rawTeams) return;
 
-    _cachedRawTeams = rawTeams;
-    var teams = List.from(rawTeams);
+  _cachedRawTeams = rawTeams;
+  var teams = List.from(rawTeams);
 
-    if (widget.onlyMyTeams && myId != null) {
-      teams = teams.where((t) {
-        final assigned = (t['assignedSupervisor'] is Map)
-            ? t['assignedSupervisor']['_id']
-            : t['assignedSupervisor'];
-        return assigned == myId;
-      }).toList();
-    }
-
+  // 1. Filter for specific Supervisor if "Only My Teams" is active
+  if (widget.onlyMyTeams && myId != null) {
     teams = teams.where((t) {
-      final status = (t['status'] ?? '').toString().toLowerCase().trim();
-      return status == 'approved';
+      final assigned = (t['assignedSupervisor'] is Map)
+          ? t['assignedSupervisor']['_id']
+          : t['assignedSupervisor'];
+      return assigned == myId;
     }).toList();
+  }
 
-    // Sorting Logic: Sort by Defense Schedule
-    teams.sort((a, b) {
-      if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
-      if (a['defenseDate'] == null) return 1;
-      if (b['defenseDate'] == null) return -1;
+  // 2. Filter for Approved "Official Teams" (Matches your NestJS memberCount logic)
+  teams = teams.where((t) {
+    final status = (t['status'] ?? '').toString().toLowerCase().trim();
+    
+    // Your backend defines memberCount = (teamMembers ?? []).length
+    final List? members = t['teamMembers'] is List ? t['teamMembers'] : null;
+    final int memberCount = members?.length ?? 0;
 
+    // Only show Approved teams that have 3 or 4 members
+    return status == 'approved' && memberCount >= 3 && memberCount <= 4;
+  }).toList();
+
+  // 3. Sorting Logic: Sort by Defense Schedule (Earliest date first)
+  teams.sort((a, b) {
+    if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
+    if (a['defenseDate'] == null) return 1; // Nulls at bottom
+    if (b['defenseDate'] == null) return -1;
+
+    try {
       DateTime dateA = DateTime.parse(a['defenseDate']);
       DateTime dateB = DateTime.parse(b['defenseDate']);
       return dateA.compareTo(dateB);
-    });
+    } catch (e) {
+      return 0;
+    }
+  });
 
-    _processedTeams = teams;
-    _courseTabs = _extractCourseTabs(_processedTeams);
-  }
+  _processedTeams = teams;
+  _courseTabs = _extractCourseTabs(_processedTeams);
+}
 
   void _showInstructions() {
     final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";

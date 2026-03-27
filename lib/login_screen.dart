@@ -36,19 +36,18 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
 _checkRegStatus() async {
-    try {
-      bool status = await _api.isRegistrationOpen();
-      if (mounted) {
-        setState(() {
-          // 🟢 If it's currently showing opposite, we add the "!" (NOT operator) 
-          // to flip the backend response to match our UI variable.
-          _isRegOpen = !status; 
-        });
-      }
-    } catch (e) {
-      if (mounted) setState(() => _isRegOpen = false);
+  try {
+    bool status = await _api.isRegistrationOpen();
+    if (mounted) {
+      setState(() {
+        // Remove the "!" so the UI matches the database
+        _isRegOpen = status; 
+      });
     }
+  } catch (e) {
+    if (mounted) setState(() => _isRegOpen = false);
   }
+}
 
   void _handleLogin() async {
     final isStudent = widget.role == 'student';
