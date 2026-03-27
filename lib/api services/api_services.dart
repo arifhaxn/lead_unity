@@ -148,6 +148,27 @@ class ApiService {
     }
   }
 
+  // 🟢 Fetches the specific proposal for the logged-in student
+  // This is used by the Dashboard to show Supervisor and Defense info
+  Future<Map<String, dynamic>?> getMyProposal() async {
+    try {
+      final response = await _dio.get('/proposals/my');
+      final List proposals = response.data;
+      
+      if (proposals.isNotEmpty) {
+        // Return the first one (usually the active one for the current semester)
+        return proposals.first as Map<String, dynamic>;
+      }
+      return null; // Student hasn't submitted a proposal yet
+    } on DioException catch (e) {
+      // If the error is a 404 or empty, we just treat it as "no proposal"
+      if (e.response?.statusCode == 404) return null;
+      throw e.response?.data['message'] ?? 'Failed to fetch team status';
+    } catch (e) {
+      return null;
+    }
+  }
+
   Future<Map<String, dynamic>> getEvaluationSettings() async {
     try {
       final response = await _dio.get('/settings');

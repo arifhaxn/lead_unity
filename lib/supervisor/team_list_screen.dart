@@ -44,50 +44,52 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   void _processDataIfNeeded(List<dynamic>? rawTeams, String? myId) {
-    if (rawTeams == null) return;
-    if (_cachedRawTeams == rawTeams) return; 
+  if (rawTeams == null) return;
+  if (_cachedRawTeams == rawTeams) return;
 
-    _cachedRawTeams = rawTeams; 
-    var teams = List.from(rawTeams); 
+  _cachedRawTeams = rawTeams;
+  var teams = List.from(rawTeams);
 
-    if (widget.onlyMyTeams && myId != null) {
-      teams = teams.where((t) {
-        final assigned = (t['assignedSupervisor'] is Map)
-            ? t['assignedSupervisor']['_id']
-            : t['assignedSupervisor'];
-        return assigned == myId;
-      }).toList();
-    }
-
+  // 1. Filter for specific Supervisor if "Only My Teams" is active
+  if (widget.onlyMyTeams && myId != null) {
     teams = teams.where((t) {
-      final status = (t['status'] ?? '').toString().toLowerCase().trim();
-      
-      // 🟢 Exclude dummy solo teams that are just requests
-      final title = (t['title'] ?? '').toString().trim().toLowerCase();
-      if (title.startsWith('team request -')) {
-        return false;
-      }
-
-      return status == 'approved';
+      final assigned = (t['assignedSupervisor'] is Map)
+          ? t['assignedSupervisor']['_id']
+          : t['assignedSupervisor'];
+      return assigned == myId;
     }).toList();
-
-    // Sort by Defense Schedule first, fallback to submission time
-    teams.sort((a, b) {
-      if (a['defenseDate'] != null && b['defenseDate'] != null) {
-        DateTime dateA = DateTime.parse(a['defenseDate']);
-        DateTime dateB = DateTime.parse(b['defenseDate']);
-        return dateA.compareTo(dateB);
-      }
-      if (a['defenseDate'] != null) return -1;
-      if (b['defenseDate'] != null) return 1;
-
-      return _submissionTime(a as Map<String, dynamic>)
-          .compareTo(_submissionTime(b as Map<String, dynamic>));
-    });
-
-    _processedTeams = teams;
-    _courseTabs = _extractCourseTabs(_processedTeams);
   }
+
+  // 2. Filter for Approved "Official Teams" (Matches your NestJS memberCount logic)
+  teams = teams.where((t) {
+    final status = (t['status'] ?? '').toString().toLowerCase().trim();
+    
+    // Your backend defines memberCount = (teamMembers ?? []).length
+    final List? members = t['teamMembers'] is List ? t['teamMembers'] : null;
+    final int memberCount = members?.length ?? 0;
+
+    // Only show Approved teams that have 3 or 4 members
+    return status == 'approved' && memberCount >= 3 && memberCount <= 4;
+  }).toList();
+
+  // 3. Sorting Logic: Sort by Defense Schedule (Earliest date first)
+  teams.sort((a, b) {
+    if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
+    if (a['defenseDate'] == null) return 1; // Nulls at bottom
+    if (b['defenseDate'] == null) return -1;
+
+    try {
+      DateTime dateA = DateTime.parse(a['defenseDate']);
+      DateTime dateB = DateTime.parse(b['defenseDate']);
+      return dateA.compareTo(dateB);
+    } catch (e) {
+      return 0;
+    }
+  });
+
+  _processedTeams = teams;
+  _courseTabs = _extractCourseTabs(_processedTeams);
+}
 
   void _showInstructions() {
     final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
@@ -292,40 +294,26 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       return RefreshIndicator(
                         onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
                         color: theme.colorScheme.primary,
-                        child: AnimationLimiter(
-                          child: ListView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-                            itemCount: filteredWithCardId.length,
-                            itemBuilder: (context, index) {
-                              final team = filteredWithCardId[index];
-                              final teamMap = team as Map<String, dynamic>;
-                              
-                              final int serial = teamMap['serialNumber'] ?? 
-                                  serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 
-                                  (index + 1);
-                                      
-                              final isNext = teamMap['_id'] == nextTeamId;
+                        child: ListView.builder(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                          itemCount: filtered.length,
+                          itemBuilder: (context, index) {
+                            final teamMap = filtered[index] as Map<String, dynamic>;
+                            final isNext = teamMap['_id'] == nextTeamId;
 
-                              return AnimationConfiguration.staggeredList(
-                                position: index,
-                                duration: const Duration(milliseconds: 375),
-                                child: SlideAnimation(
-                                  verticalOffset: 50.0,
-                                  child: FadeInAnimation(
-                                    child: _buildTeamCard(
-                                      context,
-                                      serialNumber: serial,
-                                      team: teamMap,
-                                      myId: myId,
-                                      dataProvider: dataProvider, 
-                                      isNext: isNext, 
-                                    ),
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
+                            // Calculate serial within this course tab
+                            final int dbSerial = teamMap['serialNumber'] ?? (index + 1);
+
+                            return _buildTeamCard(
+                              context,
+                              team: teamMap,
+                              serialNumber: dbSerial,
+                              myId: myId,
+                              dataProvider: dataProvider,
+                              isNext: isNext,
+                            );
+                          },
                         ),
                       );
                     }).toList(),
