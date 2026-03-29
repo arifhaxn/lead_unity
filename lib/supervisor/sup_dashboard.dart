@@ -20,9 +20,10 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
   @override
   void initState() {
     super.initState();
-    // 🟢 Trigger the silent background check as soon as the screen loads!
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<DataProvider>(context, listen: false).fetchDeadlineIfNeeded();
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      dp.fetchDeadlineIfNeeded();
+      dp.fetchTeamsIfNeeded(); 
     });
   }
 
@@ -30,8 +31,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final dp = Provider.of<DataProvider>(context); // 🟢 Listen to our provider
+    final dp = Provider.of<DataProvider>(context); 
     final user = authProvider.user;
+    final myId = user?.id;
 
     final String fullName = user?.name ?? 'Supervisor';
     final String displayName = fullName
@@ -49,7 +51,49 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       ),
     );
 
-    // 🟢 WRAPPED THE ENTIRE SCAFFOLD IN THE NETWORK OVERLAY
+    // 🟢 STATS CALCULATION
+    int totalAssigned = 0;
+    int completed = 0;
+
+    final allTeamsList = dp.allTeams ?? [];
+
+    if (myId != null && allTeamsList.isNotEmpty) {
+      for (var t in allTeamsList) {
+        final status = (t['status'] ?? '').toString().toLowerCase().trim();
+        final List? members = t['teamMembers'] is List ? t['teamMembers'] : null;
+        final int memberCount = members?.length ?? 0;
+        
+        if (status == 'approved' && memberCount >= 3 && memberCount <= 4) {
+          final assigned = (t['assignedSupervisor'] is Map)
+              ? t['assignedSupervisor']['_id']
+              : t['assignedSupervisor'];
+
+          if (assigned == myId) {
+            totalAssigned++;
+
+            final marks = t['marks'] as List? ?? [];
+            bool hasMarked = false;
+            
+            for (final mark in marks) {
+              if (mark is! Map) continue;
+              final supId = (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
+              final type = (mark['type'] ?? '').toString().toLowerCase().trim();
+              
+              if (supId == myId && type == 'own') {
+                hasMarked = true;
+                break;
+              }
+            }
+
+            if (hasMarked) completed++;
+          }
+        }
+      }
+    }
+
+    int pending = totalAssigned - completed;
+    double progressPercent = totalAssigned == 0 ? 0.0 : (completed / totalAssigned);
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
@@ -85,13 +129,19 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                     ],
                   ),
                 ),
-                // 🟢 Only hide if we have NO data AND it's currently loading.
-                // Otherwise, show the badge immediately!
                 if (!(dp.deadline == null && dp.isLoadingDeadline))
                   RegistrationStatusBadge(deadline: dp.deadline),
               ],
             ),
+            
             const SizedBox(height: 30),
+            
+            dp.isLoadingTeams && allTeamsList.isEmpty 
+              ? _buildSkeletonProgressBanner(theme)
+              : _buildProgressBanner(theme, totalAssigned, completed, pending, progressPercent),
+            
+            const SizedBox(height: 24), 
+            
             _AnimatedDashboardCard(
               title: "My Teams",
               subtitle: "Personal Markings",
@@ -138,10 +188,161 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 ),
               ],
             ),
+            
+            const SizedBox(height: 40), 
           ],
         ),
       ),
       floatingActionButton: const BreathingChatbotFab(),
+    );
+  }
+
+  // 🟢 Ultra-Slim Progress Banner Widget
+  Widget _buildProgressBanner(ThemeData theme, int total, int completed, int pending, double progress) {
+    return Container(
+      // 🟢 Stripped down vertical padding
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16), // Slightly tighter border radius
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.15), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.03),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                "Evaluation Progress",
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 15, // Slightly smaller title
+                  color: theme.colorScheme.onSurface,
+                ),
+              ),
+              Text(
+                "${(progress * 100).toInt()}%",
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16, // Slightly smaller percentage
+                  color: theme.colorScheme.primary,
+                ),
+              ),
+            ],
+          ),
+          // 🟢 Tighter gap
+          const SizedBox(height: 10),
+          
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(
+                color: theme.colorScheme.outline.withOpacity(0.2), 
+                width: 1,
+              ),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(9), 
+              child: LinearProgressIndicator(
+                value: progress,
+                minHeight: 6, // 🟢 Thinner progress bar
+                backgroundColor: theme.colorScheme.primary.withOpacity(0.05),
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  progress == 1.0 && total > 0 ? Colors.green : theme.colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+          // 🟢 Tighter gap
+          const SizedBox(height: 12),
+          
+          Row(
+            children: [
+              _buildStatColumn("Total", total.toString(), Colors.blueAccent, theme),
+              _buildVerticalDivider(),
+              _buildStatColumn("Checked", completed.toString(), Colors.green, theme),
+              _buildVerticalDivider(),
+              _buildStatColumn("Pending", pending.toString(), Colors.orangeAccent, theme),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSkeletonProgressBanner(ThemeData theme) {
+    return Container(
+      // 🟢 Reduced height for the skeleton to match the new ultra-slim banner
+      height: 105,
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: theme.colorScheme.primary.withOpacity(0.15), width: 1.5),
+      ),
+      child: Center(
+        child: SizedBox(
+          height: 20,
+          width: 20,
+          child: CircularProgressIndicator(strokeWidth: 2, color: theme.colorScheme.primary.withOpacity(0.5)),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildVerticalDivider() {
+    return Container(
+      height: 20, // 🟢 Shorter divider
+      width: 1,
+      color: Colors.grey.withOpacity(0.3),
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+    );
+  }
+
+  Widget _buildStatColumn(String label, String value, Color color, ThemeData theme) {
+    return Expanded(
+      child: Column(
+        children: [
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 19, // 🟢 Smaller, sleeker numbers
+              fontWeight: FontWeight.bold,
+              color: theme.colorScheme.onSurface,
+            ),
+          ),
+          const SizedBox(height: 2), // 🟢 Tighter spacing between number and label
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 6, // 🟢 Smaller colored dots
+                height: 6,
+                decoration: BoxDecoration(
+                  color: color,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 12, // 🟢 Smaller text for the labels
+                  color: theme.colorScheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
