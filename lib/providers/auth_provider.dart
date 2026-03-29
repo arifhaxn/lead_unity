@@ -115,8 +115,6 @@ class AuthProvider with ChangeNotifier {
       }
 
       _setLoading(false);
-      // 🟢 Show Success on Login
-      CustomSnackBar.showSuccess('Welcome back, ${_user?.name ?? "User"}!');
       
     } catch (e) {
       _setLoading(false);
@@ -219,9 +217,6 @@ class AuthProvider with ChangeNotifier {
     _user = null;
     _token = null;
     notifyListeners();
-    
-    // 🟢 Show Info on Logout
-    CustomSnackBar.showInfo('You have been logged out.');
   }
 
   void _setLoading(bool value) {
