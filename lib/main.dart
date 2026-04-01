@@ -2,15 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:link_unity/splash_screen.dart';
 import 'package:provider/provider.dart';
+
+// 🟢 1. NEW FIREBASE IMPORTS
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'firebase_options.dart'; 
+
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart'; 
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'widgets/network_overlay.dart'; 
-import 'widgets/custom_snackbar.dart'; // 🟢 1. IMPORT YOUR CUSTOM SNACKBAR HERE
+import 'widgets/custom_snackbar.dart';
 
-void main() {
+void main() async { // 🟢 2. ADDED 'async' HERE
   WidgetsFlutterBinding.ensureInitialized();
+
+  // 🟢 3. INITIALIZE FIREBASE
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -32,6 +43,10 @@ void main() {
 class LeadUnityApp extends StatelessWidget {
   const LeadUnityApp({super.key});
 
+  // 🟢 4. CREATE THE FIREBASE ANALYTICS OBSERVER
+  static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
+  static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(analytics: analytics);
+
   @override
   Widget build(BuildContext context) {
     return Consumer<ThemeProvider>(
@@ -43,7 +58,9 @@ class LeadUnityApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
           
-          // 🟢 2. ATTACH THE GLOBAL KEY HERE
+          // 🟢 5. ATTACH THE OBSERVER HERE TO TRACK SCREENS AUTOMATICALLY
+          navigatorObservers: <NavigatorObserver>[observer],
+          
           // This allows you to call CustomSnackBar.showError() from literally anywhere!
           scaffoldMessengerKey: CustomSnackBar.messengerKey,
           

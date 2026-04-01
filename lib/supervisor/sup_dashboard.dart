@@ -98,7 +98,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
       appBar: AppBar(
-        title: const Text('Supervisor Portal'),
+        title: const Text('LeadUnity'),
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,

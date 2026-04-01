@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "630087844154",
+    "project_id": "leadunity-a4757",
+    "storage_bucket": "leadunity-a4757.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:630087844154:android:3b17cf6f09a42fc228d003",
+        "android_client_info": {
+          "package_name": "com.example.link_unity"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyADaQAFIXmqdjDZd-R4xBn3mmCEj1ycvm0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -127,7 +127,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('Student Dashboard')),
+      appBar: AppBar(title: const Text('LeadUnity')),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
