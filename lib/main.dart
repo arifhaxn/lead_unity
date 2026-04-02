@@ -2,12 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:link_unity/splash_screen.dart';
 import 'package:provider/provider.dart';
-
-// 🟢 1. NEW FIREBASE IMPORTS
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'firebase_options.dart'; 
-
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart'; 
 import 'theme/app_theme.dart';
@@ -43,7 +40,6 @@ void main() async { // 🟢 2. ADDED 'async' HERE
 class LeadUnityApp extends StatelessWidget {
   const LeadUnityApp({super.key});
 
-  // 🟢 4. CREATE THE FIREBASE ANALYTICS OBSERVER
   static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
   static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(analytics: analytics);
 

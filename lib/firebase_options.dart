@@ -41,48 +41,49 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBSAEG2ssr0OAADGmcxW28Dy4jM2ze0ybA',
-    appId: '1:630087844154:web:21dee5afb473304d28d003',
-    messagingSenderId: '630087844154',
-    projectId: 'leadunity-a4757',
-    authDomain: 'leadunity-a4757.firebaseapp.com',
-    storageBucket: 'leadunity-a4757.firebasestorage.app',
-    measurementId: 'G-N75S58RCGN',
+    apiKey: 'AIzaSyCsKKIdMZjS4-7fxzrUMIgkRekrLZYTbFY',
+    appId: '1:69294984603:web:dd4250252ecae842e5653e',
+    messagingSenderId: '69294984603',
+    projectId: 'leadunity-68950',
+    authDomain: 'leadunity-68950.firebaseapp.com',
+    storageBucket: 'leadunity-68950.firebasestorage.app',
+    measurementId: 'G-SPFTX2EVFT',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyADaQAFIXmqdjDZd-R4xBn3mmCEj1ycvm0',
-    appId: '1:630087844154:android:3b17cf6f09a42fc228d003',
-    messagingSenderId: '630087844154',
-    projectId: 'leadunity-a4757',
-    storageBucket: 'leadunity-a4757.firebasestorage.app',
+    apiKey: 'AIzaSyALEvk-R9Vyjaj6Nq1V8oc0MHBECq4xUHw',
+    appId: '1:69294984603:android:183e0c87fca0c1ede5653e',
+    messagingSenderId: '69294984603',
+    projectId: 'leadunity-68950',
+    storageBucket: 'leadunity-68950.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyDiO2i-whYot91H61CYfcKCIgOkCiGo5-c',
-    appId: '1:630087844154:ios:0c187e80127c4d1328d003',
-    messagingSenderId: '630087844154',
-    projectId: 'leadunity-a4757',
-    storageBucket: 'leadunity-a4757.firebasestorage.app',
-    iosBundleId: 'com.example.linkUnity',
+    apiKey: 'AIzaSyBs0tYXUjcVKq9HzlpF4lHQEDKNXTAVFi4',
+    appId: '1:69294984603:ios:a239425a55821a25e5653e',
+    messagingSenderId: '69294984603',
+    projectId: 'leadunity-68950',
+    storageBucket: 'leadunity-68950.firebasestorage.app',
+    iosBundleId: 'com.example.leadunity',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyDiO2i-whYot91H61CYfcKCIgOkCiGo5-c',
-    appId: '1:630087844154:ios:0c187e80127c4d1328d003',
-    messagingSenderId: '630087844154',
-    projectId: 'leadunity-a4757',
-    storageBucket: 'leadunity-a4757.firebasestorage.app',
+    apiKey: 'AIzaSyBs0tYXUjcVKq9HzlpF4lHQEDKNXTAVFi4',
+    appId: '1:69294984603:ios:5bd6ae65bd9aa545e5653e',
+    messagingSenderId: '69294984603',
+    projectId: 'leadunity-68950',
+    storageBucket: 'leadunity-68950.firebasestorage.app',
     iosBundleId: 'com.example.linkUnity',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBSAEG2ssr0OAADGmcxW28Dy4jM2ze0ybA',
-    appId: '1:630087844154:web:5cb449a1d94a5f6728d003',
-    messagingSenderId: '630087844154',
-    projectId: 'leadunity-a4757',
-    authDomain: 'leadunity-a4757.firebaseapp.com',
-    storageBucket: 'leadunity-a4757.firebasestorage.app',
-    measurementId: 'G-L9Q0C66BVC',
+    apiKey: 'AIzaSyCsKKIdMZjS4-7fxzrUMIgkRekrLZYTbFY',
+    appId: '1:69294984603:web:56f344481f3273a7e5653e',
+    messagingSenderId: '69294984603',
+    projectId: 'leadunity-68950',
+    authDomain: 'leadunity-68950.firebaseapp.com',
+    storageBucket: 'leadunity-68950.firebasestorage.app',
+    measurementId: 'G-9QK0F1YVM6',
   );
+
 }
