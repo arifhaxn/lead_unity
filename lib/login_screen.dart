@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:link_unity/forgot_password_screen.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
@@ -9,8 +10,8 @@ import 'api services/api_services.dart';
 import 'theme/theme_provider.dart';
 import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';
-import '../widgets/custom_page_route.dart'; 
-import '../widgets/animated_submit_button.dart'; 
+import '../widgets/custom_page_route.dart';
+import '../widgets/animated_submit_button.dart';
 import '../widgets/custom_snackbar.dart'; // 🟢 Added CustomSnackBar Import
 
 class LoginScreen extends StatefulWidget {
@@ -27,8 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
   final _api = ApiService();
 
   bool _isRegOpen = true;
-  SubmitState _submitState = SubmitState.idle; 
-  bool _obscurePassword = true; 
+  SubmitState _submitState = SubmitState.idle;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -41,7 +42,7 @@ class _LoginScreenState extends State<LoginScreen> {
       bool status = await _api.isRegistrationOpen();
       if (mounted) {
         setState(() {
-          _isRegOpen = status; 
+          _isRegOpen = status;
         });
       }
     } catch (e) {
@@ -51,10 +52,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _handleLogin() async {
     final isStudent = widget.role == 'student';
-    final identifier = isStudent 
-        ? _identifierController.text.trim() 
+    final identifier = isStudent
+        ? _identifierController.text.trim()
         : _identifierController.text.trim().toUpperCase();
-        
+
     final password = _passController.text;
 
     if (identifier.isEmpty || password.isEmpty) {
@@ -64,7 +65,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
 
     setState(() => _submitState = SubmitState.loading);
-    
+
     try {
       await Provider.of<AuthProvider>(context, listen: false)
           .login(identifier, password, role: widget.role);
@@ -82,11 +83,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await Future.delayed(const Duration(milliseconds: 600));
         if (!mounted) return;
 
-        Navigator.pushAndRemoveUntil(
-            context,
-            FadeScaleRoute(page: const StudentDashboard()), 
-            (route) => false);
-            
+        Navigator.pushAndRemoveUntil(context,
+            FadeScaleRoute(page: const StudentDashboard()), (route) => false);
       } else if (widget.role == 'supervisor' && userRole == 'supervisor') {
         setState(() => _submitState = SubmitState.success);
         await Future.delayed(const Duration(milliseconds: 600));
@@ -94,20 +92,19 @@ class _LoginScreenState extends State<LoginScreen> {
 
         Navigator.pushAndRemoveUntil(
             context,
-            FadeScaleRoute(page: const SupervisorDashboard()), 
+            FadeScaleRoute(page: const SupervisorDashboard()),
             (route) => false);
-            
       } else {
         // 🟢 Use CustomSnackBar
         CustomSnackBar.showError("Role mismatch or invalid credentials");
         Provider.of<AuthProvider>(context, listen: false).logout();
-        setState(() => _submitState = SubmitState.idle); 
+        setState(() => _submitState = SubmitState.idle);
       }
     } catch (e) {
       // 🟢 Use CustomSnackBar
       CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
       setState(() => _submitState = SubmitState.idle);
-    } 
+    }
   }
 
   @override
@@ -124,7 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), 
+        color: theme.colorScheme.outline.withOpacity(0.2),
         height: 1.0,
       ),
     );
@@ -133,10 +130,10 @@ class _LoginScreenState extends State<LoginScreen> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-          backgroundColor: theme.scaffoldBackgroundColor, 
+          backgroundColor: theme.scaffoldBackgroundColor,
           foregroundColor: theme.colorScheme.onSurface,
           elevation: 0,
-          bottom: appBarBottomLine, 
+          bottom: appBarBottomLine,
           iconTheme: IconThemeData(color: theme.colorScheme.onSurface),
           actions: [
             IconButton(
@@ -164,7 +161,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   children: AnimationConfiguration.toStaggeredList(
                     duration: const Duration(milliseconds: 400),
                     childAnimationBuilder: (widget) => SlideAnimation(
-                      verticalOffset: 40.0, 
+                      verticalOffset: 40.0,
                       child: FadeInAnimation(
                         child: widget,
                       ),
@@ -187,8 +184,8 @@ class _LoginScreenState extends State<LoginScreen> {
                       TextField(
                         controller: _identifierController,
                         keyboardType: keyboardType,
-                        textCapitalization: isStudent 
-                            ? TextCapitalization.none 
+                        textCapitalization: isStudent
+                            ? TextCapitalization.none
                             : TextCapitalization.characters,
                         decoration: InputDecoration(
                             labelText: labelText,
@@ -199,7 +196,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       const SizedBox(height: 20),
                       TextField(
                         controller: _passController,
-                        obscureText: _obscurePassword, 
+                        obscureText: _obscurePassword,
                         decoration: InputDecoration(
                             labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock_outline_rounded),
@@ -219,11 +216,27 @@ class _LoginScreenState extends State<LoginScreen> {
                             focusedBorder: OutlineInputBorder(
                                 borderSide: BorderSide(color: themeColor))),
                       ),
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: TextButton(
+                          onPressed: () {
+                            // Navigate to your recovery screen (e.g., ForgotPasswordScreen)
+                            Navigator.push(
+                                context,
+                                FadeScaleRoute(
+                                    page: const ForgotPasswordScreen()));
+                          },
+                          child: Text(
+                            "Forgot Password?",
+                            style: TextStyle(
+                                color: themeColor, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
                       const SizedBox(height: 30),
-                      
                       SizedBox(
                         width: double.infinity,
-                        height: 54, 
+                        height: 54,
                         child: AnimatedSubmitButton(
                           state: _submitState,
                           title: "Login",
@@ -231,7 +244,6 @@ class _LoginScreenState extends State<LoginScreen> {
                           backgroundColor: themeColor,
                         ),
                       ),
-
                       if (widget.role == 'supervisor')
                         Center(
                           child: Padding(
@@ -239,28 +251,31 @@ class _LoginScreenState extends State<LoginScreen> {
                             child: TextButton(
                               onPressed: () => Navigator.push(
                                   context,
-                                  FadeScaleRoute(page: const SupervisorFirstLoginScreen())), 
-                              child: const Text(
-                                  "Change Temporary Password",
-                                  style: TextStyle(fontWeight: FontWeight.w600)),
+                                  FadeScaleRoute(
+                                      page:
+                                          const SupervisorFirstLoginScreen())),
+                              child: const Text("Change Temporary Password",
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.w600)),
                             ),
                           ),
                         ),
                       const SizedBox(height: 20),
-                      
                       if (widget.role == 'student')
                         Center(
                           child: _isRegOpen
                               ? TextButton(
                                   onPressed: () => Navigator.push(
                                       context,
-                                      FadeScaleRoute(page: const StudentRegistrationScreen())), 
+                                      FadeScaleRoute(
+                                          page:
+                                              const StudentRegistrationScreen())),
                                   child: RichText(
                                     text: TextSpan(
                                       text: 'Don\'t have an account? ',
                                       style: TextStyle(
-                                          color:
-                                              theme.colorScheme.onSurfaceVariant),
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant),
                                       children: [
                                         TextSpan(
                                             text: 'Register Now',
@@ -275,14 +290,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 10),
                                   decoration: BoxDecoration(
-                                      color:
-                                          theme.colorScheme.error.withOpacity(0.1),
+                                      color: theme.colorScheme.error
+                                          .withOpacity(0.1),
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: theme.colorScheme.error.withOpacity(0.3))),
+                                      border: Border.all(
+                                          color: theme.colorScheme.error
+                                              .withOpacity(0.3))),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(Icons.lock_clock_rounded, size: 18, color: theme.colorScheme.error),
+                                      Icon(Icons.lock_clock_rounded,
+                                          size: 18,
+                                          color: theme.colorScheme.error),
                                       const SizedBox(width: 8),
                                       Text("Registration Closed",
                                           style: TextStyle(
@@ -292,7 +311,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                 ),
                         ),
-                      const SizedBox(height: 40), 
+                      const SizedBox(height: 40),
                       Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
@@ -300,7 +319,8 @@ class _LoginScreenState extends State<LoginScreen> {
                           color: theme.colorScheme.primary.withOpacity(0.05),
                           borderRadius: BorderRadius.circular(12),
                           border: Border.all(
-                              color: theme.colorScheme.primary.withOpacity(0.2)),
+                              color:
+                                  theme.colorScheme.primary.withOpacity(0.2)),
                         ),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.start,

@@ -217,6 +217,28 @@ class ApiService {
     }
   }
 
+  // 🟢 Sends OTP to user's email for password recovery
+  Future<void> sendForgotPasswordOtp(String email) async {
+    try {
+      await _dio.post('/auth/forgot-password', data: {'email': email});
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Failed to send reset OTP';
+    }
+  }
+
+  // 🟢 Verifies OTP and updates the password
+  Future<void> resetPassword(String email, String otp, String newPassword) async {
+    try {
+      await _dio.post('/auth/reset-password', data: {
+        'email': email,
+        'otp': otp,
+        'newPassword': newPassword,
+      });
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Failed to reset password';
+    }
+  }
+
   Future<void> sendOtp(String email) async {
     try {
       await _dio.post('/auth/send-otp', data: {'email': email});
