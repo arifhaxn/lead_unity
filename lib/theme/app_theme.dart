@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
-
 class AppColors {
   // Primary: Vibrant Green
   static const primary = Color(0xFF10B981);
@@ -120,6 +119,7 @@ class AppTheme {
         backgroundColor: AppColors.surfaceAlt,
         foregroundColor: AppColors.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0.0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
@@ -144,7 +144,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData( 
+      cardTheme: const CardThemeData(
         color: Color(0xFFFFFFFF),
         elevation: 0,
         margin: EdgeInsets.zero,
@@ -228,6 +228,7 @@ class AppTheme {
         backgroundColor: AppColors.nightSurface,
         foregroundColor: AppColors.nightTextPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0.0,
         centerTitle: true,
         titleTextStyle: GoogleFonts.nunito(
           fontSize: 18,
@@ -252,7 +253,7 @@ class AppTheme {
           textStyle: const TextStyle(fontWeight: FontWeight.w600),
         ),
       ),
-      cardTheme: const CardThemeData( 
+      cardTheme: const CardThemeData(
         color: AppColors.nightCard,
         elevation: 0,
         margin: EdgeInsets.zero,

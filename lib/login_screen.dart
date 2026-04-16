@@ -12,7 +12,7 @@ import 'student/student_dash.dart';
 import 'student/student_registration_screen.dart';
 import '../widgets/custom_page_route.dart';
 import '../widgets/animated_submit_button.dart';
-import '../widgets/custom_snackbar.dart'; // 🟢 Added CustomSnackBar Import
+import '../widgets/custom_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   final String role;
@@ -59,7 +59,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passController.text;
 
     if (identifier.isEmpty || password.isEmpty) {
-      // 🟢 Use CustomSnackBar
       CustomSnackBar.showInfo("Please enter both ID/Abbreviation and Password");
       return;
     }
@@ -95,13 +94,11 @@ class _LoginScreenState extends State<LoginScreen> {
             FadeScaleRoute(page: const SupervisorDashboard()),
             (route) => false);
       } else {
-        // 🟢 Use CustomSnackBar
         CustomSnackBar.showError("Role mismatch or invalid credentials");
         Provider.of<AuthProvider>(context, listen: false).logout();
         setState(() => _submitState = SubmitState.idle);
       }
     } catch (e) {
-      // 🟢 Use CustomSnackBar
       CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
       setState(() => _submitState = SubmitState.idle);
     }
@@ -126,7 +123,6 @@ class _LoginScreenState extends State<LoginScreen> {
       ),
     );
 
-    // 🟢 REMOVED NetworkOverlay wrapper here because it is now Global in main.dart
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -216,24 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             focusedBorder: OutlineInputBorder(
                                 borderSide: BorderSide(color: themeColor))),
                       ),
-                      Align(
-                        alignment: Alignment.centerRight,
-                        child: TextButton(
-                          onPressed: () {
-                            // Navigate to your recovery screen (e.g., ForgotPasswordScreen)
-                            Navigator.push(
-                                context,
-                                FadeScaleRoute(
-                                    page: const ForgotPasswordScreen()));
-                          },
-                          child: Text(
-                            "Forgot Password?",
-                            style: TextStyle(
-                                color: themeColor, fontWeight: FontWeight.w600),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 40), 
                       SizedBox(
                         width: double.infinity,
                         height: 54,
@@ -244,49 +223,53 @@ class _LoginScreenState extends State<LoginScreen> {
                           backgroundColor: themeColor,
                         ),
                       ),
+                      
+                      const SizedBox(height: 20),
+                      
+                      // 🟢 SUPERVISOR: Forgot Password / Change Temp Password
                       if (widget.role == 'supervisor')
                         Center(
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 20.0),
-                            child: TextButton(
-                              onPressed: () => Navigator.push(
-                                  context,
-                                  FadeScaleRoute(
-                                      page:
-                                          const SupervisorFirstLoginScreen())),
-                              child: const Text("Change Temporary Password",
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.w600)),
-                            ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.push(
+                                    context,
+                                    FadeScaleRoute(
+                                        page: const ForgotPasswordScreen())),
+                                child: const Text("Forgot Password?",
+                                    style: TextStyle(
+                                        color: Colors.white, // Made white
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                              Text(
+                                " / ",
+                                style: TextStyle(
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.push(
+                                    context,
+                                    FadeScaleRoute(
+                                        page: const SupervisorFirstLoginScreen())),
+                                child: Text("Change Temp\nPassword",textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        color: themeColor,
+                                        fontWeight: FontWeight.w600)),
+                              ),
+                            ],
                           ),
                         ),
-                      const SizedBox(height: 20),
+
+                      // 🟢 STUDENT: Forgot Password / Register Now
                       if (widget.role == 'student')
                         Center(
-                          child: _isRegOpen
-                              ? TextButton(
-                                  onPressed: () => Navigator.push(
-                                      context,
-                                      FadeScaleRoute(
-                                          page:
-                                              const StudentRegistrationScreen())),
-                                  child: RichText(
-                                    text: TextSpan(
-                                      text: 'Don\'t have an account? ',
-                                      style: TextStyle(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant),
-                                      children: [
-                                        TextSpan(
-                                            text: 'Register Now',
-                                            style: TextStyle(
-                                                color: themeColor,
-                                                fontWeight: FontWeight.bold)),
-                                      ],
-                                    ),
-                                  ),
-                                )
-                              : Container(
+                          child: Column(
+                            children: [
+                              if (!_isRegOpen)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 16, vertical: 10),
                                   decoration: BoxDecoration(
@@ -310,7 +293,47 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ],
                                   ),
                                 ),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  TextButton(
+                                    onPressed: () => Navigator.push(
+                                        context,
+                                        FadeScaleRoute(
+                                            page: const ForgotPasswordScreen())),
+                                    child: const Text(
+                                      "Forgot Password?",
+                                      style: TextStyle(
+                                          color: Colors.white, // Made white
+                                          fontWeight: FontWeight.w600),
+                                    ),
+                                  ),
+                                  if (_isRegOpen) ...[
+                                    Text(
+                                      " / ",
+                                      style: TextStyle(
+                                          color: theme.colorScheme.onSurfaceVariant,
+                                          fontWeight: FontWeight.bold),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.push(
+                                          context,
+                                          FadeScaleRoute(
+                                              page: const StudentRegistrationScreen())),
+                                      child: Text(
+                                        "Register Now",
+                                        style: TextStyle(
+                                            color: themeColor,
+                                            fontWeight: FontWeight.w600),
+                                      ),
+                                    ),
+                                  ],
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
+
                       const SizedBox(height: 40),
                       Container(
                         width: double.infinity,

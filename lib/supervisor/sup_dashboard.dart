@@ -221,7 +221,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "Evaluation Progress",
+                "Assigned Progress",
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                   fontSize: 15, // Slightly smaller title

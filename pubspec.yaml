@@ -31,9 +31,9 @@ dependencies:
   flutter:
     sdk: flutter
   dio: ^5.4.0
-  flutter_secure_storage: ^9.0.0
+  flutter_secure_storage: ^10.0.0
   provider: ^6.0.5 
-  google_fonts: ^6.2.1
+  google_fonts: ^8.0.2
   webview_flutter: ^4.10.0
   webview_flutter_web: ^0.2.3
   
@@ -44,12 +44,12 @@ dependencies:
   cupertino_icons: ^1.0.8
   url_launcher: ^6.3.1
   image_picker: ^1.1.2
-  font_awesome_flutter: 10.7.0
+  font_awesome_flutter: ^11.0.0
   intl: ^0.20.2
   shimmer: ^3.0.0
   flutter_staggered_animations: ^1.1.1
   shared_preferences: ^2.5.3
-  connectivity_plus: ^6.1.0
+  connectivity_plus: ^7.1.1
   firebase_core: ^4.6.0
   firebase_analytics: ^12.2.0
 
@@ -97,6 +97,7 @@ flutter:
     - assets/template/crew/arif.jpg
     - assets/template/crew/omio.jpeg
     - assets/template/crew/araf.jpeg
+    - assets/template/crew/pfp.jpeg
     - assets/logo/logo.png
 
 

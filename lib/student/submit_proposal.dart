@@ -10,7 +10,7 @@ import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../providers/data_provider.dart'; 
 import 'request_team_screen.dart'; 
-import '../widgets/custom_snackbar.dart'; // 🟢 NEW IMPORT
+import '../widgets/custom_snackbar.dart'; 
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -386,7 +386,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
         setState(() => _submitState = SubmitState.success);
         
-        // 🟢 Replaced with CustomSnackBar
         CustomSnackBar.showSuccess('Proposal Submitted Successfully!');
             
         await Future.delayed(const Duration(seconds: 1));
@@ -395,7 +394,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     } catch (e) {
       if (mounted) {
-        // 🟢 Replaced with CustomSnackBar
         CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
@@ -547,8 +545,15 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                       TextButton.icon(
                         onPressed: () => setState(() => _showFourthMember = true),
                         icon: const Icon(Icons.group_add_rounded, color: Color(0xFF245E63)),
-                        label: const Text('Add 4th Member',
-                            style: TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
+                        label: Row(
+                          children: [
+                            const Text('Add 4th Member',
+                                style: TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
+                                SizedBox(width: 6),
+                                const Text('(Not Recommended)',
+                                style: TextStyle(color: Color.fromARGB(255, 169, 55, 55), fontWeight: FontWeight.bold)),
+                          ],
+                        ),
                       )
                     else
                       const SizedBox.shrink(),
@@ -623,25 +628,40 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-Widget _buildMemberCard(int index) {
+  Widget _buildMemberCard(int index) {
     bool isLeader = index == 0;
     final theme = Theme.of(context);
-    
-    // FORCE PURE WHITE FOR EVERYTHING inside the dark green cards
-    const whiteTextStyle = TextStyle(color: Colors.white, fontWeight: FontWeight.w500);
-    const whiteLabelStyle = TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500); // Solid White Labels!
+    final isDarkMode = theme.brightness == Brightness.dark;
+
+    // 🟢 DYNAMIC COLORS BASED ON LIGHT/DARK MODE
+    final cardBackgroundColor = isDarkMode 
+        ? const Color(0xFF245E63) // Keep the dark green for Dark Mode
+        : theme.colorScheme.primary.withOpacity(0.08); // Subtle primary tint for Light Mode
+        
+    final inputFillColor = isDarkMode 
+        ? Colors.white10 
+        : theme.colorScheme.surface;
+
+    final textColor = isDarkMode ? Colors.white : theme.colorScheme.onSurface;
+    final labelColor = isDarkMode ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+    final activeLabelColor = isDarkMode ? Colors.white : theme.colorScheme.primary;
+
+    // Dynamic Text Styles
+    final textStyle = TextStyle(color: textColor, fontWeight: FontWeight.w500);
+    final labelStyle = TextStyle(color: labelColor, fontSize: 13, fontWeight: FontWeight.w500);
+    final floatingLabelStyle = TextStyle(color: activeLabelColor, fontWeight: FontWeight.bold);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
-        color: const Color(0xFF245E63),
-        borderRadius: AppRadii.card,
+        color: cardBackgroundColor,
+        borderRadius: AppRadii.card, // Ensure AppRadii is imported in your real file
         border: Border.all(
             color: isLeader
-                ? AppColors.primary.withOpacity(0.5)
-                : theme.colorScheme.outline),
-        boxShadow: AppShadows.level1,
+                ? theme.colorScheme.primary.withOpacity(0.5)
+                : theme.colorScheme.outline.withOpacity(0.2)),
+        boxShadow: isDarkMode ? AppShadows.level1 : [], // Only apply shadow in dark mode if needed
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,20 +670,20 @@ Widget _buildMemberCard(int index) {
             isLeader ? "Member 1 (Leader)" : "Member ${index + 1}",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
-                color: isLeader ? Colors.white : Colors.white70),
+                color: isLeader ? activeLabelColor : labelColor),
           ),
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            style: whiteTextStyle, 
-            decoration: const InputDecoration(
+            style: textStyle, 
+            decoration: InputDecoration(
               labelText: 'Name', 
-              labelStyle: whiteLabelStyle, // Pure white when resting
-              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold), // Pure white when typing
+              labelStyle: labelStyle,
+              floatingLabelStyle: floatingLabelStyle,
               isDense: true, 
               filled: true, 
-              fillColor: Colors.white10, 
-              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              fillColor: inputFillColor, 
+              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
             ),
           ),
           const SizedBox(height: 8),
@@ -671,59 +691,59 @@ Widget _buildMemberCard(int index) {
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
-              style: whiteTextStyle,
-              decoration: const InputDecoration(
+              style: textStyle,
+              decoration: InputDecoration(
                 labelText: 'ID', 
-                labelStyle: whiteLabelStyle,
-                floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                labelStyle: labelStyle,
+                floatingLabelStyle: floatingLabelStyle,
                 isDense: true, 
                 filled: true, 
-                fillColor: Colors.white10, 
-                border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+                fillColor: inputFillColor, 
+                border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
               ),
             )),
             const SizedBox(width: 8),
             Expanded(
                 child: TextFormField(
               controller: _memberControllers[index]['cgpa'],
-              style: whiteTextStyle,
-              decoration: const InputDecoration(
+              style: textStyle,
+              decoration: InputDecoration(
                 labelText: 'CGPA', 
-                labelStyle: whiteLabelStyle,
-                floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                labelStyle: labelStyle,
+                floatingLabelStyle: floatingLabelStyle,
                 isDense: true, 
                 filled: true, 
-                fillColor: Colors.white10, 
-                border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+                fillColor: inputFillColor, 
+                border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
               ),
             )),
           ]),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['email'],
-            style: whiteTextStyle,
-            decoration: const InputDecoration(
+            style: textStyle,
+            decoration: InputDecoration(
               labelText: 'Email', 
-              labelStyle: whiteLabelStyle,
-              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              labelStyle: labelStyle,
+              floatingLabelStyle: floatingLabelStyle,
               isDense: true, 
               filled: true, 
-              fillColor: Colors.white10, 
-              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              fillColor: inputFillColor, 
+              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
             ),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['mobile'],
-            style: whiteTextStyle,
-            decoration: const InputDecoration(
+            style: textStyle,
+            decoration: InputDecoration(
               labelText: 'Mobile', 
-              labelStyle: whiteLabelStyle,
-              floatingLabelStyle: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+              labelStyle: labelStyle,
+              floatingLabelStyle: floatingLabelStyle,
               isDense: true, 
               filled: true, 
-              fillColor: Colors.white10, 
-              border: OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              fillColor: inputFillColor, 
+              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
             ),
           ),
         ],

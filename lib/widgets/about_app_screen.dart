@@ -26,7 +26,7 @@ class AboutAppScreen extends StatelessWidget {
         "batch": "61st Batch",
         "department": "Dept. of CSE",
         "role": "Lead Flutter Developer",
-        "image": "assets/template/crew/arif.jpg",
+        "image": "assets/template/crew/pfp.jpeg",
         "fb": "https://www.facebook.com/arifhaxnn",
         "linkedin": "https://www.linkedin.com/in/arif-hasan-672249358",
         "github": "https://github.com/arifhaxn",
@@ -219,21 +219,21 @@ class AboutAppScreen extends StatelessWidget {
               if (dev.containsKey("fb") && dev["fb"].toString().isNotEmpty)
                 IconButton(
                   onPressed: () => _launchUrl(dev["fb"]),
-                  icon: const Icon(FontAwesomeIcons.facebook,
+                  icon: const FaIcon(FontAwesomeIcons.facebook,
                       color: Color(0xFF1877F2)),
                   tooltip: "Facebook",
                 ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: () => _launchUrl(dev["github"]),
-                icon: Icon(FontAwesomeIcons.github,
+                icon: FaIcon(FontAwesomeIcons.github,
                     color: theme.colorScheme.onSurface),
                 tooltip: "GitHub",
               ),
               const SizedBox(width: 16),
               IconButton(
                 onPressed: () => _launchUrl(dev["linkedin"]),
-                icon: const Icon(FontAwesomeIcons.linkedin,
+                icon: const FaIcon(FontAwesomeIcons.linkedin,
                     color: Color(0xFF0A66C2)),
                 tooltip: "LinkedIn",
               ),

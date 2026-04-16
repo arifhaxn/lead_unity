@@ -71,7 +71,6 @@ class DataProvider with ChangeNotifier {
       debugPrint("Error fetching teams: $e");
       if (_allTeams == null) _allTeams = [];
       // 🟢 Show error ONLY if user manually pulled to refresh
-      if (forceRefresh) CustomSnackBar.showError('Failed to refresh teams list.');
     } finally {
       _isLoadingTeams = false;
       notifyListeners();

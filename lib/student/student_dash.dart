@@ -274,7 +274,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final dynamic supervisor = proposal?['assignedSupervisor'];
     final String? defenseDate = proposal?['defenseDate'];
 
-    String supName = 'Assigned';
+    String supName = 'TBA';
     if (supervisor is Map) {
       supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Assigned';
     } else if (supervisor != null && dp.allSupervisors != null) {
