@@ -246,4 +246,39 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Failed to send OTP';
     }
   }
+
+   /// Fetch all notifications for the logged-in user
+  Future<List<dynamic>> getNotifications() async {
+    try {
+      final response = await _dio.get('/notifications');
+      return response.data as List;
+    } on DioException catch (e) {
+      throw e.response?.data['message'] ?? 'Failed to load notifications';
+    }
+  }
+ 
+  /// Get only the unread count (lightweight — for the badge)
+  Future<int> getUnreadNotificationCount() async {
+    try {
+      final response = await _dio.get('/notifications/unread-count');
+      return (response.data['count'] as num).toInt();
+    } catch (_) {
+      return 0;
+    }
+  }
+ 
+  /// Mark a single notification as read
+  Future<void> markNotificationRead(String notifId) async {
+    try {
+      await _dio.patch('/notifications/$notifId/read');
+    } catch (_) {}
+  }
+ 
+  /// Mark all notifications as read
+  Future<void> markAllNotificationsRead() async {
+    try {
+      await _dio.patch('/notifications/read-all');
+    } catch (_) {}
+  }
+ 
 }

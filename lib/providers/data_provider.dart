@@ -2,12 +2,12 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../api services/api_services.dart';
-import '../widgets/custom_snackbar.dart'; // 🟢 Added CustomSnackBar Import
+import '../widgets/custom_snackbar.dart';
 
 class DataProvider with ChangeNotifier {
   final ApiService _apiService = ApiService();
 
-  // --- TEAMS CACHE ---
+  // ── TEAMS CACHE ────────────────────────────────────────────────────────────
   List<dynamic>? _allTeams;
   List<dynamic>? get allTeams => _allTeams;
 
@@ -15,7 +15,7 @@ class DataProvider with ChangeNotifier {
   bool get isLoadingTeams => _isLoadingTeams;
 
   Future<void> fetchTeamsIfNeeded({bool forceRefresh = false}) async {
-    // 1. INSTANT CACHE LOAD
+    // 1. Instant cache load
     if (!forceRefresh && _allTeams == null) {
       _isLoadingTeams = true;
       notifyListeners();
@@ -25,21 +25,18 @@ class DataProvider with ChangeNotifier {
 
       if (cachedTeams != null) {
         List<dynamic> localData = json.decode(cachedTeams);
-
-        // Apply defense sorting to cached data
         localData.sort((a, b) {
-          final serialA = a['serialNumber'] ?? 999; // Put nulls at the end
+          final serialA = a['serialNumber'] ?? 999;
           final serialB = b['serialNumber'] ?? 999;
           return serialA.compareTo(serialB);
         });
-
         _allTeams = localData;
         _isLoadingTeams = false;
         notifyListeners();
       }
     }
 
-    // 2. THE BACKGROUND/PULL-TO-REFRESH FETCH
+    // 2. Background / pull-to-refresh fetch
     if (forceRefresh) {
       _isLoadingTeams = true;
       notifyListeners();
@@ -47,8 +44,6 @@ class DataProvider with ChangeNotifier {
 
     try {
       final freshTeams = await _apiService.getAllProposals();
-
-      // Apply defense sorting to fresh data
       freshTeams.sort((a, b) {
         if (a['defenseDate'] == null && b['defenseDate'] == null) return 0;
         if (a['defenseDate'] == null) return 1;
@@ -61,7 +56,6 @@ class DataProvider with ChangeNotifier {
       final freshDataString = json.encode(freshTeams);
       final cachedTeams = prefs.getString('cached_teams');
 
-      // 3. SILENT UI UPDATE
       if (freshDataString != cachedTeams) {
         _allTeams = freshTeams;
         await prefs.setString('cached_teams', freshDataString);
@@ -70,14 +64,13 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching teams: $e");
       if (_allTeams == null) _allTeams = [];
-      // 🟢 Show error ONLY if user manually pulled to refresh
     } finally {
       _isLoadingTeams = false;
       notifyListeners();
     }
   }
 
-  // --- SUPERVISORS CACHE ---
+  // ── SUPERVISORS CACHE ──────────────────────────────────────────────────────
   List<dynamic>? _allSupervisors;
   List<dynamic>? get allSupervisors => _allSupervisors;
 
@@ -118,7 +111,6 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching supervisors: $e");
       if (_allSupervisors == null) _allSupervisors = [];
-      // 🟢 Error handling
       if (forceRefresh) CustomSnackBar.showError('Failed to refresh supervisors.');
     } finally {
       _isLoadingSupervisors = false;
@@ -126,7 +118,7 @@ class DataProvider with ChangeNotifier {
     }
   }
 
-  // --- COURSES CACHE ---
+  // ── COURSES CACHE ──────────────────────────────────────────────────────────
   List<dynamic>? _allCourses;
   List<dynamic>? get allCourses => _allCourses;
 
@@ -162,7 +154,6 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_allCourses == null) _allCourses = [];
-      // 🟢 Error handling
       if (forceRefresh) CustomSnackBar.showError('Failed to refresh courses.');
     } finally {
       _isLoadingCourses = false;
@@ -170,7 +161,7 @@ class DataProvider with ChangeNotifier {
     }
   }
 
-  // --- MY PROPOSALS CACHE ---
+  // ── MY PROPOSALS CACHE ─────────────────────────────────────────────────────
   List<dynamic>? _myProposals;
   List<dynamic>? get myProposals => _myProposals;
 
@@ -206,7 +197,6 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_myProposals == null) _myProposals = [];
-      // 🟢 Error handling
       if (forceRefresh) CustomSnackBar.showError('Failed to refresh your proposals.');
     } finally {
       _isLoadingMyProposals = false;
@@ -214,7 +204,7 @@ class DataProvider with ChangeNotifier {
     }
   }
 
-  // --- DEADLINE CACHE ---
+  // ── DEADLINE CACHE ─────────────────────────────────────────────────────────
   DateTime? _deadline;
   DateTime? get deadline => _deadline;
 
@@ -222,14 +212,14 @@ class DataProvider with ChangeNotifier {
   bool get isLoadingDeadline => _isLoadingDeadline;
 
   Future<void> fetchDeadlineIfNeeded({bool forceRefresh = false}) async {
-    // 1. INSTANT CACHE LOAD
+    // 1. Instant cache load
     if (!forceRefresh && _deadline == null) {
       _isLoadingDeadline = true;
       notifyListeners();
-      
+
       final prefs = await SharedPreferences.getInstance();
       final cachedDateString = prefs.getString('cached_deadline');
-      
+
       if (cachedDateString != null && cachedDateString.isNotEmpty) {
         _deadline = DateTime.tryParse(cachedDateString);
         _isLoadingDeadline = false;
@@ -237,7 +227,7 @@ class DataProvider with ChangeNotifier {
       }
     }
 
-    // 2. BACKGROUND FETCH
+    // 2. Background fetch
     if (forceRefresh) {
       _isLoadingDeadline = true;
       notifyListeners();
@@ -246,28 +236,117 @@ class DataProvider with ChangeNotifier {
     try {
       final freshDeadline = await _apiService.getSubmissionDeadline();
       final prefs = await SharedPreferences.getInstance();
-      
-      // Convert to ISO-8601 string for comparison/storage, or use empty string if null
+
       final freshString = freshDeadline?.toIso8601String() ?? '';
       final cachedString = prefs.getString('cached_deadline') ?? '';
 
-      // 3. SILENT UI UPDATE
       if (freshString != cachedString) {
         _deadline = freshDeadline;
         if (freshDeadline != null) {
           await prefs.setString('cached_deadline', freshString);
         } else {
-          await prefs.remove('cached_deadline'); // Clear cache if backend returns null
+          await prefs.remove('cached_deadline');
         }
         notifyListeners();
       }
     } catch (e) {
       debugPrint("Error fetching deadline: $e");
-      // 🟢 Error handling
       if (forceRefresh) CustomSnackBar.showError('Failed to refresh submission deadline.');
     } finally {
       _isLoadingDeadline = false;
       notifyListeners();
     }
+  }
+
+  // ── NOTIFICATIONS CACHE ────────────────────────────────────────────────────
+  List<dynamic>? _notifications;
+  List<dynamic>? get notifications => _notifications;
+
+  int _unreadCount = 0;
+  int get unreadCount => _unreadCount;
+
+  bool _isLoadingNotifications = false;
+  bool get isLoadingNotifications => _isLoadingNotifications;
+
+  Future<void> fetchNotificationsIfNeeded({bool forceRefresh = false}) async {
+    // 1. Instant cache load from SharedPreferences
+    if (!forceRefresh && _notifications == null) {
+      _isLoadingNotifications = true;
+      notifyListeners();
+
+      final prefs = await SharedPreferences.getInstance();
+      final cached = prefs.getString('cached_notifications');
+
+      if (cached != null) {
+        _notifications = json.decode(cached);
+        _unreadCount = _notifications!
+            .where((n) => n['isRead'] == false)
+            .length;
+        _isLoadingNotifications = false;
+        notifyListeners();
+      }
+    }
+
+    // 2. Background / force refresh fetch
+    if (forceRefresh) {
+      _isLoadingNotifications = true;
+      notifyListeners();
+    }
+
+    try {
+      final fresh = await _apiService.getNotifications();
+      final prefs = await SharedPreferences.getInstance();
+      final freshString = json.encode(fresh);
+
+      // Always update — notifications change frequently (isRead state etc.)
+      _notifications = fresh;
+      _unreadCount = fresh.where((n) => n['isRead'] == false).length;
+      await prefs.setString('cached_notifications', freshString);
+      notifyListeners();
+    } catch (e) {
+      debugPrint("Error fetching notifications: $e");
+      if (_notifications == null) _notifications = [];
+    } finally {
+      _isLoadingNotifications = false;
+      notifyListeners();
+    }
+  }
+
+  /// Mark one notification as read — optimistic local update then syncs server.
+  Future<void> markNotificationRead(String notifId) async {
+    if (_notifications != null) {
+      for (final n in _notifications!) {
+        if (n['_id']?.toString() == notifId) {
+          n['isRead'] = true;
+          break;
+        }
+      }
+      _unreadCount = _notifications!
+          .where((n) => n['isRead'] == false)
+          .length;
+
+      // Persist updated state to cache
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_notifications', json.encode(_notifications));
+
+      notifyListeners();
+    }
+    await _apiService.markNotificationRead(notifId);
+  }
+
+  /// Mark all notifications as read.
+  Future<void> markAllNotificationsRead() async {
+    if (_notifications != null) {
+      for (final n in _notifications!) {
+        n['isRead'] = true;
+      }
+      _unreadCount = 0;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('cached_notifications', json.encode(_notifications));
+
+      notifyListeners();
+    }
+    await _apiService.markAllNotificationsRead();
   }
 }
