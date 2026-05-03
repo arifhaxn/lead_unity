@@ -49,7 +49,8 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            "• Fill in the details for at least 2 team members. You can submit info for 2, 3, or 4 members. Leave unused cards blank.\n\n"
+            // 🟢 UPDATED: Changed instructions to reflect 3 members minimum
+            "• Fill in the details for at least 3 team members. You can submit info for 3 or 4 members. Leave unused cards blank.\n\n"
             "• Note: You can only submit one proposal per course.",
             style: TextStyle(height: 1.5),
           ),
@@ -76,8 +77,9 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             const Text("Need a Team?"),
           ],
         ),
+        // 🟢 UPDATED: Changed dialog text to reflect 3 members minimum
         content: const Text(
-          "Proposals require at least 2 members to be submitted. If you don't have a team yet, you can send a 'Request Team' application so supervisors can group you with others.",
+          "Proposals require at least 3 members to be submitted. If you don't have a full team yet, you can send a 'Request Team' application so supervisors can group you with others.",
           style: TextStyle(height: 1.4),
         ),
         actions: [
@@ -359,7 +361,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     }
 
-    if (members.length < 2) {
+    // 🟢 UPDATED: Changed the minimum required members to 3 instead of 2
+    if (members.length < 3) {
       setState(() => _submitState = SubmitState.idle);
       widget.onSoloStudentDetected();
       return;
@@ -656,12 +659,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: cardBackgroundColor,
-        borderRadius: AppRadii.card, // Ensure AppRadii is imported in your real file
+        borderRadius: AppRadii.card, 
         border: Border.all(
             color: isLeader
                 ? theme.colorScheme.primary.withOpacity(0.5)
                 : theme.colorScheme.outline.withOpacity(0.2)),
-        boxShadow: isDarkMode ? AppShadows.level1 : [], // Only apply shadow in dark mode if needed
+        boxShadow: isDarkMode ? AppShadows.level1 : [], 
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:link_unity/forgot_password_screen.dart';
+import 'package:link_unity/authentication/forgot_password_screen.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
 import 'package:link_unity/supervisor/sup_login_screen.dart';
 import 'package:provider/provider.dart';
-import 'providers/auth_provider.dart';
-import 'api services/api_services.dart';
-import 'theme/theme_provider.dart';
-import 'student/student_dash.dart';
-import 'student/student_registration_screen.dart';
-import '../widgets/custom_page_route.dart';
-import '../widgets/animated_submit_button.dart';
-import '../widgets/custom_snackbar.dart';
+import '../providers/auth_provider.dart';
+import '../api services/api_services.dart';
+import '../theme/theme_provider.dart';
+import '../student/student_dash.dart';
+import '../student/student_registration_screen.dart';
+import '../../widgets/custom_page_route.dart';
+import '../../widgets/animated_submit_button.dart';
+import '../../widgets/custom_snackbar.dart';
 
 class LoginScreen extends StatefulWidget {
   final String role;

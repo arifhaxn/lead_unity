@@ -64,7 +64,6 @@ class AnimatedSubmitButton extends StatelessWidget {
           size: 32,
         );
       case SubmitState.idle:
-      default:
         return Text(
           title,
           key: const ValueKey('idle'),

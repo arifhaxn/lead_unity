@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
-import '../providers/data_provider.dart'; 
+import '../providers/data_provider.dart';
 
 class TeamInfoScreen extends StatefulWidget {
   const TeamInfoScreen({super.key});
@@ -14,7 +15,6 @@ class TeamInfoScreen extends StatefulWidget {
 }
 
 class _TeamInfoScreenState extends State<TeamInfoScreen> {
-  
   @override
   void initState() {
     super.initState();
@@ -23,6 +23,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchMyProposalsIfNeeded();
       dp.fetchSupervisorsIfNeeded(); // 🟢 Fetch supervisors for the name lookup!
+      dp.fetchNotificationsIfNeeded();
     });
   }
 
@@ -30,16 +31,16 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final dp = Provider.of<DataProvider>(context); 
+    final dp = Provider.of<DataProvider>(context);
 
     final appBarBottomLine = PreferredSize(
       preferredSize: const Size.fromHeight(1.0),
       child: Container(
-        color: theme.colorScheme.outline.withOpacity(0.2), 
+        color: theme.colorScheme.outline.withOpacity(0.2),
         height: 1.0,
       ),
     );
-    
+
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
@@ -47,8 +48,9 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         backgroundColor: theme.scaffoldBackgroundColor,
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
-        bottom: appBarBottomLine, 
+        bottom: appBarBottomLine,
         actions: [
+          const NotificationBell(), // 🟢 ADDED: The Notification Bell widget
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -100,7 +102,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                   const SizedBox(height: 8),
                   Center(
                     child: Text("Submit a proposal to form a team.",
-                        style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                        style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant)),
                   ),
                 ],
               ),
@@ -131,20 +134,24 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 final proposal = dp.myProposals![index];
                 final members = proposal['teamMembers'] as List? ?? [];
                 final course = proposal['course'] ?? {};
-                
+
                 // 🟢 ID-to-Name Lookup Logic for Supervisor
                 final dynamic supervisor = proposal['assignedSupervisor'];
                 String supName = 'Not Assigned';
-                
+
                 if (supervisor is Map) {
-                  supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Not Assigned';
+                  supName = supervisor['abbreviation'] ??
+                      supervisor['name'] ??
+                      'Not Assigned';
                 } else if (supervisor != null && dp.allSupervisors != null) {
                   final foundSup = dp.allSupervisors!.firstWhere(
-                    (s) => s['_id']?.toString() == supervisor.toString(), 
-                    orElse: () => null
-                  );
+                      (s) => s['_id']?.toString() == supervisor.toString(),
+                      orElse: () => null);
                   if (foundSup != null) {
-                    supName = (foundSup['name'] ?? foundSup['abbreviation'] ?? 'Not Assigned').toString();
+                    supName = (foundSup['name'] ??
+                            foundSup['abbreviation'] ??
+                            'Not Assigned')
+                        .toString();
                   }
                 }
 
@@ -177,7 +184,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                                   padding: const EdgeInsets.symmetric(
                                       horizontal: 10, vertical: 5),
                                   decoration: BoxDecoration(
-                                      color: _getStatusColor(proposal['status']),
+                                      color:
+                                          _getStatusColor(proposal['status']),
                                       borderRadius: BorderRadius.circular(12)),
                                   child: Text(
                                     (proposal['status'] ?? 'PENDING')
@@ -193,19 +201,19 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                             ),
                             const SizedBox(height: 12),
                             const Text("Project Title",
-                                style:
-                                    TextStyle(fontSize: 12, color: Colors.white70)),
+                                style: TextStyle(
+                                    fontSize: 12, color: Colors.white70)),
                             Text(proposal['title'] ?? 'Untitled Project',
                                 style: theme.textTheme.headlineSmall
                                     ?.copyWith(color: Colors.white)),
                             const SizedBox(height: 8),
                             const Divider(color: Colors.white24),
                             const SizedBox(height: 8),
-                            
+
                             // 🟢 DISPLAY THE SUPERVISOR HERE
                             _buildInfoRow('Assigned Supervisor', supName),
                             const SizedBox(height: 12),
-                            
+
                             _buildInfoRow('Description/Link',
                                 proposal['description'] ?? 'No link provided'),
                           ],
@@ -268,7 +276,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                                           fontSize: 10, color: Colors.white70)),
                                   Text(
                                       m['cgpa'] != null
-                                          ? double.tryParse(m['cgpa'].toString())
+                                          ? double.tryParse(
+                                                      m['cgpa'].toString())
                                                   ?.toStringAsFixed(2) ??
                                               m['cgpa'].toString()
                                           : 'N/A',
@@ -323,15 +332,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ...List.generate(3, (index) => Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              height: 110,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-              ),
-            )),
+            ...List.generate(
+                3,
+                (index) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      height: 110,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    )),
           ],
         ),
       ),

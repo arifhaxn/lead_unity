@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:link_unity/splash_screen.dart';
+import 'package:link_unity/widgets/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -12,10 +12,10 @@ import 'theme/theme_provider.dart';
 import 'widgets/network_overlay.dart'; 
 import 'widgets/custom_snackbar.dart';
 
-void main() async { // 🟢 2. ADDED 'async' HERE
+void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 🟢 3. INITIALIZE FIREBASE
+  // INITIALIZE FIREBASE
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
@@ -54,7 +54,7 @@ class LeadUnityApp extends StatelessWidget {
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
           
-          // 🟢 5. ATTACH THE OBSERVER HERE TO TRACK SCREENS AUTOMATICALLY
+          // ATTACH THE OBSERVER HERE TO TRACK SCREENS AUTOMATICALLY
           navigatorObservers: <NavigatorObserver>[observer],
           
           // This allows you to call CustomSnackBar.showError() from literally anywhere!
