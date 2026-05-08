@@ -32,7 +32,7 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Login failed';
     }
   }
-  
+
   Future<Map<String, dynamic>> getUserByEmail(String email) async {
     try {
       final response = await _dio.get('/users');
@@ -107,7 +107,7 @@ class ApiService {
       final response = await _dio.get('/settings');
       final raw = response.data['submissionDeadline'];
       if (raw != null) return DateTime.parse(raw);
-      return null; 
+      return null;
     } catch (e) {
       return null;
     }
@@ -134,7 +134,7 @@ class ApiService {
       return response.data;
     } catch (e) {
       // 🟢 Throws error so the DataProvider doesn't wipe your local cache
-      throw Exception('Failed to load user proposals: $e'); 
+      throw Exception('Failed to load user proposals: $e');
     }
   }
 
@@ -144,7 +144,7 @@ class ApiService {
       return response.data;
     } catch (e) {
       // 🟢 Throws error so the DataProvider doesn't wipe your local cache
-      throw Exception('Failed to load all proposals: $e'); 
+      throw Exception('Failed to load all proposals: $e');
     }
   }
 
@@ -154,7 +154,7 @@ class ApiService {
     try {
       final response = await _dio.get('/proposals/my');
       final List proposals = response.data;
-      
+
       if (proposals.isNotEmpty) {
         // Return the first one (usually the active one for the current semester)
         return proposals.first as Map<String, dynamic>;
@@ -227,7 +227,8 @@ class ApiService {
   }
 
   // 🟢 Verifies OTP and updates the password
-  Future<void> resetPassword(String email, String otp, String newPassword) async {
+  Future<void> resetPassword(
+      String email, String otp, String newPassword) async {
     try {
       await _dio.post('/auth/reset-password', data: {
         'email': email,
@@ -247,7 +248,7 @@ class ApiService {
     }
   }
 
-   /// Fetch all notifications for the logged-in user
+  /// Fetch all notifications for the logged-in user
   Future<List<dynamic>> getNotifications() async {
     try {
       final response = await _dio.get('/notifications');
@@ -256,7 +257,7 @@ class ApiService {
       throw e.response?.data['message'] ?? 'Failed to load notifications';
     }
   }
- 
+
   /// Get only the unread count (lightweight — for the badge)
   Future<int> getUnreadNotificationCount() async {
     try {
@@ -266,19 +267,32 @@ class ApiService {
       return 0;
     }
   }
- 
+
   /// Mark a single notification as read
   Future<void> markNotificationRead(String notifId) async {
     try {
       await _dio.patch('/notifications/$notifId/read');
     } catch (_) {}
   }
- 
+
   /// Mark all notifications as read
   Future<void> markAllNotificationsRead() async {
     try {
       await _dio.patch('/notifications/read-all');
     } catch (_) {}
   }
- 
+
+  // api_services.dart - Add this method
+  Future<Map<String, dynamic>?> getMyTeam() async {
+    try {
+      final response = await _dio.get('/proposals/my-team');
+      if (response.data == null) return null;
+      return response.data as Map<String, dynamic>;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      return null;
+    } catch (e) {
+      return null;
+    }
+  }
 }

@@ -349,4 +349,54 @@ class DataProvider with ChangeNotifier {
     }
     await _apiService.markAllNotificationsRead();
   }
+
+  // data_provider.dart - Add team info cache
+Map<String, dynamic>? _myTeam;
+Map<String, dynamic>? get myTeam => _myTeam;
+
+bool _isLoadingMyTeam = false;
+bool get isLoadingMyTeam => _isLoadingMyTeam;
+
+Future<void> fetchMyTeamIfNeeded({bool forceRefresh = false}) async {
+  if (!forceRefresh && _myTeam == null) {
+    _isLoadingMyTeam = true;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    final cached = prefs.getString('cached_my_team');
+    if (cached != null) {
+      _myTeam = json.decode(cached) as Map<String, dynamic>?;
+      _isLoadingMyTeam = false;
+      notifyListeners();
+    }
+  }
+
+  if (forceRefresh) {
+    _isLoadingMyTeam = true;
+    notifyListeners();
+  }
+
+  try {
+    final fresh = await _apiService.getMyTeam();
+    final prefs = await SharedPreferences.getInstance();
+    final freshString = fresh != null ? json.encode(fresh) : '';
+    final cached = prefs.getString('cached_my_team') ?? '';
+
+    if (freshString != cached) {
+      _myTeam = fresh;
+      if (fresh != null) {
+        await prefs.setString('cached_my_team', freshString);
+      } else {
+        await prefs.remove('cached_my_team');
+      }
+      notifyListeners();
+    }
+  } catch (e) {
+    debugPrint("Error fetching my team: $e");
+    if (_myTeam == null) _myTeam = null;
+  } finally {
+    _isLoadingMyTeam = false;
+    notifyListeners();
+  }
+}
 }
