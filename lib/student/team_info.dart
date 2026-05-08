@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../theme/app_theme.dart';
@@ -48,6 +49,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         elevation: 0,
         bottom: appBarBottomLine,
         actions: [
+          const NotificationBell(), // 🟢 ADDED: The Notification Bell widget
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode

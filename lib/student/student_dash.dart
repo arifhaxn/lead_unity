@@ -3,13 +3,14 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart'; 
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart'; 
 import 'view_template.dart';
 import 'team_info.dart';
-import '../widgets/app_drawer.dart';
+import '../features/app_drawer.dart';
 
 class StudentDashboard extends StatefulWidget {
   const StudentDashboard({super.key});
@@ -31,6 +32,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       dp.fetchDeadlineIfNeeded();
       dp.fetchMyProposalsIfNeeded();
       dp.fetchSupervisorsIfNeeded();
+      dp.fetchNotificationsIfNeeded();
     });
 
     _startTickingClock();
@@ -127,7 +129,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
-      appBar: AppBar(title: const Text('LeadUnity')),
+      appBar: AppBar(
+        title: const Text('LeadUnity'),
+        actions: const [
+          NotificationBell()
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
@@ -163,10 +170,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
               ),
               const SizedBox(height: 20),
               
-              if (proposal != null) ...[
-                _buildStatusBanner(proposal, dp),
-                const SizedBox(height: 30),
-              ],
+              _buildStatusBanner(proposal, dp),
+              const SizedBox(height: 30),
               
               _buildActionCards(dp.deadline),
             ],
@@ -243,13 +248,75 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
+Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
     final theme = Theme.of(context);
     
     final isLoadingTeam = dp.isLoadingMyProposals && dp.myProposals == null;
     if (isLoadingTeam) return const LinearProgressIndicator();
 
-    final String status = (proposal?['status'] ?? '').toString().toLowerCase();
+    if (proposal == null) {
+      return Container(
+        padding: const EdgeInsets.all(16), 
+        width: double.infinity,
+        decoration: BoxDecoration(
+          color: theme.brightness == Brightness.dark 
+              ? theme.colorScheme.surfaceVariant.withOpacity(0.2) 
+              : Colors.grey.shade50,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+              color: theme.colorScheme.outline.withOpacity(0.4), 
+              width: 1.5,
+          ),
+          // 🟢 ADDED: Subtle border glow to match the active banner
+          boxShadow: [
+            BoxShadow(
+              color: theme.colorScheme.primary.withOpacity(0.08),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            )
+          ],
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primary.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.assignment_late_outlined, 
+                  color: theme.colorScheme.primary, size: 28),
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "No Active Proposal",
+                    style: TextStyle(
+                        fontWeight: FontWeight.bold, 
+                        fontSize: 15,
+                        color: theme.colorScheme.primary),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    "Submit a project proposal below to view your assigned supervisor and schedule.",
+                    style: TextStyle(
+                        fontSize: 12, 
+                        color: theme.colorScheme.onSurfaceVariant,
+                        height: 1.3),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // --- Existing logic for when a proposal DOES exist ---
+    final String status = (proposal['status'] ?? '').toString().toLowerCase();
     final bool isApproved = status == 'approved';
     final bool isPending = status == 'pending';
     final bool isRejected = status == 'rejected';
@@ -269,10 +336,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
         : Colors.white;
 
     String? courseCode;
-    if (proposal?['course'] is Map) courseCode = proposal!['course']['courseCode'];
+    if (proposal['course'] is Map) courseCode = proposal['course']['courseCode'];
 
-    final dynamic supervisor = proposal?['assignedSupervisor'];
-    final String? defenseDate = proposal?['defenseDate'];
+    final dynamic supervisor = proposal['assignedSupervisor'];
+    final String? defenseDate = proposal['defenseDate'];
 
     String supName = 'TBA';
     if (supervisor is Map) {
@@ -294,6 +361,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
+        // Active banner's existing shadow
         boxShadow: [
           BoxShadow(
             color: statusColor.withOpacity(0.1),

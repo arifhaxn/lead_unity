@@ -7,7 +7,7 @@ import '../providers/data_provider.dart';
 import 'team_list_screen.dart';
 import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
-import '../widgets/app_drawer.dart';
+import '../features/app_drawer.dart';
 
 class SupervisorDashboard extends StatefulWidget {
   const SupervisorDashboard({Key? key}) : super(key: key);
