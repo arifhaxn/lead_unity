@@ -49,7 +49,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         elevation: 0,
         bottom: appBarBottomLine,
         actions: [
-          const NotificationBell(), // 🟢 ADDED: The Notification Bell widget
+          const NotificationBell(), 
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -155,6 +155,10 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 ),
               ),
               itemBuilder: (context, index) {
+                // 🟢 BUG FIX: Safely extract the Leader mapping multiple possible keys
+                final leaderData = proposal['student'] ?? proposal['creator'] ?? {};
+                print("RAW MEMBER DATA FROM BACKEND: $members");
+
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -230,27 +234,30 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                     Text("Team Members", style: theme.textTheme.titleLarge),
                     const SizedBox(height: 12),
 
-                    // Leader (always shown first)
+                    // 🟢 BUG FIX: Leader Card explicitly checks phone AND mobile keys
                     _buildTeamMemberCard(
-                      name: proposal['student']?['name'] ?? 'Unknown Leader',
-                      studentId: proposal['student']?['studentId'] ?? 'N/A',
-                      email: proposal['student']?['email'] ?? 'N/A',
-                      mobile: proposal['student']?['mobile'] ?? 'N/A',
-                      cgpa: proposal['student']?['cgpa'],
+                      name: leaderData['name']?.toString() ?? 'Unknown Leader',
+                      studentId: leaderData['studentId']?.toString() ?? 'N/A',
+                      email: leaderData['email']?.toString() ?? 'N/A',
+                      mobile: leaderData['mobile']?.toString() ?? leaderData['phone']?.toString() ?? 'N/A',
+                      cgpa: leaderData['cgpa'],
                       isLeader: true,
                       theme: theme,
                     ),
 
-                    // Other team members
-                    ...members.map((m) => _buildTeamMemberCard(
-                          name: m['name'] ?? 'Unknown',
-                          studentId: m['studentId'] ?? 'N/A',
-                          email: m['email'] ?? 'N/A',
-                          mobile: m['mobile'] ?? 'N/A',
-                          cgpa: m['cgpa'],
-                          isLeader: false,
-                          theme: theme,
-                        )),
+                    // 🟢 BUG FIX: Member Cards explicitly check phone AND mobile keys
+                    ...members.map((m) {
+                      final mData = m as Map? ?? {};
+                      return _buildTeamMemberCard(
+                        name: mData['name']?.toString() ?? 'Unknown',
+                        studentId: mData['studentId']?.toString() ?? 'N/A',
+                        email: mData['email']?.toString() ?? 'N/A',
+                        mobile: mData['mobile']?.toString() ?? mData['phone']?.toString() ?? 'N/A',
+                        cgpa: mData['cgpa'],
+                        isLeader: false,
+                        theme: theme,
+                      );
+                    }),
                   ],
                 );
               },
@@ -275,6 +282,18 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     required bool isLeader,
     required ThemeData theme,
   }) {
+    // 🟢 BUG FIX: Data-Cleaning to obliterate invisible "Empty Strings"
+    final safeName = name.trim().isEmpty ? 'Unknown' : name.trim();
+    final safeId = studentId.trim().isEmpty ? 'N/A' : studentId.trim();
+    final safeEmail = email.trim().isEmpty ? 'N/A' : email.trim();
+    final safeMobile = mobile.trim().isEmpty ? 'N/A' : mobile.trim();
+
+    String safeCgpa = 'N/A';
+    if (cgpa != null && cgpa.toString().trim().isNotEmpty) {
+      final parsed = double.tryParse(cgpa.toString().trim());
+      safeCgpa = parsed != null ? parsed.toStringAsFixed(2) : cgpa.toString().trim();
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
       padding: const EdgeInsets.all(16),
@@ -292,7 +311,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           CircleAvatar(
             backgroundColor: Colors.white.withOpacity(0.15),
             child: Text(
-              (name.isNotEmpty ? name[0] : 'U').toUpperCase(),
+              (safeName != 'Unknown' ? safeName[0] : 'U').toUpperCase(),
               style: const TextStyle(
                   color: Colors.white, fontWeight: FontWeight.bold),
             ),
@@ -304,11 +323,14 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               children: [
                 Row(
                   children: [
-                    Text(name,
-                        style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white)),
+                    Expanded(
+                      child: Text(safeName,
+                          style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white),
+                          overflow: TextOverflow.ellipsis),
+                    ),
                     if (isLeader) ...[
                       const SizedBox(width: 8),
                       Container(
@@ -331,14 +353,15 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                   ],
                 ),
                 const SizedBox(height: 6),
-                _memberDetailRow(Icons.badge_outlined, 'ID', studentId),
+                _memberDetailRow(Icons.badge_outlined, 'ID', safeId),
                 const SizedBox(height: 4),
-                _memberDetailRow(Icons.email_outlined, 'Email', email),
+                _memberDetailRow(Icons.email_outlined, 'Email', safeEmail),
                 const SizedBox(height: 4),
-                _memberDetailRow(Icons.phone_outlined, 'Mobile', mobile),
+                _memberDetailRow(Icons.phone_outlined, 'Mobile', safeMobile),
               ],
             ),
           ),
+          const SizedBox(width: 10),
           Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -346,14 +369,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               const Text("CGPA",
                   style: TextStyle(fontSize: 10, color: Colors.white70)),
               Text(
-                  cgpa != null
-                      ? double.tryParse(cgpa.toString())?.toStringAsFixed(2) ??
-                          cgpa.toString()
-                      : 'N/A',
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: Colors.white)),
+                safeCgpa,
+                style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                    color: Colors.white),
+              ),
             ],
           ),
         ],
@@ -435,15 +456,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               ),
             ),
             const SizedBox(height: 16),
-            ...List.generate(3, (index) => Container(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  height: 110,
-                  width: double.infinity,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                )),
+            ...List.generate(
+                3,
+                (index) => Container(
+                      margin: const EdgeInsets.only(bottom: 12),
+                      height: 110,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    )),
           ],
         ),
       ),

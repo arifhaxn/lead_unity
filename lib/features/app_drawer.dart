@@ -6,6 +6,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path_provider/path_provider.dart';
 
 import '../providers/auth_provider.dart';
+import '../providers/data_provider.dart'; // 🟢 Added DataProvider import
+import '../student/notifications_screen.dart'; // 🟢 Added Notifications Screen import
 import '../home_page.dart';
 import '../theme/theme_provider.dart';
 import 'about_app_screen.dart';
@@ -69,6 +71,7 @@ class _AppDrawerState extends State<AppDrawer> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
+    final dp = Provider.of<DataProvider>(context); // 🟢 Listen to DataProvider for the badge
     final user = authProvider.user;
 
     final name = user?.name ?? 'Unknown User';
@@ -83,6 +86,26 @@ class _AppDrawerState extends State<AppDrawer> {
         name.contains('Md. Ebrahim Hossain') ||
         email == 'EBH' ||
         name.toUpperCase() == 'EBH';
+
+    // 🟢 Logic for the Drawer Unread Badge
+    Widget? unreadBadge;
+    if (dp.unreadCount > 0) {
+      unreadBadge = Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.redAccent,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          dp.unreadCount > 99 ? '99+' : dp.unreadCount.toString(),
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      );
+    }
 
     return Drawer(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -288,7 +311,40 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                   onTap: () => themeProvider.toggleTheme(),
                 ),
-                const SizedBox(height: 24),
+                
+                // 🟢 ADDED: A subtle divider to separate settings from alerts
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 0),
+                  child: Divider(
+                    color: theme.colorScheme.outline.withOpacity(0.2),
+                    thickness: 1,
+                    height: 16,
+                  ),
+                ),
+                
+                // 🟢 NEW: Notifications Link in the Drawer
+                _buildDrawerItem(
+                  context: context,
+                  icon: Icons.notifications_rounded,
+                  title: "Notifications",
+                  trailing: unreadBadge, // Injects the red badge if unread > 0
+                  onTap: () {
+                    Navigator.pop(context); // Close the drawer first
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen(),
+                      ),
+                    );
+                  },
+                ),
+
+               // const SizedBox(height: 16), // Extra Spacing before About App
+                
+                // ... (The rest of your About App InkWell stays exactly the same)
+
+                const SizedBox(height: 10), // Extra Spacing before About App
+                
                 InkWell(
                   onTap: () {
                     Navigator.pop(context);
@@ -386,7 +442,6 @@ class _AppDrawerState extends State<AppDrawer> {
     );
   }
 
-// 🟢 UPGRADED: Premium color tuning for both Light and Dark modes
   Widget _buildDrawerItem({
     required BuildContext context,
     required IconData icon,
@@ -398,12 +453,10 @@ class _AppDrawerState extends State<AppDrawer> {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
-    // 1. Define the specific colors for the Destructive state
     final destTextColor = isDark ? Colors.redAccent.shade200 : Colors.red.shade700;
     final destBgColor = isDark ? Colors.redAccent.withOpacity(0.12) : Colors.red.shade50;
     final destBorderColor = isDark ? Colors.redAccent.withOpacity(0.3) : Colors.red.shade200;
 
-    // 2. Apply them based on whether this item is destructive or normal
     final color = isDestructive ? destTextColor : theme.colorScheme.onSurface;
     final bgColor = isDestructive ? destBgColor : Colors.transparent;
 
@@ -411,7 +464,6 @@ class _AppDrawerState extends State<AppDrawer> {
       onTap: onTap,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
-        // Apply the carefully tuned border color
         side: isDestructive 
             ? BorderSide(color: destBorderColor, width: 1.2) 
             : BorderSide.none,
