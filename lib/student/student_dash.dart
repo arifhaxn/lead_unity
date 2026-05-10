@@ -5,9 +5,9 @@ import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
-import '../providers/data_provider.dart'; 
+import '../providers/data_provider.dart';
 import 'view_template.dart';
 import 'team_info.dart';
 import '../features/app_drawer.dart';
@@ -25,14 +25,18 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   void initState() {
     super.initState();
-    
-    // 🟢 Instantly trigger the background cache fetches on load
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchDeadlineIfNeeded();
-      dp.fetchMyProposalsIfNeeded();
+      // Issue 5 fix: use fetchMyTeamIfNeeded (calls /proposals/my-team)
+      // which searches BOTH as leader AND as a teamMember — so absorbed
+      // students see their merged team immediately after merge.
+      dp.fetchMyTeamIfNeeded(forceRefresh: true);
+      // Keep myProposals for the submission deadline countdown card
+      dp.fetchMyProposalsIfNeeded(forceRefresh: true);
       dp.fetchSupervisorsIfNeeded();
-      dp.fetchNotificationsIfNeeded();
+      dp.fetchNotificationsIfNeeded(forceRefresh: true);
     });
 
     _startTickingClock();
@@ -44,27 +48,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
     super.dispose();
   }
 
-  // --- Clock Logic ---
   void _startTickingClock() {
-    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+    _timer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() {});
     });
   }
 
-  // 🟢 Sorts the cached proposals and grabs the newest one
-  Map<String, dynamic>? _getNewestProposal(DataProvider dp) {
-    if (dp.myProposals == null || dp.myProposals!.isEmpty) return null;
-    
-    final list = List<dynamic>.from(dp.myProposals!);
-    list.sort((a, b) {
-      final dateA = DateTime.tryParse((a['createdAt'] ?? a['updatedAt'] ?? '').toString()) ?? DateTime(2000);
-      final dateB = DateTime.tryParse((b['createdAt'] ?? b['updatedAt'] ?? '').toString()) ?? DateTime(2000);
-      return dateB.compareTo(dateA); 
-    });
-    return list.first as Map<String, dynamic>;
-  }
-
-  // --- Status & Navigation Logic ---
   bool _canSubmit(DateTime? deadline) {
     if (deadline != null && DateTime.now().isAfter(deadline)) return false;
     return true;
@@ -73,9 +62,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   String _getSubmissionStatusText(DateTime? deadline) {
     if (deadline != null) {
       final now = DateTime.now();
-      if (now.isAfter(deadline)) {
-        return '🚨 Deadline Passed';
-      }
+      if (now.isAfter(deadline)) return '🚨 Deadline Passed';
       final diff = deadline.difference(now);
       if (diff.inDays > 0) {
         return 'Closes in ${diff.inDays}d ${diff.inHours.remainder(24)}h ${diff.inMinutes.remainder(60)}m';
@@ -90,8 +77,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     if (deadline != null) {
       final now = DateTime.now();
       if (now.isAfter(deadline)) return Colors.redAccent;
-      final diff = deadline.difference(now);
-      if (diff.inHours < 24) return Colors.redAccent;
+      if (deadline.difference(now).inHours < 24) return Colors.redAccent;
       return Colors.amberAccent;
     }
     return Colors.white70;
@@ -101,46 +87,63 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final dp = Provider.of<DataProvider>(context, listen: false);
     if (!_canSubmit(dp.deadline)) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Submission deadline has passed.'), backgroundColor: Colors.red),
+        const SnackBar(
+            content: Text('Submission deadline has passed.'),
+            backgroundColor: Colors.red),
       );
       return;
     }
-    Navigator.push(context, MaterialPageRoute(builder: (context) => const SubmitProposalScreen())).then((_) {
-      // Refresh cache when returning from submission
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const SubmitProposalScreen()),
+    ).then((_) {
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      dp.fetchMyTeamIfNeeded(forceRefresh: true);
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
     });
   }
 
-  void _navigateToTeamInfo() => Navigator.push(context, MaterialPageRoute(builder: (context) => const TeamInfoScreen()));
-  void _navigateToRequestTeam() => Navigator.push(context, MaterialPageRoute(builder: (context) => const RequestTeamScreen()));
-  void _downloadTemplate() => Navigator.push(context, MaterialPageRoute(builder: (context) => ViewTemplateScreen()));
+  void _navigateToTeamInfo() => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => const TeamInfoScreen()));
+
+  void _navigateToRequestTeam() => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => const RequestTeamScreen()));
+
+  void _downloadTemplate() => Navigator.push(
+      context, MaterialPageRoute(builder: (_) => ViewTemplateScreen()));
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final dp = Provider.of<DataProvider>(context); 
-    
-    final user = authProvider.user;
-    final String displayName = (user?.name ?? 'Student').trim().split(RegExp(r'\s+')).take(2).join(' ');
+    final dp = Provider.of<DataProvider>(context);
 
-    final proposal = _getNewestProposal(dp);
+    final user = authProvider.user;
+    final String displayName = (user?.name ?? 'Student')
+        .trim()
+        .split(RegExp(r'\s+'))
+        .take(2)
+        .join(' ');
+
+    // Issue 5 fix: use dp.myTeam (from /proposals/my-team) for banner & badge.
+    // This returns the team whether the student is a leader or a merged member.
+    final proposal = dp.myTeam;
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('LeadUnity'),
-        actions: const [
-          NotificationBell()
-        ],
+        actions: const [NotificationBell()],
       ),
       body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
             dp.fetchDeadlineIfNeeded(forceRefresh: true),
+            dp.fetchMyTeamIfNeeded(forceRefresh: true),
             dp.fetchMyProposalsIfNeeded(forceRefresh: true),
             dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+            dp.fetchNotificationsIfNeeded(forceRefresh: true),
           ]);
         },
         child: SingleChildScrollView(
@@ -148,7 +151,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           padding: const EdgeInsets.all(24.0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
+            children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -158,10 +161,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text('Hello,', style: theme.textTheme.titleLarge),
-                        Text(
-                          displayName, 
-                          style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold)
-                        ),
+                        Text(displayName,
+                            style: theme.textTheme.displaySmall
+                                ?.copyWith(fontWeight: FontWeight.bold)),
                       ],
                     ),
                   ),
@@ -169,10 +171,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ],
               ),
               const SizedBox(height: 20),
-              
               _buildStatusBanner(proposal, dp),
               const SizedBox(height: 30),
-              
               _buildActionCards(dp.deadline),
             ],
           ),
@@ -183,12 +183,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 
   Widget _buildTeamStatusBadge(Map<String, dynamic>? proposal, DataProvider dp) {
-    final isLoadingTeam = dp.isLoadingMyProposals && dp.myProposals == null;
-    if (isLoadingTeam) return const SizedBox.shrink();
+    // Show nothing while the very first load is happening
+    if (dp.isLoadingMyTeam && dp.myTeam == null) return const SizedBox.shrink();
 
     final bool hasTeam = proposal != null;
-    final String status = (proposal?['status'] ?? '').toString().toLowerCase();
-    
+    final String status =
+        (proposal?['status'] ?? '').toString().toLowerCase();
+
     final bool isApproved = status == 'approved';
     final bool isPending = status == 'pending';
     final bool isRejected = status == 'rejected';
@@ -196,28 +197,30 @@ class _StudentDashboardState extends State<StudentDashboard> {
     final Color emeraldGreen = const Color(0xFF10B981);
     final Color pendingGold = Colors.orange.shade700;
     final Color rejectedRed = Colors.red.shade600;
-    
-    final Color statusColor = isApproved 
-        ? emeraldGreen 
-        : (isPending 
-            ? pendingGold 
-            : (isRejected ? rejectedRed : Theme.of(context).colorScheme.primary));
-    
-    String label = "No Team";
+
+    final Color statusColor = isApproved
+        ? emeraldGreen
+        : isPending
+            ? pendingGold
+            : isRejected
+                ? rejectedRed
+                : Theme.of(context).colorScheme.primary;
+
+    String label = 'No Team';
     IconData icon = Icons.warning_amber_rounded;
 
     if (hasTeam) {
       if (isApproved) {
-        label = "Registered";
+        label = 'Registered';
         icon = Icons.verified_user_rounded;
       } else if (isPending) {
-        label = "Pending";
+        label = 'Pending';
         icon = Icons.lock_clock_rounded;
       } else if (isRejected) {
-        label = "Rejected";
+        label = 'Rejected';
         icon = Icons.cancel_rounded;
       } else {
-        label = "Formed";
+        label = 'Formed';
         icon = Icons.group_add_rounded;
       }
     }
@@ -226,7 +229,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
         color: statusColor.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(20), 
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
       ),
       child: Row(
@@ -248,62 +251,53 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
+  Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
     final theme = Theme.of(context);
-    
-    final isLoadingTeam = dp.isLoadingMyProposals && dp.myProposals == null;
-    if (isLoadingTeam) return const LinearProgressIndicator();
 
+    // Show progress bar while loading initial data
+    if (dp.isLoadingMyTeam && dp.myTeam == null) {
+      return const LinearProgressIndicator();
+    }
+
+    // No team yet
     if (proposal == null) {
       return Container(
-        padding: const EdgeInsets.all(16), 
+        padding: const EdgeInsets.all(16),
         width: double.infinity,
         decoration: BoxDecoration(
-          color: theme.brightness == Brightness.dark 
-              ? theme.colorScheme.surfaceVariant.withOpacity(0.2) 
+          color: theme.brightness == Brightness.dark
+              ? theme.colorScheme.surfaceVariant.withOpacity(0.2)
               : Colors.grey.shade50,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-              color: theme.colorScheme.outline.withOpacity(0.4), 
-              width: 1.5,
-          ),
-          // 🟢 ADDED: Subtle border glow to match the active banner
-          boxShadow: [
-            BoxShadow(
-              color: theme.colorScheme.primary.withOpacity(0.08),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            )
-          ],
+              color: theme.colorScheme.outline.withOpacity(0.4), width: 1.5),
         ),
         child: Row(
           children: [
             Container(
-              padding: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(10),
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: Icon(Icons.assignment_late_outlined, 
-                  color: theme.colorScheme.primary, size: 28),
+              child: Image.asset('assets/logo/logo.png',
+                  width: 32, height: 32, fit: BoxFit.contain),
             ),
             const SizedBox(width: 16),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    "No Active Proposal",
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold, 
-                        fontSize: 15,
-                        color: theme.colorScheme.primary),
-                  ),
+                  Text('No Active Proposal',
+                      style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: theme.colorScheme.primary)),
                   const SizedBox(height: 4),
                   Text(
-                    "Submit a project proposal below to view your assigned supervisor and schedule.",
+                    'Submit a project proposal below to view your assigned supervisor and schedule.',
                     style: TextStyle(
-                        fontSize: 12, 
+                        fontSize: 12,
                         color: theme.colorScheme.onSurfaceVariant,
                         height: 1.3),
                   ),
@@ -315,43 +309,62 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
       );
     }
 
-    // --- Existing logic for when a proposal DOES exist ---
-    final String status = (proposal['status'] ?? '').toString().toLowerCase();
+    final String status =
+        (proposal['status'] ?? '').toString().toLowerCase();
     final bool isApproved = status == 'approved';
-    final bool isPending = status == 'pending';
-    final bool isRejected = status == 'rejected';
 
     final Color emeraldGreen = const Color(0xFF10B981);
     final Color pendingGold = Colors.orange.shade700;
     final Color rejectedRed = Colors.red.shade600;
-    
-    final Color statusColor = isApproved 
-        ? emeraldGreen 
-        : (isPending 
-            ? pendingGold 
-            : (isRejected ? rejectedRed : theme.colorScheme.primary));
-    
-    final Color bgColor = theme.brightness == Brightness.dark 
-        ? theme.colorScheme.surfaceVariant.withOpacity(0.5) 
+
+    final Color statusColor = status == 'approved'
+        ? emeraldGreen
+        : status == 'pending'
+            ? pendingGold
+            : status == 'rejected'
+                ? rejectedRed
+                : theme.colorScheme.primary;
+
+    final Color bgColor = theme.brightness == Brightness.dark
+        ? theme.colorScheme.surfaceVariant.withOpacity(0.5)
         : Colors.white;
 
+    // Resolve course code
     String? courseCode;
-    if (proposal['course'] is Map) courseCode = proposal['course']['courseCode'];
-
-    final dynamic supervisor = proposal['assignedSupervisor'];
-    final String? defenseDate = proposal['defenseDate'];
-
-    String supName = 'TBA';
-    if (supervisor is Map) {
-      supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'Assigned';
-    } else if (supervisor != null && dp.allSupervisors != null) {
-      final foundSup = dp.allSupervisors!.firstWhere((s) => s['_id']?.toString() == supervisor.toString(), orElse: () => null);
-      if (foundSup != null) supName = (foundSup['name'] ?? foundSup['abbreviation'] ?? 'Assigned').toString();
+    if (proposal['course'] is Map) {
+      courseCode = proposal['course']['courseCode'];
+    } else {
+      final searchId = proposal['course']?.toString();
+      if (searchId != null && dp.allCourses != null) {
+        final found = dp.allCourses!.firstWhere(
+          (c) => c['_id']?.toString() == searchId,
+          orElse: () => null,
+        );
+        courseCode = found?['courseCode'];
+      }
     }
 
-    String formattedDate = "TBA";
-    if (defenseDate != null) {
-      final localDate = DateTime.parse(defenseDate).toLocal();
+    // Resolve supervisor name
+    final dynamic supervisor = proposal['assignedSupervisor'];
+    String supName = 'TBA';
+    if (supervisor is Map) {
+      supName = supervisor['abbreviation'] ?? supervisor['name'] ?? 'TBA';
+    } else if (supervisor != null && dp.allSupervisors != null) {
+      final found = dp.allSupervisors!.firstWhere(
+        (s) => s['_id']?.toString() == supervisor.toString(),
+        orElse: () => null,
+      );
+      if (found != null) {
+        supName =
+            (found['name'] ?? found['abbreviation'] ?? 'TBA').toString();
+      }
+    }
+
+    // Format defense date
+    String formattedDate = 'TBA';
+    if (proposal['defenseDate'] != null) {
+      final localDate =
+          DateTime.parse(proposal['defenseDate']).toLocal();
       formattedDate = DateFormat('dd MMM, hh:mm a').format(localDate);
     }
 
@@ -361,13 +374,11 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: statusColor.withOpacity(0.5), width: 1.5),
-        // Active banner's existing shadow
         boxShadow: [
           BoxShadow(
-            color: statusColor.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
+              color: statusColor.withOpacity(0.1),
+              blurRadius: 10,
+              offset: const Offset(0, 4))
         ],
       ),
       child: Column(
@@ -378,44 +389,45 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
               Expanded(
                 flex: 2,
                 child: _buildInfoChip(
-                  context: context,
                   icon: Icons.book_rounded,
-                  label: "Course",
-                  value: courseCode ?? "N/A",
-                  color: const Color(0xFF2563EB), 
+                  label: 'Course',
+                  value: courseCode ?? 'N/A',
+                  color: const Color(0xFF2563EB),
                 ),
               ),
-              if (isApproved || defenseDate != null) ...[
+              if (isApproved || proposal['defenseDate'] != null) ...[
                 const SizedBox(width: 12),
                 Expanded(
                   flex: 3,
                   child: _buildInfoChip(
-                    context: context,
                     icon: Icons.event_available_rounded,
-                    label: "Defense",
+                    label: 'Defense',
                     value: formattedDate,
-                    color: const Color(0xFFEA580C), 
+                    color: const Color(0xFFEA580C),
                   ),
                 ),
-              ]
+              ],
             ],
           ),
           const SizedBox(height: 12),
           _buildInfoChip(
-            context: context,
             icon: Icons.person_pin_rounded,
-            label: "Supervisor",
+            label: 'Supervisor',
             value: supName,
-            color: const Color(0xFF7C3AED), 
+            color: const Color(0xFF7C3AED),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoChip({required BuildContext context, required IconData icon, required String label, required String value, required Color color}) {
+  Widget _buildInfoChip({
+    required IconData icon,
+    required String label,
+    required String value,
+    required Color color,
+  }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -437,7 +449,8 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color:
+                      isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -450,7 +463,7 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
                   color: isDark ? Colors.white : Colors.black87,
                 ),
                 maxLines: 1,
-                overflow: TextOverflow.ellipsis, 
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
@@ -465,7 +478,9 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _AnimatedStudentCard(
-          icon: canSubmit ? Icons.upload_file_rounded : Icons.lock_clock_rounded,
+          icon: canSubmit
+              ? Icons.upload_file_rounded
+              : Icons.lock_clock_rounded,
           title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
           action: _getSubmissionStatusText(deadline),
           actionColor: _getSubmissionStatusColor(deadline),
@@ -519,6 +534,7 @@ Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
   }
 }
 
+// ── Animated card widget (unchanged) ────────────────────────────────────────
 class _AnimatedStudentCard extends StatefulWidget {
   final IconData icon;
   final String title;
@@ -557,8 +573,9 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
     return Opacity(
       opacity: widget.isDisabled ? 0.6 : 1.0,
       child: GestureDetector(
-        onTapDown:
-            widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
+        onTapDown: widget.isDisabled
+            ? null
+            : (_) => setState(() => _isPressed = true),
         onTapUp: widget.isDisabled
             ? null
             : (_) {
@@ -574,72 +591,93 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
             decoration: BoxDecoration(
               color: widget.bgColor,
               borderRadius: BorderRadius.circular(16),
-              boxShadow: widget.isDisabled || _isPressed ? [] : [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8, offset: const Offset(0, 4))],
-              border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+              boxShadow: widget.isDisabled || _isPressed
+                  ? []
+                  : [
+                      BoxShadow(
+                          color: Colors.black.withOpacity(0.1),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4))
+                    ],
+              border: Border.all(
+                  color: theme.colorScheme.outline.withOpacity(0.3)),
             ),
             padding: EdgeInsets.all(widget.isProminent ? 24.0 : 20.0),
-            child: widget.isCompact ? _buildCompactContent() : _buildStandardContent(),
+            child: widget.isCompact
+                ? _buildCompactContent()
+                : _buildStandardContent(),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildCompactContent() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildAnimatedIcon(),
-        const SizedBox(height: 16),
-        Text(widget.title, style: const TextStyle(fontSize: 16, color: Colors.white, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 4),
-        Text(widget.action, style: TextStyle(fontSize: 12, color: widget.actionColor ?? Colors.white70)),
-      ],
-    );
-  }
+  Widget _buildCompactContent() => Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _buildAnimatedIcon(),
+          const SizedBox(height: 16),
+          Text(widget.title,
+              style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold)),
+          const SizedBox(height: 4),
+          Text(widget.action,
+              style: TextStyle(
+                  fontSize: 12,
+                  color: widget.actionColor ?? Colors.white70)),
+        ],
+      );
 
-  Widget _buildStandardContent() {
-    return Row(
-      children: <Widget>[
-        _buildAnimatedIcon(),
-        const SizedBox(width: 20),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(widget.title, style: TextStyle(fontSize: widget.isProminent ? 20 : 18, fontWeight: FontWeight.bold, color: Colors.white)),
-              const SizedBox(height: 6),
-              Text(
-                widget.action,
-                style: TextStyle(
-                  fontSize: widget.isProminent ? 15 : 14,
-                  color: widget.actionColor ?? Colors.white70,
-                  fontWeight: widget.isProminent || widget.actionColor != null ? FontWeight.w800 : FontWeight.normal,
+  Widget _buildStandardContent() => Row(
+        children: [
+          _buildAnimatedIcon(),
+          const SizedBox(width: 20),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(widget.title,
+                    style: TextStyle(
+                        fontSize: widget.isProminent ? 20 : 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white)),
+                const SizedBox(height: 6),
+                Text(
+                  widget.action,
+                  style: TextStyle(
+                    fontSize: widget.isProminent ? 15 : 14,
+                    color: widget.actionColor ?? Colors.white70,
+                    fontWeight:
+                        widget.isProminent || widget.actionColor != null
+                            ? FontWeight.w800
+                            : FontWeight.normal,
+                  ),
                 ),
-              )
-            ],
+              ],
+            ),
           ),
-        ),
-        if (!widget.isDisabled) const Icon(Icons.arrow_forward_ios_rounded, size: 16, color: Colors.white70),
-      ],
-    );
-  }
+          if (!widget.isDisabled)
+            const Icon(Icons.arrow_forward_ios_rounded,
+                size: 16, color: Colors.white70),
+        ],
+      );
 
-  Widget _buildAnimatedIcon() {
-    return AnimatedScale(
-      scale: _isPressed ? 1.25 : 1.0,
-      duration: const Duration(milliseconds: 250),
-      curve: Curves.elasticOut,
-      child: Container(
-        padding: EdgeInsets.all(widget.isCompact ? 10 : 12),
-        decoration: BoxDecoration(
-          color: widget.iconColor.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: widget.iconColor.withOpacity(0.3)),
+  Widget _buildAnimatedIcon() => AnimatedScale(
+        scale: _isPressed ? 1.25 : 1.0,
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.elasticOut,
+        child: Container(
+          padding: EdgeInsets.all(widget.isCompact ? 10 : 12),
+          decoration: BoxDecoration(
+            color: widget.iconColor.withOpacity(0.15),
+            borderRadius: BorderRadius.circular(12),
+            border:
+                Border.all(color: widget.iconColor.withOpacity(0.3)),
+          ),
+          child: Icon(widget.icon,
+              size: widget.isCompact ? 28 : 30, color: widget.iconColor),
         ),
-        child: Icon(widget.icon,
-            size: widget.isCompact ? 28 : 30, color: widget.iconColor),
-      ),
-    );
-  }
+      );
 }
