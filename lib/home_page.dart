@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/widgets/about_app_screen.dart';
+import 'package:link_unity/features/about_app_screen.dart';
 import 'package:provider/provider.dart';
-import 'login_screen.dart';
+import 'authentication/login_screen.dart';
 import 'theme/theme_provider.dart';
 import 'providers/auth_provider.dart'; // 🟢 IMPORT ADDED
 import 'student/student_dash.dart';   // 🟢 IMPORT ADDED
