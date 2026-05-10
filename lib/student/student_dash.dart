@@ -182,13 +182,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildTeamStatusBadge(Map<String, dynamic>? proposal, DataProvider dp) {
+  Widget _buildTeamStatusBadge(
+      Map<String, dynamic>? proposal, DataProvider dp) {
     // Show nothing while the very first load is happening
     if (dp.isLoadingMyTeam && dp.myTeam == null) return const SizedBox.shrink();
 
     final bool hasTeam = proposal != null;
-    final String status =
-        (proposal?['status'] ?? '').toString().toLowerCase();
+    final String status = (proposal?['status'] ?? '').toString().toLowerCase();
 
     final bool isApproved = status == 'approved';
     final bool isPending = status == 'pending';
@@ -309,8 +309,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       );
     }
 
-    final String status =
-        (proposal['status'] ?? '').toString().toLowerCase();
+    final String status = (proposal['status'] ?? '').toString().toLowerCase();
     final bool isApproved = status == 'approved';
 
     final Color emeraldGreen = const Color(0xFF10B981);
@@ -355,16 +354,14 @@ class _StudentDashboardState extends State<StudentDashboard> {
         orElse: () => null,
       );
       if (found != null) {
-        supName =
-            (found['name'] ?? found['abbreviation'] ?? 'TBA').toString();
+        supName = (found['name'] ?? found['abbreviation'] ?? 'TBA').toString();
       }
     }
 
     // Format defense date
     String formattedDate = 'TBA';
     if (proposal['defenseDate'] != null) {
-      final localDate =
-          DateTime.parse(proposal['defenseDate']).toLocal();
+      final localDate = DateTime.parse(proposal['defenseDate']).toLocal();
       formattedDate = DateFormat('dd MMM, hh:mm a').format(localDate);
     }
 
@@ -449,8 +446,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
-                  color:
-                      isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -478,9 +474,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _AnimatedStudentCard(
-          icon: canSubmit
-              ? Icons.upload_file_rounded
-              : Icons.lock_clock_rounded,
+          icon:
+              canSubmit ? Icons.upload_file_rounded : Icons.lock_clock_rounded,
           title: canSubmit ? 'Submit Proposal' : 'Submissions Closed',
           action: _getSubmissionStatusText(deadline),
           actionColor: _getSubmissionStatusColor(deadline),
@@ -573,9 +568,8 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
     return Opacity(
       opacity: widget.isDisabled ? 0.6 : 1.0,
       child: GestureDetector(
-        onTapDown: widget.isDisabled
-            ? null
-            : (_) => setState(() => _isPressed = true),
+        onTapDown:
+            widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
         onTapUp: widget.isDisabled
             ? null
             : (_) {
@@ -599,8 +593,8 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
                           blurRadius: 8,
                           offset: const Offset(0, 4))
                     ],
-              border: Border.all(
-                  color: theme.colorScheme.outline.withOpacity(0.3)),
+              border:
+                  Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
             ),
             padding: EdgeInsets.all(widget.isProminent ? 24.0 : 20.0),
             child: widget.isCompact
@@ -625,8 +619,7 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
           const SizedBox(height: 4),
           Text(widget.action,
               style: TextStyle(
-                  fontSize: 12,
-                  color: widget.actionColor ?? Colors.white70)),
+                  fontSize: 12, color: widget.actionColor ?? Colors.white70)),
         ],
       );
 
@@ -649,10 +642,9 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
                   style: TextStyle(
                     fontSize: widget.isProminent ? 15 : 14,
                     color: widget.actionColor ?? Colors.white70,
-                    fontWeight:
-                        widget.isProminent || widget.actionColor != null
-                            ? FontWeight.w800
-                            : FontWeight.normal,
+                    fontWeight: widget.isProminent || widget.actionColor != null
+                        ? FontWeight.w800
+                        : FontWeight.normal,
                   ),
                 ),
               ],
@@ -673,8 +665,7 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
           decoration: BoxDecoration(
             color: widget.iconColor.withOpacity(0.15),
             borderRadius: BorderRadius.circular(12),
-            border:
-                Border.all(color: widget.iconColor.withOpacity(0.3)),
+            border: Border.all(color: widget.iconColor.withOpacity(0.3)),
           ),
           child: Icon(widget.icon,
               size: widget.isCompact ? 28 : 30, color: widget.iconColor),

@@ -40,7 +40,7 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
             Icon(Icons.info_outline_rounded,
                 color: Theme.of(context).colorScheme.primary),
             const SizedBox(width: 8),
-            const Text("How to Request a Team"),
+            const Text("Request a Team"),
           ],
         ),
         content: const SingleChildScrollView(
