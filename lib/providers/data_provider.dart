@@ -197,7 +197,6 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_myProposals == null) _myProposals = [];
-      if (forceRefresh) CustomSnackBar.showError('Failed to refresh your proposals.');
     } finally {
       _isLoadingMyProposals = false;
       notifyListeners();
