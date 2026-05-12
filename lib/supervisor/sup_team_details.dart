@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart'; // 🟢 ADDED: Required for clicking links
 import '../theme/app_theme.dart';
 
 class SupervisorTeamDetailsScreen extends StatelessWidget {
@@ -143,13 +144,28 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
                   const Icon(Icons.link, color: Colors.blueAccent),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text(
-                      description,
-                      style: const TextStyle(
-                          color: Colors.blueAccent,
-                          decoration: TextDecoration.underline),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
+                    // 🟢 ADDED: GestureDetector with URL launching logic
+                    child: GestureDetector(
+                      onTap: () async {
+                        if (description != 'No description provided' && description.isNotEmpty) {
+                          final uri = Uri.tryParse(description);
+                          final launchUri = (uri != null && !uri.hasScheme) 
+                              ? Uri.tryParse('https://$description') 
+                              : uri;
+                              
+                          if (launchUri != null && await canLaunchUrl(launchUri)) {
+                            await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+                          }
+                        }
+                      },
+                      child: Text(
+                        description,
+                        style: const TextStyle(
+                            color: Colors.blueAccent,
+                            decoration: TextDecoration.underline),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                   ),
                 ],

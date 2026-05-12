@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart'; 
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 NEW IMPORT
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
 import '../providers/data_provider.dart'; 
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -142,7 +142,6 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
               );
             }
 
-            // 🟢 NEW: AnimationLimiter prevents the app from animating things off-screen
             return AnimationLimiter(
               child: ListView.builder(
                 itemCount: _processedSups.length,
@@ -152,11 +151,9 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
                   final name = _fullName(s);
                   final designation = _designation(s);
 
-                  // 🟢 NEW: Configure the stagger delay based on the item's index
                   return AnimationConfiguration.staggeredList(
                     position: index,
                     duration: const Duration(milliseconds: 375),
-                    // 🟢 NEW: Slide up vertically while fading in
                     child: SlideAnimation(
                       verticalOffset: 50.0,
                       child: FadeInAnimation(
@@ -229,7 +226,7 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
           return Container(
             margin: const EdgeInsets.only(bottom: 12),
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12), 
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: Colors.white,
               borderRadius: AppRadii.card, 
             ),

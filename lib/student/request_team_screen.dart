@@ -8,7 +8,6 @@ import 'package:shimmer/shimmer.dart';
 import '../api services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
-import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
 import '../widgets/custom_snackbar.dart';
 
@@ -48,7 +47,6 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing any proposal documents or portfolio work. Ensure link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            // 🟢 UPDATED: 1 or 2 members
             "• Fill in your details. You can submit alone (1 member) or add 1 additional teammate (2 members).\n\n"
             "• Note: You can only submit one request/proposal per course.",
             style: TextStyle(height: 1.5),
@@ -286,13 +284,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
   @override
   void initState() {
     super.initState();
-    // Auto-fill user data instantly
-    final user = Provider.of<AuthProvider>(context, listen: false).user;
-    if (user != null) {
-      _memberControllers[0]['name']!.text = user.name;
-      _memberControllers[0]['id']!.text = user.studentId ?? '';
-      _memberControllers[0]['email']!.text = user.email;
-    }
+    // 🟢 Autofill logic removed from here
   }
 
   @override
@@ -329,7 +321,6 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
 
     setState(() => _submitState = SubmitState.loading);
 
-    // WITH this:
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     int memberCount = _showSecondMember ? 2 : 1;

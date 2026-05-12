@@ -3,6 +3,7 @@ import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/notification_bell.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart'; // 🟢 ADDED: Required for clicking links
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../providers/data_provider.dart';
@@ -115,17 +116,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           // Resolve supervisor name
           final dynamic supervisor = proposal['assignedSupervisor'];
           String supName = 'Not Assigned';
+          
           if (supervisor is Map) {
-            supName =
-                supervisor['abbreviation'] ?? supervisor['name'] ?? 'Not Assigned';
+            // 🟢 FIXED: Swapped 'name' to be checked BEFORE 'abbreviation'
+            supName = supervisor['name'] ?? supervisor['abbreviation'] ?? 'Not Assigned';
           } else if (supervisor != null && dp.allSupervisors != null) {
             final found = dp.allSupervisors!.firstWhere(
               (s) => s['_id']?.toString() == supervisor.toString(),
               orElse: () => null,
             );
             if (found != null) {
-              supName = (found['name'] ?? found['abbreviation'] ?? 'Not Assigned')
-                  .toString();
+              supName = (found['name'] ?? found['abbreviation'] ?? 'Not Assigned').toString();
             }
           }
 
@@ -225,8 +226,10 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                       const SizedBox(height: 8),
                       _buildInfoRow('Assigned Supervisor', supName),
                       const SizedBox(height: 12),
-                      _buildInfoRow('Description / Link',
-                          proposal['description'] ?? 'No link provided'),
+                      
+                      // 🟢 UPDATED: Passing isLink: true so it triggers the clickable logic
+                      _buildInfoRow('Description/Link',
+                          proposal['description'] ?? 'No link provided', isLink: true),
                     ],
                   ),
                 ),
@@ -411,17 +414,44 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  // 🟢 UPDATED: Now supports clickable links if isLink is passed as true
+  Widget _buildInfoRow(String label, String value, {bool isLink = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(label,
             style: const TextStyle(fontSize: 12, color: Colors.white70)),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white)),
+        const SizedBox(height: 4),
+        if (isLink && value != 'No link provided' && value.isNotEmpty)
+          GestureDetector(
+            onTap: () async {
+              final uri = Uri.tryParse(value);
+              // Fallback for valid URLs that don't explicitly start with https://
+              final launchUri = (uri != null && !uri.hasScheme) 
+                  ? Uri.tryParse('https://$value') 
+                  : uri;
+                  
+              if (launchUri != null && await canLaunchUrl(launchUri)) {
+                await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+              }
+            },
+            child: Text(
+              value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.lightBlueAccent, // Makes it look clickable
+                  decoration: TextDecoration.underline,
+                  decorationColor: Colors.lightBlueAccent,
+              ),
+            ),
+          )
+        else
+          Text(value,
+              style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white)),
       ],
     );
   }
