@@ -104,27 +104,62 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(height: 90, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+                Container(
+                    height: 90,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16))),
                 const SizedBox(height: 30),
-                Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                Container(
+                    height: 55,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8))),
                 const SizedBox(height: 16),
-                Container(height: 55, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8))),
+                Container(
+                    height: 55,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(8))),
                 const SizedBox(height: 24),
                 Container(height: 20, width: 150, color: Colors.white),
                 const SizedBox(height: 10),
                 Row(
                   children: [
-                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    Expanded(
+                        child: Container(
+                            height: 55,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8)))),
                     const SizedBox(width: 8),
-                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    Expanded(
+                        child: Container(
+                            height: 55,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8)))),
                     const SizedBox(width: 8),
-                    Expanded(child: Container(height: 55, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(8)))),
+                    Expanded(
+                        child: Container(
+                            height: 55,
+                            decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(8)))),
                   ],
                 ),
                 const SizedBox(height: 30),
                 Container(height: 20, width: 120, color: Colors.white),
                 const SizedBox(height: 10),
-                Container(height: 250, width: double.infinity, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16))),
+                Container(
+                    height: 250,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16))),
               ],
             ),
           ),
@@ -144,7 +179,9 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
           actions: [
             IconButton(
               icon: Icon(
-                themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+                themeProvider.isDarkMode
+                    ? Icons.light_mode_rounded
+                    : Icons.dark_mode_rounded,
               ),
               onPressed: themeProvider.toggleTheme,
             ),
@@ -156,11 +193,14 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
 
     Set<String> submittedCourseIds = {};
     if (dp.myProposals != null) {
-      submittedCourseIds = dp.myProposals!.map((p) {
-        final courseData = p['course'];
-        if (courseData is Map) return courseData['_id']?.toString();
-        return courseData?.toString();
-      }).whereType<String>().toSet();
+      submittedCourseIds = dp.myProposals!
+          .map((p) {
+            final courseData = p['course'];
+            if (courseData is Map) return courseData['_id']?.toString();
+            return courseData?.toString();
+          })
+          .whereType<String>()
+          .toSet();
     }
 
     return Scaffold(
@@ -174,14 +214,19 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
         actions: [
           IconButton(
             icon: Icon(
-              themeProvider.isDarkMode ? Icons.light_mode_rounded : Icons.dark_mode_rounded,
+              themeProvider.isDarkMode
+                  ? Icons.light_mode_rounded
+                  : Icons.dark_mode_rounded,
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
-            tooltip: themeProvider.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+            tooltip: themeProvider.isDarkMode
+                ? 'Switch to light mode'
+                : 'Switch to dark mode',
           ),
           IconButton(
-            icon: Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
+            icon: Icon(Icons.info_outline_rounded,
+                color: theme.colorScheme.primary),
             onPressed: _showInstructions,
             tooltip: 'Instructions',
           ),
@@ -266,12 +311,14 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
-      CustomSnackBar.showError('Please select a course at the top of the form.');
+      CustomSnackBar.showError(
+          'Please select a course at the top of the form.');
       return;
     }
 
     if (widget.submittedCourseIds.contains(_selectedCourseId)) {
-      CustomSnackBar.showError('You have already submitted a proposal/request for this course.');
+      CustomSnackBar.showError(
+          'You have already submitted a proposal/request for this course.');
       return;
     }
 
@@ -282,10 +329,11 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
 
     setState(() => _submitState = SubmitState.loading);
 
+    // WITH this:
     List<Map<String, dynamic>> members = [];
     Set<String> uniqueIds = {};
     int memberCount = _showSecondMember ? 2 : 1;
-    
+
     for (int i = 0; i < memberCount; i++) {
       String id = _memberControllers[i]['id']!.text.trim();
       String name = _memberControllers[i]['name']!.text.trim();
@@ -293,9 +341,14 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       String email = _memberControllers[i]['email']!.text.trim();
       String mobile = _memberControllers[i]['mobile']!.text.trim();
 
-      if (id.isEmpty || name.isEmpty || cgpaRaw.isEmpty || email.isEmpty || mobile.isEmpty) {
+      if (id.isEmpty ||
+          name.isEmpty ||
+          cgpaRaw.isEmpty ||
+          email.isEmpty ||
+          mobile.isEmpty) {
         setState(() => _submitState = SubmitState.idle);
-        CustomSnackBar.showError('Please complete all fields for Member ${i + 1}.');
+        CustomSnackBar.showError(
+            'Please complete all fields for Member ${i + 1}.');
         return;
       }
 
@@ -313,6 +366,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       }
 
       uniqueIds.add(id);
+
       members.add({
         'name': name,
         'studentId': id,
@@ -340,29 +394,29 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       if (mounted) {
         final dp = Provider.of<DataProvider>(context, listen: false);
         dp.fetchMyProposalsIfNeeded(forceRefresh: true);
-        dp.fetchTeamsIfNeeded(forceRefresh: true); 
+        dp.fetchTeamsIfNeeded(forceRefresh: true);
 
         setState(() => _submitState = SubmitState.success);
-        
+
         CustomSnackBar.showSuccess('Team Request Submitted Successfully!');
-            
+
         await Future.delayed(const Duration(seconds: 1));
-        
-        if (mounted) Navigator.pop(context); 
+
+        if (mounted) Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
-    } 
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bool isAlreadySubmitted = _selectedCourseId != null && 
-                                    widget.submittedCourseIds.contains(_selectedCourseId);
+    final bool isAlreadySubmitted = _selectedCourseId != null &&
+        widget.submittedCourseIds.contains(_selectedCourseId);
 
     return AnimationLimiter(
       child: SingleChildScrollView(
@@ -386,7 +440,9 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                     border: Border.all(
                         color: _selectedCourseId == null
                             ? theme.colorScheme.primary.withOpacity(0.5)
-                            : (isAlreadySubmitted ? Colors.redAccent.withOpacity(0.5) : Colors.green.withOpacity(0.5)), 
+                            : (isAlreadySubmitted
+                                ? Colors.redAccent.withOpacity(0.5)
+                                : Colors.green.withOpacity(0.5)),
                         width: 2),
                   ),
                   child: Column(
@@ -397,10 +453,14 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                           Icon(
                             _selectedCourseId == null
                                 ? Icons.school_rounded
-                                : (isAlreadySubmitted ? Icons.block_rounded : Icons.check_circle_rounded),
+                                : (isAlreadySubmitted
+                                    ? Icons.block_rounded
+                                    : Icons.check_circle_rounded),
                             color: _selectedCourseId == null
                                 ? theme.colorScheme.primary
-                                : (isAlreadySubmitted ? Colors.redAccent : Colors.green),
+                                : (isAlreadySubmitted
+                                    ? Colors.redAccent
+                                    : Colors.green),
                             size: 22,
                           ),
                           const SizedBox(width: 8),
@@ -428,13 +488,15 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                           filled: true,
                           fillColor: theme.colorScheme.surface,
                         ),
-                        validator: (value) => value == null ? 'Required to submit' : null,
-                        items:
-                            widget.courses.map<DropdownMenuItem<String>>((course) {
+                        validator: (value) =>
+                            value == null ? 'Required to submit' : null,
+                        items: widget.courses
+                            .map<DropdownMenuItem<String>>((course) {
                           return DropdownMenuItem<String>(
                             value: course['_id'],
                             child: Text(course['courseCode'],
-                                style: const TextStyle(fontWeight: FontWeight.w600)),
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.w600)),
                           );
                         }).toList(),
                         onChanged: (newValue) {
@@ -448,25 +510,28 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                           padding: EdgeInsets.only(top: 8.0),
                           child: Text(
                             '⚠️ You have already submitted a proposal for this course.',
-                            style: TextStyle(color: Colors.redAccent, fontSize: 13, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: Colors.redAccent,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold),
                           ),
                         )
                     ],
                   ),
                 ),
                 const SizedBox(height: 30),
-
                 TextFormField(
                     controller: _titleController,
-                    decoration: const InputDecoration(labelText: 'Project Title'),
+                    decoration:
+                        const InputDecoration(labelText: 'Project Title'),
                     validator: (v) => v!.isEmpty ? 'Required' : null),
                 const SizedBox(height: 16),
                 TextFormField(
                     controller: _linkController,
-                    decoration: const InputDecoration(labelText: 'Google Drive Link'),
+                    decoration:
+                        const InputDecoration(labelText: 'Google Drive Link'),
                     validator: (v) => v!.isEmpty ? 'Required' : null),
                 const SizedBox(height: 24),
-
                 Text('Preferred Supervisors',
                     style: TextStyle(
                         fontSize: 16,
@@ -480,7 +545,6 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                   const SizedBox(width: 8),
                   _buildSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
                 ]),
-
                 const SizedBox(height: 30),
                 Text('Team Members',
                     style: TextStyle(
@@ -488,25 +552,24 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary)),
                 const SizedBox(height: 10),
-
-                _buildMemberCard(0), 
-
-                if (_showSecondMember)
-                  _buildMemberCard(1),
-
+                _buildMemberCard(0),
+                if (_showSecondMember) _buildMemberCard(1),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     if (!_showSecondMember)
                       TextButton.icon(
-                        onPressed: () => setState(() => _showSecondMember = true),
-                        icon: const Icon(Icons.group_add_rounded, color: Color(0xFF245E63)),
+                        onPressed: () =>
+                            setState(() => _showSecondMember = true),
+                        icon: const Icon(Icons.group_add_rounded,
+                            color: Color(0xFF245E63)),
                         label: const Text('Add 2nd Member',
-                                style: TextStyle(color: Color(0xFF245E63), fontWeight: FontWeight.bold)),
+                            style: TextStyle(
+                                color: Color(0xFF245E63),
+                                fontWeight: FontWeight.bold)),
                       )
                     else
                       const SizedBox.shrink(),
-
                     if (_showSecondMember)
                       TextButton.icon(
                         onPressed: () => setState(() {
@@ -515,20 +578,23 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                           }
                           _showSecondMember = false;
                         }),
-                        icon: Icon(Icons.person_remove_rounded, color: theme.colorScheme.error),
+                        icon: Icon(Icons.person_remove_rounded,
+                            color: theme.colorScheme.error),
                         label: Text('Remove 2nd Member',
-                            style: TextStyle(color: theme.colorScheme.error, fontWeight: FontWeight.bold)),
+                            style: TextStyle(
+                                color: theme.colorScheme.error,
+                                fontWeight: FontWeight.bold)),
                       ),
                   ],
                 ),
-
                 const SizedBox(height: 30),
-                
                 SizedBox(
                   height: 54,
                   child: AnimatedSubmitButton(
                     state: _submitState,
-                    title: isAlreadySubmitted ? 'Already Submitted' : 'Submit Request',
+                    title: isAlreadySubmitted
+                        ? 'Already Submitted'
+                        : 'Submit Request',
                     onPressed: isAlreadySubmitted ? null : _submitRequest,
                     backgroundColor: const Color(0xFF245E63),
                   ),
@@ -548,7 +614,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       child: DropdownButtonFormField<String>(
         value: value,
         isExpanded: true,
-        menuMaxHeight: 300, 
+        menuMaxHeight: 300,
         decoration: InputDecoration(
           labelText: 'Sup $index',
           contentPadding:
@@ -582,33 +648,36 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    final cardBackgroundColor = isDarkMode 
-        ? const Color(0xFF245E63) 
-        : theme.colorScheme.primary.withOpacity(0.08); 
-        
-    final inputFillColor = isDarkMode 
-        ? Colors.white10 
-        : theme.colorScheme.surface;
+    final cardBackgroundColor = isDarkMode
+        ? const Color(0xFF245E63)
+        : theme.colorScheme.primary.withOpacity(0.08);
+
+    final inputFillColor =
+        isDarkMode ? Colors.white10 : theme.colorScheme.surface;
 
     final textColor = isDarkMode ? Colors.white : theme.colorScheme.onSurface;
-    final labelColor = isDarkMode ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
-    final activeLabelColor = isDarkMode ? Colors.white : theme.colorScheme.primary;
+    final labelColor =
+        isDarkMode ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
+    final activeLabelColor =
+        isDarkMode ? Colors.white : theme.colorScheme.primary;
 
     final textStyle = TextStyle(color: textColor, fontWeight: FontWeight.w500);
-    final labelStyle = TextStyle(color: labelColor, fontSize: 13, fontWeight: FontWeight.w500);
-    final floatingLabelStyle = TextStyle(color: activeLabelColor, fontWeight: FontWeight.bold);
+    final labelStyle =
+        TextStyle(color: labelColor, fontSize: 13, fontWeight: FontWeight.w500);
+    final floatingLabelStyle =
+        TextStyle(color: activeLabelColor, fontWeight: FontWeight.bold);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 15),
       padding: const EdgeInsets.all(15),
       decoration: BoxDecoration(
         color: cardBackgroundColor,
-        borderRadius: AppRadii.card, 
+        borderRadius: AppRadii.card,
         border: Border.all(
             color: isLeader
                 ? theme.colorScheme.primary.withOpacity(0.5)
                 : theme.colorScheme.outline.withOpacity(0.2)),
-        boxShadow: isDarkMode ? AppShadows.level1 : [], 
+        boxShadow: isDarkMode ? AppShadows.level1 : [],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -622,16 +691,17 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
           const SizedBox(height: 10),
           TextFormField(
             controller: _memberControllers[index]['name'],
-            style: textStyle, 
+            style: textStyle,
             decoration: InputDecoration(
-              labelText: 'Name', 
-              labelStyle: labelStyle,
-              floatingLabelStyle: floatingLabelStyle,
-              isDense: true, 
-              filled: true, 
-              fillColor: inputFillColor, 
-              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
-            ),
+                labelText: 'Name',
+                labelStyle: labelStyle,
+                floatingLabelStyle: floatingLabelStyle,
+                isDense: true,
+                filled: true,
+                fillColor: inputFillColor,
+                border: const OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.all(Radius.circular(8)))),
           ),
           const SizedBox(height: 8),
           Row(children: [
@@ -640,14 +710,15 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
               controller: _memberControllers[index]['id'],
               style: textStyle,
               decoration: InputDecoration(
-                labelText: 'ID', 
-                labelStyle: labelStyle,
-                floatingLabelStyle: floatingLabelStyle,
-                isDense: true, 
-                filled: true, 
-                fillColor: inputFillColor, 
-                border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
-              ),
+                  labelText: 'ID',
+                  labelStyle: labelStyle,
+                  floatingLabelStyle: floatingLabelStyle,
+                  isDense: true,
+                  filled: true,
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.all(Radius.circular(8)))),
             )),
             const SizedBox(width: 8),
             Expanded(
@@ -655,14 +726,15 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
               controller: _memberControllers[index]['cgpa'],
               style: textStyle,
               decoration: InputDecoration(
-                labelText: 'CGPA', 
-                labelStyle: labelStyle,
-                floatingLabelStyle: floatingLabelStyle,
-                isDense: true, 
-                filled: true, 
-                fillColor: inputFillColor, 
-                border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
-              ),
+                  labelText: 'CGPA',
+                  labelStyle: labelStyle,
+                  floatingLabelStyle: floatingLabelStyle,
+                  isDense: true,
+                  filled: true,
+                  fillColor: inputFillColor,
+                  border: const OutlineInputBorder(
+                      borderSide: BorderSide.none,
+                      borderRadius: BorderRadius.all(Radius.circular(8)))),
             )),
           ]),
           const SizedBox(height: 8),
@@ -670,28 +742,30 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
             controller: _memberControllers[index]['email'],
             style: textStyle,
             decoration: InputDecoration(
-              labelText: 'Email', 
-              labelStyle: labelStyle,
-              floatingLabelStyle: floatingLabelStyle,
-              isDense: true, 
-              filled: true, 
-              fillColor: inputFillColor, 
-              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
-            ),
+                labelText: 'Email',
+                labelStyle: labelStyle,
+                floatingLabelStyle: floatingLabelStyle,
+                isDense: true,
+                filled: true,
+                fillColor: inputFillColor,
+                border: const OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.all(Radius.circular(8)))),
           ),
           const SizedBox(height: 8),
           TextFormField(
             controller: _memberControllers[index]['mobile'],
             style: textStyle,
             decoration: InputDecoration(
-              labelText: 'Mobile', 
-              labelStyle: labelStyle,
-              floatingLabelStyle: floatingLabelStyle,
-              isDense: true, 
-              filled: true, 
-              fillColor: inputFillColor, 
-              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
-            ),
+                labelText: 'Mobile',
+                labelStyle: labelStyle,
+                floatingLabelStyle: floatingLabelStyle,
+                isDense: true,
+                filled: true,
+                fillColor: inputFillColor,
+                border: const OutlineInputBorder(
+                    borderSide: BorderSide.none,
+                    borderRadius: BorderRadius.all(Radius.circular(8)))),
           ),
         ],
       ),
