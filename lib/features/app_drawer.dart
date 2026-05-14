@@ -1,13 +1,14 @@
-import 'dart:io';
+import 'dart:convert'; // 🟢 ADDED: For Base64 encoding/decoding
+import 'dart:typed_data'; // 🟢 ADDED: For Uint8List (cross-platform bytes)
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:path_provider/path_provider.dart';
+// 🔴 REMOVED: dart:io and path_provider as they break Web compilation
 
 import '../providers/auth_provider.dart';
-import '../providers/data_provider.dart'; // 🟢 Added DataProvider import
-import '../student/notifications_screen.dart'; // 🟢 Added Notifications Screen import
+import '../providers/data_provider.dart';
+import '../student/notifications_screen.dart';
 import '../home_page.dart';
 import '../theme/theme_provider.dart';
 import 'about_app_screen.dart';
@@ -21,7 +22,9 @@ class AppDrawer extends StatefulWidget {
 
 class _AppDrawerState extends State<AppDrawer> {
   final _storage = const FlutterSecureStorage();
-  File? _profileImage;
+  
+  // 🟢 UPDATED: Using bytes instead of a File object
+  Uint8List? _profileImageBytes;
   String _savedIdentifier = 'SUP';
 
   @override
@@ -31,13 +34,14 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Future<void> _loadInitialData() async {
-    String? imagePath = await _storage.read(key: 'profile_image_path');
+    // 🟢 UPDATED: Reading the Base64 string instead of a file path
+    String? base64Image = await _storage.read(key: 'profile_image_base64');
     String? ident = await _storage.read(key: 'login_identifier');
 
     if (mounted) {
       setState(() {
-        if (imagePath != null && File(imagePath).existsSync()) {
-          _profileImage = File(imagePath);
+        if (base64Image != null && base64Image.isNotEmpty) {
+          _profileImageBytes = base64Decode(base64Image);
         }
         if (ident != null && ident.isNotEmpty) {
           _savedIdentifier = ident.toUpperCase(); 
@@ -52,14 +56,16 @@ class _AppDrawerState extends State<AppDrawer> {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        final directory = await getApplicationDocumentsDirectory();
-        final permanentPath = '${directory.path}/profile_picture.png';
-        final savedImage = await File(pickedFile.path).copy(permanentPath);
+        // 🟢 UPDATED: Read as cross-platform bytes directly from the picker
+        final bytes = await pickedFile.readAsBytes();
 
         setState(() {
-          _profileImage = savedImage;
+          _profileImageBytes = bytes;
         });
-        await _storage.write(key: 'profile_image_path', value: permanentPath);
+        
+        // Convert to a string to save in storage so it persists across reloads
+        final base64String = base64Encode(bytes);
+        await _storage.write(key: 'profile_image_base64', value: base64String);
       }
     } catch (e) {
       debugPrint("Error picking image: $e");
@@ -71,7 +77,7 @@ class _AppDrawerState extends State<AppDrawer> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final authProvider = Provider.of<AuthProvider>(context);
-    final dp = Provider.of<DataProvider>(context); // 🟢 Listen to DataProvider for the badge
+    final dp = Provider.of<DataProvider>(context); 
     final user = authProvider.user;
 
     final name = user?.name ?? 'Unknown User';
@@ -87,7 +93,6 @@ class _AppDrawerState extends State<AppDrawer> {
         email == 'EBH' ||
         name.toUpperCase() == 'EBH';
 
-    // 🟢 Logic for the Drawer Unread Badge
     Widget? unreadBadge;
     if (dp.unreadCount > 0) {
       unreadBadge = Container(
@@ -114,7 +119,6 @@ class _AppDrawerState extends State<AppDrawer> {
       ),
       child: Column(
         children: [
-
           Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(24, 60, 24, 24),
@@ -156,13 +160,14 @@ class _AppDrawerState extends State<AppDrawer> {
                       child: CircleAvatar(
                         radius: 42,
                         backgroundColor: theme.colorScheme.surface,
-                        backgroundImage: _profileImage != null
-                            ? FileImage(_profileImage!) as ImageProvider
+                        // 🟢 UPDATED: Use MemoryImage for bytes instead of FileImage
+                        backgroundImage: _profileImageBytes != null
+                            ? MemoryImage(_profileImageBytes!) as ImageProvider
                             : (isEbrahimSir
                                 ? const AssetImage(
                                     "assets/template/crew/sir.jpeg")
                                 : null),
-                        child: _profileImage == null && !isEbrahimSir
+                        child: _profileImageBytes == null && !isEbrahimSir
                             ? Text(
                                 firstLetter,
                                 style: TextStyle(
@@ -312,7 +317,6 @@ class _AppDrawerState extends State<AppDrawer> {
                   onTap: () => themeProvider.toggleTheme(),
                 ),
                 
-                // 🟢 ADDED: A subtle divider to separate settings from alerts
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 0),
                   child: Divider(
@@ -322,14 +326,13 @@ class _AppDrawerState extends State<AppDrawer> {
                   ),
                 ),
                 
-                // 🟢 NEW: Notifications Link in the Drawer
                 _buildDrawerItem(
                   context: context,
                   icon: Icons.notifications_rounded,
                   title: "Notifications",
-                  trailing: unreadBadge, // Injects the red badge if unread > 0
+                  trailing: unreadBadge, 
                   onTap: () {
-                    Navigator.pop(context); // Close the drawer first
+                    Navigator.pop(context); 
                     Navigator.push(
                       context,
                       MaterialPageRoute(
@@ -339,11 +342,7 @@ class _AppDrawerState extends State<AppDrawer> {
                   },
                 ),
 
-               // const SizedBox(height: 16), // Extra Spacing before About App
-                
-                // ... (The rest of your About App InkWell stays exactly the same)
-
-                const SizedBox(height: 10), // Extra Spacing before About App
+                const SizedBox(height: 10), 
                 
                 InkWell(
                   onTap: () {

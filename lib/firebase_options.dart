@@ -42,12 +42,12 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: 'AIzaSyCsKKIdMZjS4-7fxzrUMIgkRekrLZYTbFY',
-    appId: '1:69294984603:web:dd4250252ecae842e5653e',
+    appId: '1:69294984603:web:56f344481f3273a7e5653e',
     messagingSenderId: '69294984603',
     projectId: 'leadunity-68950',
     authDomain: 'leadunity-68950.firebaseapp.com',
     storageBucket: 'leadunity-68950.firebasestorage.app',
-    measurementId: 'G-SPFTX2EVFT',
+    measurementId: 'G-9QK0F1YVM6',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -78,12 +78,11 @@ class DefaultFirebaseOptions {
 
   static const FirebaseOptions windows = FirebaseOptions(
     apiKey: 'AIzaSyCsKKIdMZjS4-7fxzrUMIgkRekrLZYTbFY',
-    appId: '1:69294984603:web:56f344481f3273a7e5653e',
+    appId: '1:69294984603:web:6fa49face7f42b0fe5653e',
     messagingSenderId: '69294984603',
     projectId: 'leadunity-68950',
     authDomain: 'leadunity-68950.firebaseapp.com',
     storageBucket: 'leadunity-68950.firebasestorage.app',
-    measurementId: 'G-9QK0F1YVM6',
+    measurementId: 'G-S0VLMNS8PG',
   );
-
 }

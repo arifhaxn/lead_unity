@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../api services/api_services.dart';
+import '../services/api_services.dart';
 import '../widgets/custom_snackbar.dart';
 
 class DataProvider with ChangeNotifier {

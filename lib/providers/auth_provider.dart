@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../../api services/api_services.dart';
+import '../services/api_services.dart';
 import '../../models/user_model.dart';
 import '../widgets/custom_snackbar.dart'; // 🟢 Import the custom snackbar!
 
@@ -46,7 +46,8 @@ class AuthProvider with ChangeNotifier {
       if (data['user'] != null) {
         _user = User.fromJson(data['user']);
       } else {
-        debugPrint("Missing user object structure. attempting manual construction...");
+        debugPrint(
+            "Missing user object structure. attempting manual construction...");
 
         if (data['name'] != null) {
           _user = User(
@@ -79,7 +80,7 @@ class AuthProvider with ChangeNotifier {
                 userRole = me['role'].toString().toLowerCase();
               }
               if (me['studentId'] != null) {
-                extractedStudentId = me['studentId'].toString(); 
+                extractedStudentId = me['studentId'].toString();
               }
               if (me['designation'] != null) {
                 extractedDesignation = me['designation'].toString();
@@ -97,7 +98,8 @@ class AuthProvider with ChangeNotifier {
               designation: extractedDesignation,
             );
           } catch (e) {
-            _user = User(id: 'temp', name: 'User', email: identifier, role: 'unknown');
+            _user = User(
+                id: 'temp', name: 'User', email: identifier, role: 'unknown');
           }
         }
       }
@@ -115,7 +117,6 @@ class AuthProvider with ChangeNotifier {
       }
 
       _setLoading(false);
-      
     } catch (e) {
       _setLoading(false);
       // 🟢 Show Error on Login Failure (and clean up the text)
@@ -125,7 +126,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   //Registration
-  Future<void> register(String name, String email, String password, String sid, String batch, String section, String otp) async {
+  Future<void> register(String name, String email, String password, String sid,
+      String batch, String section, String otp) async {
     _setLoading(true);
     try {
       final registrationData = {
@@ -180,10 +182,9 @@ class AuthProvider with ChangeNotifier {
 
       notifyListeners();
       _setLoading(false);
-      
+
       // 🟢 Show Success on Registration
       CustomSnackBar.showSuccess('Account created successfully!');
-      
     } catch (e) {
       _setLoading(false);
       // 🟢 Show Error on Registration Failure
@@ -209,9 +210,10 @@ class AuthProvider with ChangeNotifier {
     try {
       await _apiService.logout();
     } catch (e) {
-      debugPrint("API Logout error: $e"); // Fail silently on API side if network is down
+      debugPrint(
+          "API Logout error: $e"); // Fail silently on API side if network is down
     }
-    
+
     await _storage.delete(key: 'user_data');
     await _storage.delete(key: 'jwt_token'); // Make sure to delete token too!
     _user = null;

@@ -4,6 +4,7 @@ import 'package:link_unity/widgets/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_messaging/firebase_messaging.dart'; // 🟢 ADDED for notifications
 import 'firebase_options.dart'; 
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart'; 
@@ -12,6 +13,13 @@ import 'theme/theme_provider.dart';
 import 'widgets/network_overlay.dart'; 
 import 'widgets/custom_snackbar.dart';
 
+// 🟢 ADDED: This MUST be a top-level function (outside of any classes)
+@pragma('vm:entry-point')
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  print("Background message received: ${message.messageId}");
+}
+
 void main() async { 
   WidgetsFlutterBinding.ensureInitialized();
 
@@ -19,6 +27,9 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // 🟢 ADDED: Tell Firebase to listen for background messages
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
@@ -49,7 +60,7 @@ class LeadUnityApp extends StatelessWidget {
       builder: (context, themeProvider, _) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'LeadUnity Portal',
+          title: 'LeadUnity',
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,

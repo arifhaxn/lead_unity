@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:link_unity/services/notification_service.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
@@ -25,6 +26,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   @override
   void initState() {
     super.initState();
+    NotificationService.setupPushNotifications();
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
@@ -107,9 +109,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
   // 🟢 UPDATED: Added refresh callback when returning from Team Info
   void _navigateToTeamInfo() {
     Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (_) => const TeamInfoScreen())
-    ).then((_) {
+            context, MaterialPageRoute(builder: (_) => const TeamInfoScreen()))
+        .then((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchMyTeamIfNeeded(forceRefresh: true);
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
@@ -118,10 +119,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   // 🟢 UPDATED: Added refresh callback when returning from Request Team
   void _navigateToRequestTeam() {
-    Navigator.push(
-      context, 
-      MaterialPageRoute(builder: (_) => const RequestTeamScreen())
-    ).then((_) {
+    Navigator.push(context,
+        MaterialPageRoute(builder: (_) => const RequestTeamScreen())).then((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchMyTeamIfNeeded(forceRefresh: true);
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
@@ -201,13 +200,13 @@ class _StudentDashboardState extends State<StudentDashboard> {
     );
   }
 
-  Widget _buildTeamStatusBadge(Map<String, dynamic>? proposal, DataProvider dp) {
+  Widget _buildTeamStatusBadge(
+      Map<String, dynamic>? proposal, DataProvider dp) {
     // Show nothing while the very first load is happening
     if (dp.isLoadingMyTeam && dp.myTeam == null) return const SizedBox.shrink();
 
     final bool hasTeam = proposal != null;
-    final String status =
-        (proposal?['status'] ?? '').toString().toLowerCase();
+    final String status = (proposal?['status'] ?? '').toString().toLowerCase();
 
     final bool isApproved = status == 'approved';
     final bool isPending = status == 'pending';
@@ -328,8 +327,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       );
     }
 
-    final String status =
-        (proposal['status'] ?? '').toString().toLowerCase();
+    final String status = (proposal['status'] ?? '').toString().toLowerCase();
     final bool isApproved = status == 'approved';
 
     final Color emeraldGreen = const Color(0xFF10B981);
@@ -363,7 +361,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
     }
 
-    // 🟢 UPDATED: Force full name preference for supervisor 
+    // 🟢 UPDATED: Force full name preference for supervisor
     final dynamic supervisor = proposal['assignedSupervisor'];
     String supName = 'TBA';
     if (supervisor is Map) {
@@ -381,8 +379,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     // Format defense date
     String formattedDate = 'TBA';
     if (proposal['defenseDate'] != null) {
-      final localDate =
-          DateTime.parse(proposal['defenseDate']).toLocal();
+      final localDate = DateTime.parse(proposal['defenseDate']).toLocal();
       formattedDate = DateFormat('dd MMM, hh:mm a').format(localDate);
     }
 
@@ -467,8 +464,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.bold,
-                  color:
-                      isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -590,9 +586,8 @@ class _AnimatedStudentCardState extends State<_AnimatedStudentCard> {
     return Opacity(
       opacity: widget.isDisabled ? 0.6 : 1.0,
       child: GestureDetector(
-        onTapDown: widget.isDisabled
-            ? null
-            : (_) => setState(() => _isPressed = true),
+        onTapDown:
+            widget.isDisabled ? null : (_) => setState(() => _isPressed = true),
         onTapUp: widget.isDisabled
             ? null
             : (_) {
