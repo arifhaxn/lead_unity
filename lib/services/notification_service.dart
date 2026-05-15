@@ -3,7 +3,6 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'; // Needed for Navigator
-import 'package:link_unity/widgets/custom_snackbar.dart';
 import 'package:link_unity/widgets/top_notification.dart'; // Your snackbar!
 
 class NotificationService {
