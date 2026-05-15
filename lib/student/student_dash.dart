@@ -23,25 +23,27 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   Timer? _timer;
 
-  @override
+@override
   void initState() {
     super.initState();
-    NotificationService.setupPushNotifications();
 
+    _startTickingClock();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      // 1. Grab your providers
       final dp = Provider.of<DataProvider>(context, listen: false);
+      final ap = Provider.of<AuthProvider>(context, listen: false); 
+
+      // 2. Pass the context and the token to our updated function!
+      // (Note: Change 'ap.token' if your AuthProvider uses a different variable name for the user's JWT)
+      NotificationService.setupPushNotifications(context, ap.token ?? "");
+
+      // 3. The rest of your existing code stays exactly the same...
       dp.fetchDeadlineIfNeeded();
-      // Issue 5 fix: use fetchMyTeamIfNeeded (calls /proposals/my-team)
-      // which searches BOTH as leader AND as a teamMember — so absorbed
-      // students see their merged team immediately after merge.
       dp.fetchMyTeamIfNeeded(forceRefresh: true);
-      // Keep myProposals for the submission deadline countdown card
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
       dp.fetchSupervisorsIfNeeded();
       dp.fetchNotificationsIfNeeded(forceRefresh: true);
     });
-
-    _startTickingClock();
   }
 
   @override
