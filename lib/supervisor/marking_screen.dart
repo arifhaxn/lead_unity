@@ -91,20 +91,24 @@ class _MarkingScreenState extends State<MarkingScreen> {
               ? (saved['criteria2'] as num).toDouble()
               : null;
 
+          // Build dynamic per-criterion entries from the saved criteria array
+          final savedCriteria = (saved['criteria'] as List?)
+                  ?.map<double?>((v) => v != null ? (v as num).toDouble() : null)
+                  .toList() ??
+              [c1Val, c2Val]; // backward-compat with old c1/c2 fields
+
           _studentMarks[uid] = {
-            'c1': c1Val,
-            'c2': c2Val,
-            'c1_text': formatMark(c1Val), // Store visual text representation
-            'c2_text': formatMark(c2Val), // Store visual text representation
+            'criteria': savedCriteria,
+            'criteria_text': savedCriteria
+                .map((v) => v != null ? formatMark(v) : '')
+                .toList(),
             'absent': saved['isAbsent'] ?? false,
             'data': student
           };
         } else {
           _studentMarks[uid] = {
-            'c1': null,
-            'c2': null,
-            'c1_text': '', // Guaranteed physically empty string
-            'c2_text': '',
+            'criteria': <double?>[],
+            'criteria_text': <String>[],
             'absent': false,
             'data': student
           };
@@ -127,17 +131,15 @@ class _MarkingScreenState extends State<MarkingScreen> {
   }
 
   void _submitMarks() async {
-    // 🟢 STRICT VALIDATION: Check the literal text string, not just the parsed number
+    // Strict validation: every present student must have all criteria filled
     bool hasEmptyBox = false;
     String? missingStudentName;
 
     for (var entry in _studentMarks.entries) {
       final marks = entry.value;
       if (marks['absent'] == false) {
-        String c1Text = (marks['c1_text'] ?? '').toString().trim();
-        String c2Text = (marks['c2_text'] ?? '').toString().trim();
-
-        if (c1Text.isEmpty || c2Text.isEmpty) {
+        final texts = (marks['criteria_text'] as List<String>?) ?? [];
+        if (texts.isEmpty || texts.any((t) => t.trim().isEmpty)) {
           hasEmptyBox = true;
           missingStudentName = marks['data']['name'] ?? 'a student';
           break;
@@ -148,7 +150,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
     if (hasEmptyBox) {
       CustomSnackBar.showError(
           "Please fill all marks for $missingStudentName, or mark them absent.");
-      return; // 🛑 HARD STOP: Submission blocked
+      return;
     }
 
     setState(() => _submitState = SubmitState.loading);
@@ -158,8 +160,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
     _studentMarks.forEach((key, value) {
       payload.add({
         'studentId': key,
-        'criteria1': value['c1'],
-        'criteria2': value['c2'],
+        'criteria': (value['criteria'] as List?)
+            ?.map((v) => (v as double?) ?? 0.0)
+            .toList() ?? [],
         'isAbsent': value['absent']
       });
     });
@@ -206,11 +209,9 @@ class _MarkingScreenState extends State<MarkingScreen> {
           theme, themeProvider, appBarBottomLine, teamTitle);
     }
 
-    final config = _allSettings[_evaluationType] ?? {};
-    final c1Name = config['c1']?['name'] ?? 'Criteria 1';
-    final c1Max = config['c1']?['max'] ?? 30;
-    final c2Name = config['c2']?['name'] ?? 'Criteria 2';
-    final c2Max = config['c2']?['max'] ?? 30;
+    // criteriaList is List<{name, max}> from api_services.getEvaluationSettings
+    final List<dynamic> criteriaList =
+        (_allSettings[_evaluationType] as List?) ?? [];
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -259,13 +260,23 @@ class _MarkingScreenState extends State<MarkingScreen> {
                   ]),
               child: Column(
                 children: [
-                  _buildCriteriaRow(
-                      theme, "1", c1Name, c1Max, theme.colorScheme.primary),
-                  const Padding(
-                      padding: EdgeInsets.symmetric(vertical: 8.0),
-                      child: Divider(height: 1)),
-                  _buildCriteriaRow(
-                      theme, "2", c2Name, c2Max, theme.colorScheme.secondary),
+                  ...criteriaList.asMap().entries.map((e) {
+                    final idx = e.key;
+                    final c = e.value as Map;
+                    final color = idx % 2 == 0
+                        ? theme.colorScheme.primary
+                        : theme.colorScheme.secondary;
+                    return Column(
+                      children: [
+                        if (idx > 0)
+                          const Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Divider(height: 1)),
+                        _buildCriteriaRow(theme,
+                            '${idx + 1}', c['name'], c['max'], color),
+                      ],
+                    );
+                  }).toList(),
                 ],
               ),
             ),
@@ -280,8 +291,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
               return StudentMarkingCard(
                 studentData: _studentMarks[uid]!['data'],
                 marksData: _studentMarks[uid]!,
-                maxC1: c1Max,
-                maxC2: c2Max,
+                criteriaList: criteriaList,
                 onChanged: (updatedMarks) {
                   _studentMarks[uid] = updatedMarks;
                 },
@@ -416,16 +426,14 @@ class _MarkingScreenState extends State<MarkingScreen> {
 class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;
-  final int maxC1;
-  final int maxC2;
+  final List<dynamic> criteriaList; // [{name, max}, ...]
   final Function(Map<String, dynamic>) onChanged;
 
   const StudentMarkingCard({
     Key? key,
     required this.studentData,
     required this.marksData,
-    required this.maxC1,
-    required this.maxC2,
+    required this.criteriaList,
     required this.onChanged,
   }) : super(key: key);
 
@@ -434,8 +442,7 @@ class StudentMarkingCard extends StatefulWidget {
 }
 
 class _StudentMarkingCardState extends State<StudentMarkingCard> {
-  late TextEditingController _c1Controller;
-  late TextEditingController _c2Controller;
+  late List<TextEditingController> _controllers;
   late bool _isAbsent;
 
   @override
@@ -443,55 +450,54 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     super.initState();
     _isAbsent = widget.marksData['absent'] ?? false;
 
-    // Initialize text fields with the explicit string passed from parent
-    _c1Controller =
-        TextEditingController(text: widget.marksData['c1_text'] ?? '');
-    _c2Controller =
-        TextEditingController(text: widget.marksData['c2_text'] ?? '');
+    final texts =
+        (widget.marksData['criteria_text'] as List?)?.cast<String>() ?? [];
+    final n = widget.criteriaList.length;
+
+    // Ensure we have exactly n controllers, padding with empty if needed
+    _controllers = List.generate(
+      n,
+      (i) => TextEditingController(text: i < texts.length ? texts[i] : ''),
+    );
   }
 
   @override
   void dispose() {
-    _c1Controller.dispose();
-    _c2Controller.dispose();
+    for (final c in _controllers) {
+      c.dispose();
+    }
     super.dispose();
   }
 
   void _updateMarks() {
-    double? c1;
-    if (_c1Controller.text.trim().isNotEmpty) {
-      c1 = double.tryParse(_c1Controller.text);
-    }
+    final n = widget.criteriaList.length;
+    final List<double?> values = [];
+    final List<String> textValues = [];
 
-    double? c2;
-    if (_c2Controller.text.trim().isNotEmpty) {
-      c2 = double.tryParse(_c2Controller.text);
-    }
+    for (int i = 0; i < n; i++) {
+      if (_isAbsent) {
+        values.add(0.0);
+        textValues.add('0');
+      } else {
+        final int maxVal = (widget.criteriaList[i]['max'] as num).toInt();
+        final text = _controllers[i].text.trim();
+        double? val = text.isEmpty ? null : double.tryParse(text);
 
-    if (_isAbsent) {
-      c1 = 0.0;
-      c2 = 0.0;
-    } else {
-      if (c1 != null && c1 > widget.maxC1) {
-        c1 = widget.maxC1.toDouble();
-        _c1Controller.text = c1.toStringAsFixed(0);
-        _c1Controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _c1Controller.text.length));
-      }
-      if (c2 != null && c2 > widget.maxC2) {
-        c2 = widget.maxC2.toDouble();
-        _c2Controller.text = c2.toStringAsFixed(0);
-        _c2Controller.selection = TextSelection.fromPosition(
-            TextPosition(offset: _c2Controller.text.length));
+        // Clamp to max
+        if (val != null && val > maxVal) {
+          val = maxVal.toDouble();
+          _controllers[i].text = val.toStringAsFixed(0);
+          _controllers[i].selection = TextSelection.fromPosition(
+              TextPosition(offset: _controllers[i].text.length));
+        }
+        values.add(val);
+        textValues.add(_controllers[i].text);
       }
     }
 
-    // 🟢 Send the literal string back to the parent to ensure validation works
     widget.onChanged({
-      'c1': c1,
-      'c2': c2,
-      'c1_text': _isAbsent ? '0' : _c1Controller.text,
-      'c2_text': _isAbsent ? '0' : _c2Controller.text,
+      'criteria': values,
+      'criteria_text': textValues,
       'absent': _isAbsent,
       'data': widget.studentData,
     });
@@ -509,9 +515,11 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
     final initials =
         studentName.isNotEmpty ? studentName[0].toUpperCase() : '?';
 
-    final c1Value = double.tryParse(_c1Controller.text) ?? 0;
-    final c2Value = double.tryParse(_c2Controller.text) ?? 0;
-    final total = c1Value + c2Value;
+    // Running total across all non-absent criteria
+    double total = 0;
+    for (final c in _controllers) {
+      total += double.tryParse(c.text) ?? 0;
+    }
 
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
@@ -531,6 +539,7 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
       ),
       child: Column(
         children: [
+          // ── Student header ──────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Row(
@@ -575,13 +584,15 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                     ],
                   ),
                 ),
+                // Absent toggle
                 GestureDetector(
                   onTap: () {
                     setState(() {
                       _isAbsent = !_isAbsent;
                       if (_isAbsent) {
-                        _c1Controller.clear();
-                        _c2Controller.clear();
+                        for (final c in _controllers) {
+                          c.clear();
+                        }
                       }
                       _updateMarks();
                     });
@@ -618,7 +629,8 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                                 : Icons.person_off_rounded,
                             key: ValueKey<bool>(_isAbsent),
                             size: 18,
-                            color: _isAbsent ? Colors.green : Colors.redAccent,
+                            color:
+                                _isAbsent ? Colors.green : Colors.redAccent,
                           ),
                         ),
                       ),
@@ -628,9 +640,11 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
-                          color: _isAbsent ? Colors.green : Colors.redAccent,
+                          color:
+                              _isAbsent ? Colors.green : Colors.redAccent,
                         ),
-                        child: Text(_isAbsent ? "Mark Present" : "Mark Absent"),
+                        child:
+                            Text(_isAbsent ? "Mark Present" : "Mark Absent"),
                       ),
                     ],
                   ),
@@ -639,6 +653,7 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
             ),
           ),
           const Divider(height: 1),
+          // ── Score inputs ────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -650,17 +665,27 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
             ),
             child: _isAbsent
                 ? _buildAbsentBadge()
-                : Row(
+                : Wrap(
+                    spacing: 10,
+                    runSpacing: 10,
                     children: [
-                      Expanded(
+                      // One input box per criterion
+                      ...widget.criteriaList.asMap().entries.map((e) {
+                        final idx = e.key;
+                        final label = 'C${idx + 1}';
+                        final maxVal =
+                            (e.value['max'] as num).toInt();
+                        return SizedBox(
+                          width: 80,
                           child: _buildDigitalInput(
-                              context, 'C1', _c1Controller, widget.maxC1)),
-                      const SizedBox(width: 12),
-                      Expanded(
-                          child: _buildDigitalInput(
-                              context, 'C2', _c2Controller, widget.maxC2)),
-                      const SizedBox(width: 12),
-                      Expanded(child: _buildTotalBox(context, total)),
+                              context, label, _controllers[idx], maxVal),
+                        );
+                      }).toList(),
+                      // Total box
+                      SizedBox(
+                        width: 80,
+                        child: _buildTotalBox(context, total),
+                      ),
                     ],
                   ),
           ),
@@ -700,7 +725,8 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
       decoration: BoxDecoration(
           color: theme.colorScheme.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
+          border:
+              Border.all(color: theme.colorScheme.outline.withOpacity(0.2)),
           boxShadow: [
             BoxShadow(
                 color: Colors.black.withOpacity(0.02),
@@ -716,7 +742,8 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   color: theme.colorScheme.onSurfaceVariant)),
           TextField(
             controller: controller,
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
+            keyboardType:
+                const TextInputType.numberWithOptions(decimal: true),
             textAlign: TextAlign.center,
             style: TextStyle(
                 fontSize: 22,
@@ -728,6 +755,10 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                 border: InputBorder.none),
             onChanged: (_) => _updateMarks(),
           ),
+          Text('/$max',
+              style: TextStyle(
+                  fontSize: 10,
+                  color: theme.colorScheme.onSurfaceVariant)),
         ],
       ),
     );
@@ -760,6 +791,8 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Colors.white)),
+          const Text("/100",
+              style: TextStyle(fontSize: 10, color: Colors.white70)),
         ],
       ),
     );

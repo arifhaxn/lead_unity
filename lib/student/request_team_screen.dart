@@ -9,6 +9,7 @@ import '../services/api_services.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 import '../providers/data_provider.dart';
+import '../providers/auth_provider.dart';
 import '../widgets/custom_snackbar.dart';
 
 class RequestTeamScreen extends StatefulWidget {
@@ -284,7 +285,18 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
   @override
   void initState() {
     super.initState();
-    // 🟢 Autofill logic removed from here
+    // Auto-fill the leader's name, studentId, and email from their logged-in account.
+    // This guarantees the studentId in teamMembers[] always matches the populated
+    // student object, so cgpa and mobile show correctly in Team Info.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.user;
+      if (user != null) {
+        _memberControllers[0]['name']!.text  = user.name        ?? '';
+        _memberControllers[0]['id']!.text    = user.studentId   ?? '';
+        _memberControllers[0]['email']!.text = user.email       ?? '';
+      }
+    });
   }
 
   @override
@@ -680,13 +692,19 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                 color: isLeader ? activeLabelColor : labelColor),
           ),
           const SizedBox(height: 10),
+          // Name field — read-only for leader (auto-filled from account)
           TextFormField(
             controller: _memberControllers[index]['name'],
             style: textStyle,
+            readOnly: isLeader,
             decoration: InputDecoration(
                 labelText: 'Name',
                 labelStyle: labelStyle,
                 floatingLabelStyle: floatingLabelStyle,
+                suffixIcon: isLeader
+                    ? Icon(Icons.lock_outline_rounded,
+                        size: 16, color: labelColor)
+                    : null,
                 isDense: true,
                 filled: true,
                 fillColor: inputFillColor,
@@ -700,10 +718,15 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
               style: textStyle,
+              readOnly: isLeader,
               decoration: InputDecoration(
                   labelText: 'ID',
                   labelStyle: labelStyle,
                   floatingLabelStyle: floatingLabelStyle,
+                  suffixIcon: isLeader
+                      ? Icon(Icons.lock_outline_rounded,
+                          size: 16, color: labelColor)
+                      : null,
                   isDense: true,
                   filled: true,
                   fillColor: inputFillColor,
@@ -716,6 +739,8 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
                 child: TextFormField(
               controller: _memberControllers[index]['cgpa'],
               style: textStyle,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
               decoration: InputDecoration(
                   labelText: 'CGPA',
                   labelStyle: labelStyle,
@@ -729,13 +754,19 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
             )),
           ]),
           const SizedBox(height: 8),
+          // Email field — read-only for leader (auto-filled from account)
           TextFormField(
             controller: _memberControllers[index]['email'],
             style: textStyle,
+            readOnly: isLeader,
             decoration: InputDecoration(
                 labelText: 'Email',
                 labelStyle: labelStyle,
                 floatingLabelStyle: floatingLabelStyle,
+                suffixIcon: isLeader
+                    ? Icon(Icons.lock_outline_rounded,
+                        size: 16, color: labelColor)
+                    : null,
                 isDense: true,
                 filled: true,
                 fillColor: inputFillColor,
@@ -747,6 +778,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
           TextFormField(
             controller: _memberControllers[index]['mobile'],
             style: textStyle,
+            keyboardType: TextInputType.phone,
             decoration: InputDecoration(
                 labelText: 'Mobile',
                 labelStyle: labelStyle,
