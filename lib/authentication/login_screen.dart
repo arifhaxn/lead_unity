@@ -212,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             focusedBorder: OutlineInputBorder(
                                 borderSide: BorderSide(color: themeColor))),
                       ),
-                      const SizedBox(height: 40), 
+                      const SizedBox(height: 40),
                       SizedBox(
                         width: double.infinity,
                         height: 54,
@@ -223,9 +223,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           backgroundColor: themeColor,
                         ),
                       ),
-                      
+
                       const SizedBox(height: 20),
-                      
+
                       // 🟢 SUPERVISOR: Forgot Password / Change Temp Password
                       if (widget.role == 'supervisor')
                         Center(
@@ -237,9 +237,9 @@ class _LoginScreenState extends State<LoginScreen> {
                                     context,
                                     FadeScaleRoute(
                                         page: const ForgotPasswordScreen())),
-                                child: const Text("Forgot Password?",
+                                child: Text("Forgot Password?",
                                     style: TextStyle(
-                                        color: Colors.white, // Made white
+                                        color: theme.colorScheme.onSurface, // Made white
                                         fontWeight: FontWeight.w600)),
                               ),
                               Text(
@@ -252,8 +252,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 onPressed: () => Navigator.push(
                                     context,
                                     FadeScaleRoute(
-                                        page: const SupervisorFirstLoginScreen())),
-                                child: Text("Change Temp\nPassword",textAlign: TextAlign.center,
+                                        page:
+                                            const SupervisorFirstLoginScreen())),
+                                child: Text("Change Temp\nPassword",
+                                    textAlign: TextAlign.center,
                                     style: TextStyle(
                                         color: themeColor,
                                         fontWeight: FontWeight.w600)),
@@ -300,11 +302,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     onPressed: () => Navigator.push(
                                         context,
                                         FadeScaleRoute(
-                                            page: const ForgotPasswordScreen())),
-                                    child: const Text(
+                                            page:
+                                                const ForgotPasswordScreen())),
+                                    child: Text(
                                       "Forgot Password?",
                                       style: TextStyle(
-                                          color: Colors.white, // Made white
+                                          color: theme.colorScheme.onSurface, // Made white
                                           fontWeight: FontWeight.w600),
                                     ),
                                   ),
@@ -312,14 +315,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Text(
                                       " / ",
                                       style: TextStyle(
-                                          color: theme.colorScheme.onSurfaceVariant,
+                                          color: theme
+                                              .colorScheme.onSurfaceVariant,
                                           fontWeight: FontWeight.bold),
                                     ),
                                     TextButton(
                                       onPressed: () => Navigator.push(
                                           context,
                                           FadeScaleRoute(
-                                              page: const StudentRegistrationScreen())),
+                                              page:
+                                                  const StudentRegistrationScreen())),
                                       child: Text(
                                         "Register Now",
                                         style: TextStyle(
