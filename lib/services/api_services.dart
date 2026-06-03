@@ -174,33 +174,27 @@ class ApiService {
       final response = await _dio.get('/settings');
       final data = response.data;
 
-      // Defense Board criteria
-      final defC1Name = data['criteria1Name'] ?? 'Criteria 1';
-      final defC1Max = data['criteria1Max'] ?? 35;
-      final defC2Name = data['criteria2Name'] ?? 'Criteria 2';
-      final defC2Max = data['criteria2Max'] ?? 35;
-
-      // Supervisor Internal criteria (own teams)
-      final ownC1Name = data['ownTeamCriteria1Name'] ??
-          data['supervisorInternalLabel1'] ??
-          'Criteria 1';
-      final ownC1Max =
-          data['ownTeamCriteria1Max'] ?? data['supervisorInternalMax1'] ?? 15;
-      final ownC2Name = data['ownTeamCriteria2Name'] ??
-          data['supervisorInternalLabel2'] ??
-          'Criteria 2';
-      final ownC2Max =
-          data['ownTeamCriteria2Max'] ?? data['supervisorInternalMax2'] ?? 15;
+      // Build a list of {name, max} maps from the dynamic criteria arrays.
+      // Falls back gracefully to two equal criteria if the server returns nothing.
+      List<Map<String, dynamic>> parseCriteria(dynamic raw, String prefix) {
+        if (raw is List && raw.isNotEmpty) {
+          return raw
+              .map<Map<String, dynamic>>((c) => {
+                    'name': (c['name'] ?? '$prefix Criteria').toString(),
+                    'max': (c['max'] as num?)?.toInt() ?? 50,
+                  })
+              .toList();
+        }
+        // Fallback: two equal criteria summing to 100
+        return [
+          {'name': '$prefix Criteria 1', 'max': 50},
+          {'name': '$prefix Criteria 2', 'max': 50},
+        ];
+      }
 
       return {
-        'defense': {
-          'c1': {'name': defC1Name, 'max': defC1Max},
-          'c2': {'name': defC2Name, 'max': defC2Max},
-        },
-        'own': {
-          'c1': {'name': ownC1Name, 'max': ownC1Max},
-          'c2': {'name': ownC2Name, 'max': ownC2Max},
-        }
+        'defense': parseCriteria(data['defenseCriteria'], 'Defense'),
+        'own': parseCriteria(data['ownTeamCriteria'], 'Internal'),
       };
     } catch (e) {
       return {};
