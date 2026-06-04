@@ -174,25 +174,23 @@ class ApiService {
       final response = await _dio.get('/settings');
       final data = response.data;
 
-      // Build a list of {name, max} maps from the dynamic criteria arrays.
-      // Falls back gracefully to two equal criteria if the server returns nothing.
+      // Combined total marks (admin-defined, default 100)
+      final int totalMarks = (data['totalMarks'] as num?)?.toInt() ?? 100;
+
       List<Map<String, dynamic>> parseCriteria(dynamic raw, String prefix) {
         if (raw is List && raw.isNotEmpty) {
           return raw
               .map<Map<String, dynamic>>((c) => {
                     'name': (c['name'] ?? '$prefix Criteria').toString(),
-                    'max': (c['max'] as num?)?.toInt() ?? 50,
+                    'max': (c['max'] as num?)?.toInt() ?? 0,
                   })
               .toList();
         }
-        // Fallback: two equal criteria summing to 100
-        return [
-          {'name': '$prefix Criteria 1', 'max': 50},
-          {'name': '$prefix Criteria 2', 'max': 50},
-        ];
+        return [];
       }
 
       return {
+        'totalMarks': totalMarks,
         'defense': parseCriteria(data['defenseCriteria'], 'Defense'),
         'own': parseCriteria(data['ownTeamCriteria'], 'Internal'),
       };
