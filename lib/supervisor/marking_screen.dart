@@ -209,7 +209,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
           theme, themeProvider, appBarBottomLine, teamTitle);
     }
 
-    // criteriaList is List<{name, max}> from api_services.getEvaluationSettings
+    final int totalMarks = (_allSettings['totalMarks'] as int?) ?? 100;
     final List<dynamic> criteriaList =
         (_allSettings[_evaluationType] as List?) ?? [];
 
@@ -292,6 +292,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
                 studentData: _studentMarks[uid]!['data'],
                 marksData: _studentMarks[uid]!,
                 criteriaList: criteriaList,
+                totalMarks: totalMarks,
                 onChanged: (updatedMarks) {
                   _studentMarks[uid] = updatedMarks;
                 },
@@ -427,6 +428,7 @@ class StudentMarkingCard extends StatefulWidget {
   final Map<String, dynamic> studentData;
   final Map<String, dynamic> marksData;
   final List<dynamic> criteriaList; // [{name, max}, ...]
+  final int totalMarks;
   final Function(Map<String, dynamic>) onChanged;
 
   const StudentMarkingCard({
@@ -434,6 +436,7 @@ class StudentMarkingCard extends StatefulWidget {
     required this.studentData,
     required this.marksData,
     required this.criteriaList,
+    required this.totalMarks,
     required this.onChanged,
   }) : super(key: key);
 
@@ -791,7 +794,7 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Colors.white)),
-          const Text("/100",
+          Text("/${widget.totalMarks}",
               style: TextStyle(fontSize: 10, color: Colors.white70)),
         ],
       ),
