@@ -446,7 +446,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+      crossAxisAlignment: CrossAxisAlignment.center, // This keeps the icon perfectly centered even if text wraps!
       children: [
         Container(
           padding: const EdgeInsets.all(8),
@@ -478,7 +478,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
-                maxLines: 1,
+                // 🟢 FIX: Let the text drop to a second line on narrow screens!
+                maxLines: 2, 
                 overflow: TextOverflow.ellipsis,
               ),
             ],
