@@ -25,6 +25,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
       dp.fetchMyTeamIfNeeded();
       dp.fetchSupervisorsIfNeeded();
       dp.fetchNotificationsIfNeeded();
+      // 🟢 RESTORED: Fetch user's individual proposal history
+      dp.fetchMyProposalsIfNeeded(); 
     });
   }
 
@@ -33,6 +35,9 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
     final dp = Provider.of<DataProvider>(context);
+
+    // 🟢 Grab the proposals list to display at the bottom
+    final myProposals = dp.myProposals ?? [];
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -76,12 +81,15 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                 await Future.wait([
                   dp.fetchMyTeamIfNeeded(forceRefresh: true),
                   dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+                  // 🟢 RESTORED: Refresh proposal history
+                  dp.fetchMyProposalsIfNeeded(forceRefresh: true),
                 ]);
               },
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+                  // Push it up slightly if they have proposals to show below
+                  SizedBox(height: MediaQuery.of(context).size.height * (myProposals.isEmpty ? 0.3 : 0.1)),
                   Icon(Icons.diversity_3_outlined,
                       size: 80,
                       color: theme.brightness == Brightness.dark
@@ -89,7 +97,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           : Colors.grey[300]),
                   const SizedBox(height: 16),
                   const Center(
-                    child: Text('No Team Found',
+                    child: Text('No Active Team Found',
                         style: TextStyle(
                             fontSize: 20,
                             fontWeight: FontWeight.bold,
@@ -104,6 +112,21 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                       textAlign: TextAlign.center,
                     ),
                   ),
+                  
+                  // 🟢 RESTORED: Show proposal list even if no active team exists yet
+                  if (myProposals.isNotEmpty) ...[
+                    const SizedBox(height: 40),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
+                    ),
+                    const SizedBox(height: 12),
+                    ...myProposals.map((p) => Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: _buildProposalCard(p, theme),
+                        )),
+                    const SizedBox(height: 20),
+                  ]
                 ],
               ),
             );
@@ -118,7 +141,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           String supName = 'Not Assigned';
           
           if (supervisor is Map) {
-            // 🟢 FIXED: Swapped 'name' to be checked BEFORE 'abbreviation'
+            // FIXED: Swapped 'name' to be checked BEFORE 'abbreviation'
             supName = supervisor['name'] ?? supervisor['abbreviation'] ?? 'Not Assigned';
           } else if (supervisor != null && dp.allSupervisors != null) {
             final found = dp.allSupervisors!.firstWhere(
@@ -131,20 +154,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           }
 
           // ── Build the deduplicated member list ───────────────────────────
-          //
-          // Issue 3 & 4 root cause:
-          //   - The `student` field (leader) is stored separately in the DB.
-          //   - `teamMembers[]` sometimes also contains the leader (duplicate).
-          //   - For non-merged teams, `teamMembers[]` may lack mobile/cgpa
-          //     because those come from the User model, not the embedded object.
-          //
-          // Solution:
-          //   1. Always show the leader first from `proposal['student']`.
-          //   2. Filter `teamMembers[]` to remove anyone whose studentId
-          //      matches the leader — prevents Issue 4 (duplicates).
-          //   3. For the leader's mobile/cgpa, fall back to the embedded
-          //      student map if the populated field has it.
-
           final leaderMap = proposal['student'];
           final String? leaderStudentId =
               leaderMap is Map ? leaderMap['studentId']?.toString() : null;
@@ -163,6 +172,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               await Future.wait([
                 dp.fetchMyTeamIfNeeded(forceRefresh: true),
                 dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+                // 🟢 RESTORED: Refresh proposal history
+                dp.fetchMyProposalsIfNeeded(forceRefresh: true),
               ]);
             },
             color: theme.colorScheme.primary,
@@ -227,7 +238,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                       _buildInfoRow('Assigned Supervisor', supName),
                       const SizedBox(height: 12),
                       
-                      // 🟢 UPDATED: Passing isLink: true so it triggers the clickable logic
+                      // UPDATED: Passing isLink: true so it triggers the clickable logic
                       _buildInfoRow('Description/Link',
                           proposal['description'] ?? 'No link provided', isLink: true),
                     ],
@@ -244,8 +255,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                     name: leaderMap['name']?.toString() ?? 'Unknown',
                     studentId: leaderMap['studentId']?.toString() ?? 'N/A',
                     email: leaderMap['email']?.toString() ?? 'N/A',
-                    // Leader mobile/cgpa may come from the populated User object
-                    // or fall back to a matching entry in teamMembers
                     mobile: _resolveField(
                       fromPopulated: leaderMap['mobile'],
                       rawMembers: rawMembers,
@@ -270,6 +279,15 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                       cgpa: m['cgpa']?.toString(),
                       isLeader: false,
                     )),
+
+                // 🟢 RESTORED: Proposal History Section appended at the bottom
+                if (myProposals.isNotEmpty) ...[
+                  const SizedBox(height: 30),
+                  Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+                  ...myProposals.map((p) => _buildProposalCard(p, theme)),
+                  const SizedBox(height: 20),
+                ]
               ],
             ),
           );
@@ -279,8 +297,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   }
 
   /// Tries `fromPopulated` first; if null/empty, looks inside the raw
-  /// teamMembers list for a matching entry (useful for 3-person non-merged
-  /// teams where the leader's extra fields live in teamMembers[]).
+  /// teamMembers list for a matching entry.
   String? _resolveField({
     required dynamic fromPopulated,
     required List rawMembers,
@@ -414,7 +431,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     );
   }
 
-  // 🟢 UPDATED: Now supports clickable links if isLink is passed as true
+  // UPDATED: Now supports clickable links if isLink is passed as true
   Widget _buildInfoRow(String label, String value, {bool isLink = false}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -453,6 +470,79 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                   fontWeight: FontWeight.bold,
                   color: Colors.white)),
       ],
+    );
+  }
+
+  // 🟢 RESTORED: Proposal Card Builder
+  Widget _buildProposalCard(Map<String, dynamic> proposal, ThemeData theme) {
+    final status = (proposal['status'] ?? 'PENDING').toString().toUpperCase();
+    final statusColor = _getStatusColor(proposal['status']);
+    
+    // Resolve Course code safely
+    final course = proposal['course'];
+    String courseCode = 'N/A';
+    if (course is Map) {
+      courseCode = course['courseCode']?.toString() ?? 'N/A';
+    } else if (course != null) {
+      final dp = Provider.of<DataProvider>(context, listen: false);
+      final found = dp.allCourses?.firstWhere(
+        (c) => c['_id']?.toString() == course.toString(),
+        orElse: () => null,
+      );
+      if (found != null) courseCode = found['courseCode']?.toString() ?? 'N/A';
+    }
+
+    final isDark = theme.brightness == Brightness.dark;
+    final bgColor = isDark ? theme.colorScheme.surfaceVariant.withOpacity(0.3) : Colors.white;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: AppRadii.card,
+        border: Border.all(color: theme.colorScheme.outline.withOpacity(0.3)),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          )
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.book_rounded, size: 14, color: theme.colorScheme.primary),
+                  const SizedBox(width: 6),
+                  Text(courseCode, style: TextStyle(fontWeight: FontWeight.bold, color: theme.colorScheme.primary, fontSize: 12)),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: statusColor.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  status,
+                  style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: statusColor, letterSpacing: 0.5),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Text(
+            proposal['title'] ?? 'Untitled Proposal',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: isDark ? Colors.white : Colors.black87),
+          ),
+        ],
+      ),
     );
   }
 
