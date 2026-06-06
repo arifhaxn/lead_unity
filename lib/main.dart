@@ -4,31 +4,60 @@ import 'package:link_unity/widgets/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_messaging/firebase_messaging.dart'; // 🟢 ADDED for notifications
-import 'firebase_options.dart'; 
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // 🟢 NEW
+import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
-import 'providers/data_provider.dart'; 
+import 'providers/data_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
-import 'widgets/network_overlay.dart'; 
+import 'widgets/network_overlay.dart';
 import 'widgets/custom_snackbar.dart';
 
-// 🟢 ADDED: This MUST be a top-level function (outside of any classes)
+// 🟢 This MUST be a top-level function (outside of any classes)
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  // Re-initialize Firebase because this runs in a separate isolate
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  print("Background message received: ${message.messageId}");
+
+  // Set up the local notifications plugin
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
+
+  const AndroidInitializationSettings initializationSettingsAndroid =
+      AndroidInitializationSettings('@mipmap/ic_launcher');
+
+  await flutterLocalNotificationsPlugin.initialize(
+    const InitializationSettings(android: initializationSettingsAndroid),
+  );
+
+  // Show the OS notification banner (this is what appears when the app is closed/background)
+  if (message.notification != null) {
+    await flutterLocalNotificationsPlugin.show(
+      message.hashCode,
+      message.notification!.title,
+      message.notification!.body,
+      const NotificationDetails(
+        android: AndroidNotificationDetails(
+          'leadunity_channel',       // must match the channel id in AndroidManifest.xml
+          'LeadUnity Notifications', // user-visible channel name
+          importance: Importance.high,
+          priority: Priority.high,
+        ),
+      ),
+    );
+  }
 }
 
-void main() async { 
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // INITIALIZE FIREBASE
+  // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // 🟢 ADDED: Tell Firebase to listen for background messages
+  // Register the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
@@ -52,7 +81,8 @@ class LeadUnityApp extends StatelessWidget {
   const LeadUnityApp({super.key});
 
   static FirebaseAnalytics analytics = FirebaseAnalytics.instance;
-  static FirebaseAnalyticsObserver observer = FirebaseAnalyticsObserver(analytics: analytics);
+  static FirebaseAnalyticsObserver observer =
+      FirebaseAnalyticsObserver(analytics: analytics);
 
   @override
   Widget build(BuildContext context) {
@@ -64,19 +94,19 @@ class LeadUnityApp extends StatelessWidget {
           theme: AppTheme.lightTheme,
           darkTheme: AppTheme.darkTheme,
           themeMode: themeProvider.themeMode,
-          
-          // ATTACH THE OBSERVER HERE TO TRACK SCREENS AUTOMATICALLY
+
+          // Attach the observer to track screens automatically
           navigatorObservers: <NavigatorObserver>[observer],
-          
-          // This allows you to call CustomSnackBar.showError() from literally anywhere!
+
+          // Allows calling CustomSnackBar.showError() from anywhere
           scaffoldMessengerKey: CustomSnackBar.messengerKey,
-          
-          // This wraps EVERY screen in your app with the NetworkOverlay automatically
+
+          // Wraps every screen with the NetworkOverlay
           builder: (context, child) {
             return NetworkOverlay(child: child!);
           },
-          
-          home: const SplashScreen(), 
+
+          home: const SplashScreen(),
         );
       },
     );
