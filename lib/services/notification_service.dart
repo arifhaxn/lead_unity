@@ -15,7 +15,7 @@ class NotificationService {
   // ✅ FIXED — replace YOUR_VAPID_KEY with your real VAPID key from:
   // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
   static const String _vapidKey =
-      'YOUR_REAL_VAPID_KEY_FROM_FIREBASE_CONSOLE'; // <-- replace this value
+      'BDu0B1pCcMaF8BlK_kB74Ja0oGWvVWGnrxWiq3tFtRo9aa4ARMEx27VbZFDigYEqs0ODyeD7tGNYSdGHaauAyEQ'; // <-- replace this value
 
   static Future<void> setupPushNotifications(
       BuildContext context, String userAuthToken) async {
