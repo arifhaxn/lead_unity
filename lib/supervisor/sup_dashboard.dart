@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/registration_status_badge.dart';
-import 'package:link_unity/widgets/notification_bell.dart'; // 🟢 ADDED IMPORT
+// 🟢 REMOVED: NotificationBell import is no longer needed here
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
@@ -32,6 +32,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
 
       dp.fetchDeadlineIfNeeded();
       dp.fetchTeamsIfNeeded();
+      dp.fetchNotificationsIfNeeded(); // 🟢 Ensure notifications are fetched for the badge
     });
   }
 
@@ -114,7 +115,42 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         bottom: appBarBottomLine,
-        actions: const [NotificationBell()], // 🟢 ADDED NOTIFICATION BELL
+        // 🟢 ADDED: Custom hamburger menu with notification badge
+        leading: Builder(
+          builder: (context) {
+            // Check if there are any unread notifications in the DataProvider
+            final bool hasUnread = dp.notifications?.any((n) => 
+                n['isRead'] == false || n['read'] == false) ?? false;
+
+            return IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.menu_rounded),
+                  if (hasUnread)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.scaffoldBackgroundColor, 
+                            width: 1.5
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            );
+          },
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
@@ -209,12 +245,10 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
   Widget _buildProgressBanner(
       ThemeData theme, int total, int completed, int pending, double progress) {
     return Container(
-      // 🟢 Stripped down vertical padding
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius:
-            BorderRadius.circular(16), // Slightly tighter border radius
+        borderRadius: BorderRadius.circular(16), 
         border: Border.all(
             color: theme.colorScheme.primary.withOpacity(0.15), width: 1.5),
         boxShadow: [
@@ -235,7 +269,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 "Assigned Progress",
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15, // Slightly smaller title
+                  fontSize: 15, 
                   color: theme.colorScheme.onSurface,
                 ),
               ),
@@ -243,13 +277,12 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 "${(progress * 100).toInt()}%",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16, // Slightly smaller percentage
+                  fontSize: 16, 
                   color: theme.colorScheme.primary,
                 ),
               ),
             ],
           ),
-          // 🟢 Tighter gap
           const SizedBox(height: 10),
 
           Container(
@@ -264,7 +297,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               borderRadius: BorderRadius.circular(9),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 6, // 🟢 Thinner progress bar
+                minHeight: 6, 
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.05),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   progress == 1.0 && total > 0
@@ -274,7 +307,6 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               ),
             ),
           ),
-          // 🟢 Tighter gap
           const SizedBox(height: 12),
 
           Row(
@@ -296,7 +328,6 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
 
   Widget _buildSkeletonProgressBanner(ThemeData theme) {
     return Container(
-      // 🟢 Reduced height for the skeleton to match the new ultra-slim banner
       height: 105,
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
@@ -318,7 +349,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
 
   Widget _buildVerticalDivider() {
     return Container(
-      height: 20, // 🟢 Shorter divider
+      height: 20, 
       width: 1,
       color: Colors.grey.withOpacity(0.3),
       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -333,18 +364,17 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
           Text(
             value,
             style: TextStyle(
-              fontSize: 19, // 🟢 Smaller, sleeker numbers
+              fontSize: 19, 
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
             ),
           ),
-          const SizedBox(
-              height: 2), // 🟢 Tighter spacing between number and label
+          const SizedBox(height: 2), 
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 6, // 🟢 Smaller colored dots
+                width: 6, 
                 height: 6,
                 decoration: BoxDecoration(
                   color: color,
@@ -355,7 +385,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12, // 🟢 Smaller text for the labels
+                  fontSize: 12, 
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),

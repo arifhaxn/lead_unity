@@ -755,18 +755,17 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
           ]),
           const SizedBox(height: 8),
           // Email field — read-only for leader (auto-filled from account)
+          // Email field — Unlocked so they can provide a preferred contact email!
           TextFormField(
             controller: _memberControllers[index]['email'],
             style: textStyle,
-            readOnly: isLeader,
+            // 🟢 readOnly removed!
             decoration: InputDecoration(
                 labelText: 'Email',
                 labelStyle: labelStyle,
+            
                 floatingLabelStyle: floatingLabelStyle,
-                suffixIcon: isLeader
-                    ? Icon(Icons.lock_outline_rounded,
-                        size: 16, color: labelColor)
-                    : null,
+                // 🟢 Lock icon removed!
                 isDense: true,
                 filled: true,
                 fillColor: inputFillColor,

@@ -4,7 +4,7 @@ import 'package:link_unity/services/notification_service.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-import 'package:link_unity/widgets/notification_bell.dart';
+// 🟢 REMOVED: NotificationBell import is no longer needed here
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -29,20 +29,16 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     _startTickingClock();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      // 1. Grab your providers
       final dp = Provider.of<DataProvider>(context, listen: false);
       final ap = Provider.of<AuthProvider>(context, listen: false); 
 
-      // 2. Pass the context and the token to our updated function!
-      // (Note: Change 'ap.token' if your AuthProvider uses a different variable name for the user's JWT)
       NotificationService.setupPushNotifications(context, ap.token ?? "");
 
-      // 3. The rest of your existing code stays exactly the same...
       dp.fetchDeadlineIfNeeded();
-      dp.fetchMyTeamIfNeeded(forceRefresh: true);
-      dp.fetchMyProposalsIfNeeded(forceRefresh: true);
+      dp.fetchMyTeamIfNeeded(); 
+      dp.fetchMyProposalsIfNeeded();
       dp.fetchSupervisorsIfNeeded();
-      dp.fetchNotificationsIfNeeded(forceRefresh: true);
+      dp.fetchNotificationsIfNeeded();
     });
   }
 
@@ -101,14 +97,12 @@ class _StudentDashboardState extends State<StudentDashboard> {
       context,
       MaterialPageRoute(builder: (_) => const SubmitProposalScreen()),
     ).then((_) {
-      // 🟢 Force cache refresh when returning
       final dp = Provider.of<DataProvider>(context, listen: false);
       dp.fetchMyTeamIfNeeded(forceRefresh: true);
       dp.fetchMyProposalsIfNeeded(forceRefresh: true);
     });
   }
 
-  // 🟢 UPDATED: Added refresh callback when returning from Team Info
   void _navigateToTeamInfo() {
     Navigator.push(
             context, MaterialPageRoute(builder: (_) => const TeamInfoScreen()))
@@ -119,7 +113,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
     });
   }
 
-  // 🟢 UPDATED: Added refresh callback when returning from Request Team
   void _navigateToRequestTeam() {
     Navigator.push(context,
         MaterialPageRoute(builder: (_) => const RequestTeamScreen())).then((_) {
@@ -145,8 +138,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
         .take(2)
         .join(' ');
 
-    // Issue 5 fix: use dp.myTeam (from /proposals/my-team) for banner & badge.
-    // This returns the team whether the student is a leader or a merged member.
     final proposal = dp.myTeam;
 
     return Scaffold(
@@ -154,7 +145,42 @@ class _StudentDashboardState extends State<StudentDashboard> {
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('LeadUnity'),
-        actions: const [NotificationBell()],
+        // 🟢 ADDED: Custom hamburger menu with notification badge
+        leading: Builder(
+          builder: (context) {
+            // Check if there are any unread notifications in the DataProvider
+            final bool hasUnread = dp.notifications?.any((n) => 
+                n['isRead'] == false || n['read'] == false) ?? false;
+
+            return IconButton(
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.menu_rounded),
+                  if (hasUnread)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: theme.scaffoldBackgroundColor, 
+                            width: 1.5
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              onPressed: () => Scaffold.of(context).openDrawer(),
+              tooltip: MaterialLocalizations.of(context).openAppDrawerTooltip,
+            );
+          },
+        ),
       ),
       body: RefreshIndicator(
         onRefresh: () async {
@@ -204,7 +230,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
   Widget _buildTeamStatusBadge(
       Map<String, dynamic>? proposal, DataProvider dp) {
-    // Show nothing while the very first load is happening
     if (dp.isLoadingMyTeam && dp.myTeam == null) return const SizedBox.shrink();
 
     final bool hasTeam = proposal != null;
@@ -274,12 +299,10 @@ class _StudentDashboardState extends State<StudentDashboard> {
   Widget _buildStatusBanner(Map<String, dynamic>? proposal, DataProvider dp) {
     final theme = Theme.of(context);
 
-    // Show progress bar while loading initial data
     if (dp.isLoadingMyTeam && dp.myTeam == null) {
       return const LinearProgressIndicator();
     }
 
-    // No team yet
     if (proposal == null) {
       return Container(
         padding: const EdgeInsets.all(16),
@@ -348,7 +371,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
         ? theme.colorScheme.surfaceVariant.withOpacity(0.5)
         : Colors.white;
 
-    // Resolve course code
     String? courseCode;
     if (proposal['course'] is Map) {
       courseCode = proposal['course']['courseCode'];
@@ -363,7 +385,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
     }
 
-    // 🟢 UPDATED: Force full name preference for supervisor
     final dynamic supervisor = proposal['assignedSupervisor'];
     String supName = 'TBA';
     if (supervisor is Map) {
@@ -378,7 +399,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
       }
     }
 
-    // Format defense date
     String formattedDate = 'TBA';
     if (proposal['defenseDate'] != null) {
       final localDate = DateTime.parse(proposal['defenseDate']).toLocal();
@@ -446,7 +466,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.center, // This keeps the icon perfectly centered even if text wraps!
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
         Container(
           padding: const EdgeInsets.all(8),
@@ -478,7 +498,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
-                // 🟢 FIX: Let the text drop to a second line on narrow screens!
                 maxLines: 2, 
                 overflow: TextOverflow.ellipsis,
               ),
@@ -514,7 +533,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 child: _AnimatedStudentCard(
                   icon: Icons.groups_2_rounded,
                   title: 'Team Info',
-                  action: 'View Team & Status',
+                  action: 'View Current and Past Submissions',
                   iconColor: Colors.white,
                   onTap: _navigateToTeamInfo,
                   isCompact: true,
@@ -550,7 +569,6 @@ class _StudentDashboardState extends State<StudentDashboard> {
   }
 }
 
-// ── Animated card widget (unchanged) ────────────────────────────────────────
 class _AnimatedStudentCard extends StatefulWidget {
   final IconData icon;
   final String title;

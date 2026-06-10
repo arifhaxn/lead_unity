@@ -272,7 +272,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           () => setState(() => _searchQuery = v.trim()));
                     },
                     decoration: InputDecoration(
-                      hintText: "Search by title or #ID",
+                      hintText: "Search by title or #TeamID",
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: theme.colorScheme.surface,

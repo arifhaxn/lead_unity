@@ -11,6 +11,7 @@ import '../theme/theme_provider.dart';
 import '../providers/data_provider.dart'; 
 import 'request_team_screen.dart'; 
 import '../widgets/custom_snackbar.dart'; 
+import '../providers/auth_provider.dart';
 
 class SubmitProposalScreen extends StatefulWidget {
   const SubmitProposalScreen({super.key});
@@ -285,6 +286,21 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   SubmitState _submitState = SubmitState.idle;
   bool _showFourthMember = false;
   String? _sup1, _sup2, _sup3;
+
+  @override
+  void initState() {
+    super.initState();
+    // 🟢 Auto-fill the leader's exact login info to prevent backend duplication
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final auth = Provider.of<AuthProvider>(context, listen: false);
+      final user = auth.user;
+      if (user != null) {
+        _memberControllers[0]['name']!.text  = user.name ?? '';
+        _memberControllers[0]['id']!.text    = user.studentId ?? '';
+        _memberControllers[0]['email']!.text = user.email ?? '';
+      }
+    });
+  }
 
   @override
   void dispose() {
@@ -670,7 +686,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            isLeader ? "Member 1 (Leader)" : "Member ${index + 1}",
+            isLeader ? "Member 1 (Me)" : "Member ${index + 1}",
             style: TextStyle(
                 fontWeight: FontWeight.bold,
                 color: isLeader ? activeLabelColor : labelColor),
@@ -679,10 +695,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           TextFormField(
             controller: _memberControllers[index]['name'],
             style: textStyle, 
+            readOnly: isLeader, // 🟢 LOCK IT
             decoration: InputDecoration(
               labelText: 'Name', 
               labelStyle: labelStyle,
               floatingLabelStyle: floatingLabelStyle,
+              suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, // 🟢 SHOW LOCK
               isDense: true, 
               filled: true, 
               fillColor: inputFillColor, 
@@ -695,10 +713,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
               style: textStyle,
+              readOnly: isLeader, // 🟢 LOCK IT
               decoration: InputDecoration(
                 labelText: 'ID', 
                 labelStyle: labelStyle,
                 floatingLabelStyle: floatingLabelStyle,
+                suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, // 🟢 SHOW LOCK
                 isDense: true, 
                 filled: true, 
                 fillColor: inputFillColor, 
@@ -722,17 +742,23 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             )),
           ]),
           const SizedBox(height: 8),
+          // 3. The Email Field (Now Unlocked!)
           TextFormField(
             controller: _memberControllers[index]['email'],
             style: textStyle,
+            // 🟢 readOnly is completely removed so anyone can edit it
             decoration: InputDecoration(
               labelText: 'Email', 
               labelStyle: labelStyle,
               floatingLabelStyle: floatingLabelStyle,
+              // 🟢 Lock icon removed from the suffix
               isDense: true, 
               filled: true, 
               fillColor: inputFillColor, 
-              border: const OutlineInputBorder(borderSide: BorderSide.none, borderRadius: BorderRadius.all(Radius.circular(8)))
+              border: const OutlineInputBorder(
+                  borderSide: BorderSide.none, 
+                  borderRadius: BorderRadius.all(Radius.circular(8))
+              )
             ),
           ),
           const SizedBox(height: 8),
