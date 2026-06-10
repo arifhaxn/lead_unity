@@ -9,6 +9,7 @@ import 'team_list_screen.dart';
 import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
 import '../features/app_drawer.dart';
+import '../services/notification_service.dart';
 
 class SupervisorDashboard extends StatefulWidget {
   const SupervisorDashboard({Key? key}) : super(key: key);
@@ -23,9 +24,14 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
+      final ap =
+          Provider.of<AuthProvider>(context, listen: false); // ← add this
+
+      // ✅ Register FCM token for supervisor — was completely missing
+      NotificationService.setupPushNotifications(context, ap.token ?? "");
+
       dp.fetchDeadlineIfNeeded();
       dp.fetchTeamsIfNeeded();
-      dp.fetchNotificationsIfNeeded(); // 🟢 ADDED NOTIFICATION FETCH
     });
   }
 

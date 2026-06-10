@@ -6,7 +6,8 @@ import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/top_notification.dart';
 
 class NotificationService {
-  static bool _hasRequested = false;
+  static bool _initialized = false;
+  static void reset() => _initialized = false;
 
   // ✅ FIXED — use the same base URL as ApiService, not a placeholder
   static const String _baseUrl =
@@ -19,8 +20,8 @@ class NotificationService {
 
   static Future<void> setupPushNotifications(
       BuildContext context, String userAuthToken) async {
-    if (_hasRequested) return;
-    _hasRequested = true;
+    if (_initialized) return; // ← prevents duplicate listeners
+    _initialized = true;
 
     FirebaseMessaging messaging = FirebaseMessaging.instance;
 
@@ -73,7 +74,8 @@ class NotificationService {
       String fcmToken, String userAuthToken) async {
     final url = Uri.parse('$_baseUrl/users/fcm-token'); // ✅ correct endpoint
     try {
-      final response = await http.patch( // ✅ PATCH, not POST
+      final response = await http.patch(
+        // ✅ PATCH, not POST
         url,
         headers: {
           'Content-Type': 'application/json',

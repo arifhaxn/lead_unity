@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
@@ -272,6 +273,14 @@ class ApiService {
     try {
       await _dio.patch('/notifications/read-all');
     } catch (_) {}
+  }
+
+  Future<void> clearFcmToken(String authToken) async {
+    await _dio.patch(
+      '/users/fcm-token',
+      data: {'fcmToken': null},
+      options: Options(headers: {'Authorization': 'Bearer $authToken'}),
+    );
   }
 
   // api_services.dart - Add this method
