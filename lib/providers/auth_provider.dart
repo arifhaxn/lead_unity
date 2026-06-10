@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:link_unity/services/notification_service.dart';
 import '../services/api_services.dart';
 import '../../models/user_model.dart';
 import '../widgets/custom_snackbar.dart'; // 🟢 Import the custom snackbar!
@@ -207,12 +208,16 @@ class AuthProvider with ChangeNotifier {
   }
 
   Future<void> logout() async {
-    try {
-      await _apiService.logout();
-    } catch (e) {
-      debugPrint(
-          "API Logout error: $e"); // Fail silently on API side if network is down
+  try {
+    // ✅ Tell backend to wipe FCM token before we delete the JWT
+    if (_token != null) {
+      await _apiService.clearFcmToken(_token!);
     }
+    await _apiService.logout();
+  } catch (e) {
+    debugPrint("API Logout error: $e");
+  }
+    NotificationService.reset();
 
     await _storage.delete(key: 'user_data');
     await _storage.delete(key: 'jwt_token'); // Make sure to delete token too!
