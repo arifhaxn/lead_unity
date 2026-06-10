@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/registration_status_badge.dart';
+import 'package:link_unity/widgets/notification_bell.dart'; // 🟢 ADDED IMPORT
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
@@ -113,6 +114,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
         foregroundColor: theme.colorScheme.onSurface,
         elevation: 0,
         bottom: appBarBottomLine,
+        actions: const [NotificationBell()], // 🟢 ADDED NOTIFICATION BELL
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),

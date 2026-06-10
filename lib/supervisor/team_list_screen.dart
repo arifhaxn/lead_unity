@@ -4,9 +4,9 @@ import 'package:link_unity/supervisor/sup_team_details.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; 
+import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import '../providers/auth_provider.dart';
-import '../providers/data_provider.dart'; 
+import '../providers/data_provider.dart';
 import 'marking_screen.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
@@ -24,7 +24,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   String _searchQuery = '';
   Timer? _searchDebounce;
 
-  List<dynamic>? _cachedRawTeams; 
+  List<dynamic>? _cachedRawTeams;
   List<dynamic> _processedTeams = [];
   List<String> _courseTabs = [];
 
@@ -45,7 +45,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
   void _processDataIfNeeded(List<dynamic>? rawTeams, String? myId) {
     if (rawTeams == null) return;
-    
+
     if (_cachedRawTeams == rawTeams) return;
 
     _cachedRawTeams = rawTeams;
@@ -83,7 +83,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
       if (!noDateA) {
         startA = DateTime.tryParse(a['defenseDate'].toString())?.toLocal();
         if (startA != null) {
-          DateTime endA = a['defenseEndDate'] != null ? DateTime.parse(a['defenseEndDate']).toLocal() : startA;
+          DateTime endA = a['defenseEndDate'] != null
+              ? DateTime.parse(a['defenseEndDate']).toLocal()
+              : startA;
           isPastA = endA.isBefore(now);
         } else {
           noDateA = true;
@@ -93,7 +95,9 @@ class _TeamListScreenState extends State<TeamListScreen> {
       if (!noDateB) {
         startB = DateTime.tryParse(b['defenseDate'].toString())?.toLocal();
         if (startB != null) {
-          DateTime endB = b['defenseEndDate'] != null ? DateTime.parse(b['defenseEndDate']).toLocal() : startB;
+          DateTime endB = b['defenseEndDate'] != null
+              ? DateTime.parse(b['defenseEndDate']).toLocal()
+              : startB;
           isPastB = endB.isBefore(now);
         } else {
           noDateB = true;
@@ -110,7 +114,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
       if (!noDateA && !noDateB && startA != null && startB != null) {
         return startA.compareTo(startB);
       }
-      
+
       return 0;
     });
 
@@ -119,7 +123,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   void _showInstructions() {
-    final title = widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
+    final title =
+        widget.onlyMyTeams ? "Personal Marking" : "Defense Board Marking";
     final content = widget.onlyMyTeams
         ? "This list contains only the teams directly assigned to you. Use this section to provide your personal marking and evaluate your own students."
         : "This list contains all registered teams. Use this section to evaluate and mark teams as an external member during a Defense Board.";
@@ -141,7 +146,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context), 
+            onPressed: () => Navigator.pop(context),
             child: const Text("Got it!"),
           ),
         ],
@@ -155,8 +160,21 @@ class _TeamListScreenState extends State<TeamListScreen> {
     try {
       final startDt = DateTime.parse(startIso).toLocal();
       final endDt = endIso != null ? DateTime.parse(endIso).toLocal() : null;
-      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'May',
+        'Jun',
+        'Jul',
+        'Aug',
+        'Sep',
+        'Oct',
+        'Nov',
+        'Dec'
+      ];
+
       String dateStr = '${months[startDt.month - 1]} ${startDt.day}';
 
       String formatTime(DateTime dt) {
@@ -170,7 +188,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
       String timeRange = formatTime(startDt);
       if (endDt != null) timeRange += ' - ${formatTime(endDt)}';
-      
+
       return {'date': dateStr, 'time': timeRange};
     } catch (e) {
       return {'date': 'TBD', 'time': ''};
@@ -180,7 +198,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
-    final dataProvider = Provider.of<DataProvider>(context); 
+    final dataProvider = Provider.of<DataProvider>(context);
     final myId = authProvider.user?.id;
     final theme = Theme.of(context);
     final themeProvider = Provider.of<ThemeProvider>(context);
@@ -220,15 +238,16 @@ class _TeamListScreenState extends State<TeamListScreen> {
       body: Builder(
         builder: (context) {
           if (dataProvider.isLoadingTeams && dataProvider.allTeams == null) {
-            return _buildSkeletonLoader(theme); 
+            return _buildSkeletonLoader(theme);
           }
 
           if (_processedTeams.isEmpty) {
             return RefreshIndicator(
-              onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+              onRefresh: () =>
+                  dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
               color: theme.colorScheme.primary,
               child: ListView(
-                physics: const AlwaysScrollableScrollPhysics(), 
+                physics: const AlwaysScrollableScrollPhysics(),
                 children: const [
                   SizedBox(height: 200),
                   Center(child: Text("No approved teams found.")),
@@ -243,9 +262,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildCourseTabs(context, _courseTabs),
-
                 Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10), 
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 10),
                   child: TextField(
                     controller: _searchController,
                     onChanged: (v) {
@@ -254,7 +272,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                           () => setState(() => _searchQuery = v.trim()));
                     },
                     decoration: InputDecoration(
-                      hintText: 'Search by Title',
+                      hintText: "Search by title or #ID",
                       prefixIcon: const Icon(Icons.search),
                       filled: true,
                       fillColor: theme.colorScheme.surface,
@@ -264,74 +282,46 @@ class _TeamListScreenState extends State<TeamListScreen> {
                     ),
                   ),
                 ),
-
                 Expanded(
                   child: TabBarView(
                     children: _courseTabs.map((courseCode) {
-                      final courseOrdered = _getTeamsForCourse(_processedTeams, courseCode);
+                      final courseOrdered =
+                          _getTeamsForCourse(_processedTeams, courseCode);
 
                       final serialByTeamKeyInCourse = <String, int>{
                         for (int i = 0; i < courseOrdered.length; i++)
-                          _teamKey(courseOrdered[i] as Map<String, dynamic>): i + 1,
+                          _teamKey(courseOrdered[i] as Map<String, dynamic>):
+                              i + 1,
                       };
 
                       final normalizedQuery = _searchQuery.toLowerCase();
-                      
+
                       final filteredWithCardId = courseOrdered.where((team) {
-                        if (normalizedQuery.isEmpty) return true;
-
                         final teamMap = team as Map<String, dynamic>;
-                        final int serial = teamMap['serialNumber'] ?? serialByTeamKeyInCourse[_teamKey(teamMap)] ?? 0;
-                        
-                        String displayTitle = (teamMap['title'] ?? 'Untitled Team').toString();
-                        String displaySupName = 'Not Assigned';
-                        if (teamMap['assignedSupervisor'] is Map) {
-                          displaySupName = (teamMap['assignedSupervisor']['name'] ?? '').toString().trim();
-                        }
-                        
-                        String otherSups = '';
-                        if (teamMap['supervisors'] is List) {
-                          for (var s in teamMap['supervisors']) {
-                            if (s is Map) {
-                              otherSups += (s['name'] ?? '').toString() + ' ';
-                            }
-                          }
-                        }
-
-                        String membersData = '';
-                        if (teamMap['teamMembers'] is List) {
-                          for (var m in teamMap['teamMembers']) {
-                            if (m is Map) {
-                              membersData += (m['studentId'] ?? '').toString() + ' ' + (m['name'] ?? '').toString() + ' ';
-                            }
-                          }
-                        }
-
-                        final searchableString = "$displayTitle $displaySupName $otherSups $membersData team $serial #$serial serial $serial".toLowerCase();
-                        
-                        final cleanSearchable = searchableString.replaceAll(RegExp(r'[^\w\s]'), '');
-                        final cleanQuery = normalizedQuery.replaceAll(RegExp(r'[^\w\s]'), '');
-                        final searchTerms = cleanQuery.split(' ').where((t) => t.isNotEmpty).toList();
-                        
-                        return searchTerms.every((term) => cleanSearchable.contains(term));
+                        // Pass the team, the search query, and the dataProvider to our new helper!
+                        return _teamMatchesSearch(
+                            teamMap, _searchQuery, dataProvider);
                       }).toList();
 
                       if (filteredWithCardId.isEmpty) {
                         return RefreshIndicator(
-                          onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+                          onRefresh: () => dataProvider.fetchTeamsIfNeeded(
+                              forceRefresh: true),
                           color: theme.colorScheme.primary,
                           child: ListView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             children: const [
                               SizedBox(height: 100),
-                              Center(child: Text("No teams match your filter.")),
+                              Center(
+                                  child: Text("No teams match your filter.")),
                             ],
                           ),
                         );
                       }
 
                       return RefreshIndicator(
-                        onRefresh: () => dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
+                        onRefresh: () =>
+                            dataProvider.fetchTeamsIfNeeded(forceRefresh: true),
                         color: theme.colorScheme.primary,
                         child: AnimationLimiter(
                           child: ListView.builder(
@@ -339,8 +329,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
                             padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
                             itemCount: filteredWithCardId.length,
                             itemBuilder: (context, index) {
-                              final teamMap = filteredWithCardId[index] as Map<String, dynamic>;
-                              final int dbSerial = teamMap['serialNumber'] ?? (index + 1);
+                              final teamMap = filteredWithCardId[index]
+                                  as Map<String, dynamic>;
+                              final int dbSerial =
+                                  teamMap['serialNumber'] ?? (index + 1);
 
                               return AnimationConfiguration.staggeredList(
                                 position: index,
@@ -377,7 +369,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
     final theme = Theme.of(context);
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.only(top: 8, bottom: 10), 
+      padding: const EdgeInsets.only(top: 8, bottom: 10),
       decoration: BoxDecoration(
         color: theme.scaffoldBackgroundColor,
         // 🟢 Added the border here so it sits directly under the tabs
@@ -390,10 +382,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
       ),
       child: TabBar(
         isScrollable: true,
-        tabAlignment: TabAlignment.center, 
-        dividerColor: Colors.transparent, 
+        tabAlignment: TabAlignment.center,
+        dividerColor: Colors.transparent,
         indicatorSize: TabBarIndicatorSize.label,
-        labelPadding: const EdgeInsets.symmetric(horizontal: 10), 
+        labelPadding: const EdgeInsets.symmetric(horizontal: 10),
         labelColor: theme.colorScheme.primary,
         unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
         indicator: BoxDecoration(
@@ -403,11 +395,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
         tabs: courseTabs
             .map((c) => Tab(
-                  height: 34, 
+                  height: 34,
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Text(c,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                        style: const TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.w600)),
                   ),
                 ))
             .toList(),
@@ -423,20 +416,30 @@ class _TeamListScreenState extends State<TeamListScreen> {
     return Column(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20), 
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Shimmer.fromColors(
                 baseColor: baseColor,
                 highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+                child: Container(
+                    height: 30,
+                    width: 80,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10))),
               ),
               const SizedBox(width: 10),
               Shimmer.fromColors(
                 baseColor: baseColor,
                 highlightColor: highlightColor,
-                child: Container(height: 30, width: 80, decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(10))),
+                child: Container(
+                    height: 30,
+                    width: 80,
+                    decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(10))),
               ),
             ],
           ),
@@ -449,7 +452,8 @@ class _TeamListScreenState extends State<TeamListScreen> {
             child: Container(
               height: 50,
               width: double.infinity,
-              decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(
+                  color: Colors.white, borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ),
@@ -464,7 +468,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 highlightColor: highlightColor,
                 child: Container(
                   margin: const EdgeInsets.only(bottom: 14),
-                  height: 120, 
+                  height: 120,
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(16),
@@ -479,10 +483,12 @@ class _TeamListScreenState extends State<TeamListScreen> {
   }
 
   String _teamKey(Map<String, dynamic> team) {
-    final key = (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
+    final key =
+        (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
     if (key.isNotEmpty) return key;
     final title = (team['title'] ?? '').toString();
-    final createdAt = (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
+    final createdAt =
+        (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
     return '$title|$createdAt';
   }
 
@@ -498,55 +504,137 @@ class _TeamListScreenState extends State<TeamListScreen> {
 
   List<dynamic> _getTeamsForCourse(List<dynamic> teams, String courseCode) {
     return teams.where((team) {
-      final code = (team['course'] is Map) ? team['course']['courseCode']?.toString() : null;
+      final code = (team['course'] is Map)
+          ? team['course']['courseCode']?.toString()
+          : null;
       return code == courseCode;
     }).toList();
   }
 
-  bool _hasSubmittedEvaluation(Map<String, dynamic> team, String? myId, String evaluationType) {
+  bool _hasSubmittedEvaluation(
+      Map<String, dynamic> team, String? myId, String evaluationType) {
     if (myId == null || myId.isEmpty) return false;
     final marks = team['marks'] as List? ?? [];
     for (final mark in marks) {
       if (mark is! Map) continue;
-      final supervisorId = (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
+      final supervisorId =
+          (mark['supervisorId'] ?? mark['supervisor'] ?? '').toString();
       final type = (mark['type'] ?? '').toString().toLowerCase().trim();
       if (supervisorId == myId && type == evaluationType) return true;
     }
     return false;
   }
 
-  Widget _buildTeamCard(BuildContext context, {required int serialNumber, required Map<String, dynamic> team, required String? myId, required DataProvider dataProvider}) { 
+  bool _teamMatchesSearch(
+      Map<String, dynamic> team, String query, DataProvider dataProvider) {
+    if (query.isEmpty) return true;
+    final q = query.toLowerCase().trim();
+
+    // 1. Search Title
+    final title = (team['title'] ?? '').toString().toLowerCase();
+    if (title.contains(q)) return true;
+
+    // 2. Search IDs & Serial Numbers
+    final serial = (team['serialNumber'] ?? '').toString();
+    if (serial == q || 'team $serial' == q || '#$serial' == q) return true;
+    if ((team['_id'] ?? '').toString().toLowerCase() == q) return true;
+
+    // 3. Safe Helper to Search Supervisor Data
+    bool checkSupervisor(dynamic supData) {
+      if (supData == null) return false;
+
+      // A. Check if the backend already populated the name/abbreviation
+      if (supData is Map) {
+        final name = (supData['name'] ?? '').toString().toLowerCase();
+        final abbr = (supData['abbreviation'] ??
+                supData['abbr'] ??
+                supData['initials'] ??
+                '')
+            .toString()
+            .toLowerCase();
+        if (name.contains(q) || abbr.contains(q)) return true;
+      }
+
+      // B. Cross-reference the ID with the DataProvider to be 100% sure
+      final supId = supData is Map ? supData['_id'] : supData;
+      if (supId != null && dataProvider.allSupervisors != null) {
+        for (var s in dataProvider.allSupervisors!) {
+          if (s is Map && s['_id'].toString() == supId.toString()) {
+            final name = (s['name'] ?? '').toString().toLowerCase();
+            final abbr = (s['abbreviation'] ?? s['abbr'] ?? s['initials'] ?? '')
+                .toString()
+                .toLowerCase();
+            if (name.contains(q) || abbr.contains(q)) return true;
+            break; // Stop checking other supervisors if we found the matching ID
+          }
+        }
+      }
+      return false;
+    }
+
+    // Check the Assigned Supervisor & any Co-Supervisors
+    if (checkSupervisor(team['assignedSupervisor'])) return true;
+    if (team['supervisors'] is List) {
+      for (var s in team['supervisors']) {
+        if (checkSupervisor(s)) return true;
+      }
+    }
+
+    // 4. Search Student Team Members
+    if (team['teamMembers'] is List) {
+      for (var m in team['teamMembers']) {
+        if (m is Map) {
+          final name = (m['name'] ?? '').toString().toLowerCase();
+          final sId = (m['studentId'] ?? '').toString().toLowerCase();
+          if (name.contains(q) || sId.contains(q)) return true;
+        }
+      }
+    }
+
+    // If it makes it all the way down here, it's not a match!
+    return false;
+  }
+
+  Widget _buildTeamCard(BuildContext context,
+      {required int serialNumber,
+      required Map<String, dynamic> team,
+      required String? myId,
+      required DataProvider dataProvider}) {
     final theme = Theme.of(context);
     final title = team['title'] ?? 'Untitled Team';
     String supervisorName = 'Not Assigned';
     final assignedSupervisor = team['assignedSupervisor'];
-    
+
     if (assignedSupervisor is Map) {
       supervisorName = (assignedSupervisor['name'] ?? '').toString().trim();
-    } else if (assignedSupervisor != null && dataProvider.allSupervisors != null) {
+    } else if (assignedSupervisor != null &&
+        dataProvider.allSupervisors != null) {
       final found = dataProvider.allSupervisors!.firstWhere(
-        (s) => s['_id']?.toString() == assignedSupervisor.toString(), 
-        orElse: () => null
-      );
+          (s) => s['_id']?.toString() == assignedSupervisor.toString(),
+          orElse: () => null);
       if (found != null) {
-        supervisorName = (found['name'] ?? found['abbreviation'] ?? '').toString().trim();
+        supervisorName =
+            (found['name'] ?? found['abbreviation'] ?? '').toString().trim();
       }
     }
-    
+
     final uniqueTag = 'team_title_${team['_id'] ?? team['title']}';
 
     bool isMyTeam = false;
     if (myId != null) {
-      final assigned = (team['assignedSupervisor'] is Map) ? team['assignedSupervisor']['_id'] : team['assignedSupervisor'];
+      final assigned = (team['assignedSupervisor'] is Map)
+          ? team['assignedSupervisor']['_id']
+          : team['assignedSupervisor'];
       isMyTeam = assigned == myId;
     }
-    
+
     bool isActionDisabled = !widget.onlyMyTeams && isMyTeam;
     final evaluationType = widget.onlyMyTeams ? 'own' : 'defense';
     final hasSubmitted = _hasSubmittedEvaluation(team, myId, evaluationType);
 
     // Get the separate Date and Time parts
-    final parts = _getDateTimeParts(team['defenseDate']?.toString(), team['defenseEndDate']?.toString());
+    final parts = _getDateTimeParts(
+        team['defenseDate']?.toString(), team['defenseEndDate']?.toString());
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -562,14 +650,14 @@ class _TeamListScreenState extends State<TeamListScreen> {
       child: Column(
         children: [
           ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             leading: CircleAvatar(
               backgroundColor: theme.colorScheme.primary.withOpacity(0.1),
-              child: Text(serialNumber.toString(), 
-                style: TextStyle(
-                  color: theme.colorScheme.primary, 
-                  fontWeight: FontWeight.bold)
-              ),
+              child: Text(serialNumber.toString(),
+                  style: TextStyle(
+                      color: theme.colorScheme.primary,
+                      fontWeight: FontWeight.bold)),
             ),
             title: Row(
               children: [
@@ -591,45 +679,51 @@ class _TeamListScreenState extends State<TeamListScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 4),
-                Text("Supervisor: $supervisorName", style: TextStyle(fontSize: 12, color: theme.colorScheme.onSurfaceVariant)),
+                Text("Supervisor: $supervisorName",
+                    style: TextStyle(
+                        fontSize: 12,
+                        color: theme.colorScheme.onSurfaceVariant)),
                 if (team['defenseDate'] != null) ...[ 
                   const SizedBox(height: 6),
-                  Row(
-                    children: [
-                      const Icon(Icons.event_available_rounded, size: 14, color: Color(0xFFF59E0B)),
-                      const SizedBox(width: 6),
-                      RichText(
-                        text: TextSpan(
-                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
-                          children: [
-                            TextSpan(
-                              text: parts['date'], 
-                              style: TextStyle(color: theme.colorScheme.primary)
-                            ),
-                            TextSpan(
-                              text: '  •  ', 
-                              style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4))
-                            ),
-                            TextSpan(
-                              text: parts['time'], 
-                              style: const TextStyle(color: Color(0xFFF59E0B))
-                            ),
-                          ],
+                  
+                  // 🟢 Row, Icon, and Expanded have been completely removed!
+                  RichText(
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      children: [
+                        TextSpan(
+                          text: parts['date'], 
+                          style: TextStyle(color: theme.colorScheme.primary)
                         ),
-                      ),
-                    ],
+                        TextSpan(
+                          text: '  •  ', 
+                          style: TextStyle(color: theme.colorScheme.onSurfaceVariant.withOpacity(0.4))
+                        ),
+                        TextSpan(
+                          text: parts['time'], 
+                          style: const TextStyle(color: Color(0xFFF59E0B))
+                        ),
+                      ],
+                    ),
                   ),
                 ]
               ],
             ),
             trailing: Container(
-              width: 24, height: 24,
+              width: 24,
+              height: 24,
               decoration: BoxDecoration(
                 color: hasSubmitted ? const Color(0xFF16A34A) : null,
                 borderRadius: BorderRadius.circular(7),
-                border: Border.all(color: hasSubmitted ? const Color(0xFF16A34A) : theme.colorScheme.outline.withOpacity(0.8), width: 1.6),
+                border: Border.all(
+                    color: hasSubmitted
+                        ? const Color(0xFF16A34A)
+                        : theme.colorScheme.outline.withOpacity(0.8),
+                    width: 1.6),
               ),
-              child: hasSubmitted ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
+              child: hasSubmitted
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
+                  : null,
             ),
           ),
           const Divider(height: 1),
@@ -639,20 +733,35 @@ class _TeamListScreenState extends State<TeamListScreen> {
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
-                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SupervisorTeamDetailsScreen(team: team))),
+                  onPressed: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (_) =>
+                              SupervisorTeamDetailsScreen(team: team))),
                   child: const Text("Details"),
                 ),
                 const SizedBox(width: 8),
                 ElevatedButton.icon(
-                  onPressed: isActionDisabled ? null : () async {
-                    await Navigator.push(context, MaterialPageRoute(builder: (_) => MarkingScreen(team: team, evaluationType: evaluationType)));
-                    dataProvider.fetchTeamsIfNeeded(forceRefresh: true);
-                  },
-                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note, size: 16),
+                  onPressed: isActionDisabled
+                      ? null
+                      : () async {
+                          await Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (_) => MarkingScreen(
+                                      team: team,
+                                      evaluationType: evaluationType)));
+                          dataProvider.fetchTeamsIfNeeded(forceRefresh: true);
+                        },
+                  icon: Icon(isActionDisabled ? Icons.lock : Icons.edit_note,
+                      size: 16),
                   label: Text(isActionDisabled ? "Your Team" : "Evaluate"),
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: isActionDisabled ? Colors.grey[300] : const Color(0xFFF59E0B),
-                    foregroundColor: isActionDisabled ? Colors.grey[600] : Colors.white,
+                    backgroundColor: isActionDisabled
+                        ? Colors.grey[300]
+                        : const Color(0xFFF59E0B),
+                    foregroundColor:
+                        isActionDisabled ? Colors.grey[600] : Colors.white,
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     elevation: isActionDisabled ? 0 : 2,
                   ),
