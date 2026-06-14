@@ -50,7 +50,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            // 🟢 UPDATED: Changed instructions to reflect 3 members minimum
             "• Fill in the details for at least 3 team members. You can submit info for 3 or 4 members. Leave unused cards blank.\n\n"
             "• Note: You can only submit one proposal per course.",
             style: TextStyle(height: 1.5),
@@ -78,7 +77,6 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             const Text("Need a Team?"),
           ],
         ),
-        // 🟢 UPDATED: Changed dialog text to reflect 3 members minimum
         content: const Text(
           "Proposals require at least 3 members to be submitted. If you don't have a full team yet, you can send a 'Request Team' application so supervisors can group you with others.",
           style: TextStyle(height: 1.4),
@@ -290,7 +288,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   @override
   void initState() {
     super.initState();
-    // 🟢 Auto-fill the leader's exact login info to prevent backend duplication
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.user;
@@ -377,7 +374,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
       }
     }
 
-    // 🟢 UPDATED: Changed the minimum required members to 3 instead of 2
     if (members.length < 3) {
       setState(() => _submitState = SubmitState.idle);
       widget.onSoloStudentDetected();
@@ -534,12 +530,13 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                         fontWeight: FontWeight.bold,
                         color: theme.colorScheme.primary)),
                 const SizedBox(height: 10),
+                
                 Row(children: [
-                  _buildSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
+                  _buildSearchableSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
                   const SizedBox(width: 8),
-                  _buildSupDropdown(2, _sup2, (v) => setState(() => _sup2 = v)),
+                  _buildSearchableSupDropdown(2, _sup2, (v) => setState(() => _sup2 = v)),
                   const SizedBox(width: 8),
-                  _buildSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
+                  _buildSearchableSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
                 ]),
 
                 const SizedBox(height: 30),
@@ -612,37 +609,49 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-  Widget _buildSupDropdown(
-      int index, String? value, ValueChanged<String?> onChanged) {
-    return Expanded(
-      child: DropdownButtonFormField<String>(
-        value: value,
-        isExpanded: true,
-        menuMaxHeight: 300, 
-        decoration: InputDecoration(
-          labelText: 'Sup $index',
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 10, vertical: 0),
-        ),
-        validator: (value) => value == null ? 'Required' : null,
-        items: widget.supervisors.map<DropdownMenuItem<String>>((s) {
-          final abbreviation = [
-            s['abbreviation'],
-            s['abbr'],
-            s['shortName'],
-            s['initials'],
-          ].map((v) => (v ?? '').toString().trim()).firstWhere(
-                (v) => v.isNotEmpty,
-                orElse: () => '',
-              );
+  Widget _buildSearchableSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
+    final theme = Theme.of(context);
+    
+    String displayName = 'Select';
+    if (value != null) {
+      final found = widget.supervisors.firstWhere((s) => s['_id'] == value, orElse: () => null);
+      if (found != null) {
+        displayName = (found['name'] ?? found['abbreviation'] ?? 'Unknown').toString();
+      }
+    }
 
-          return DropdownMenuItem(
-              value: s['_id'],
-              child: Text(abbreviation,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 13)));
-        }).toList(),
-        onChanged: onChanged,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () async {
+          final selectedId = await showDialog<String>(
+            context: context,
+            builder: (context) => _SupervisorSearchDialog(
+              supervisors: widget.supervisors,
+              title: 'Select Supervisor $index',
+            ),
+          );
+          if (selectedId != null) {
+            onChanged(selectedId);
+          }
+        },
+        child: InputDecorator(
+          decoration: InputDecoration(
+            labelText: 'Sup $index',
+            contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          ),
+          // 🟢 FIX 1: Search Icon removed completely! Just the text remains.
+          child: Text(
+            displayName,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: value == null ? FontWeight.normal : FontWeight.bold,
+              color: value == null ? theme.colorScheme.onSurfaceVariant : theme.colorScheme.onSurface,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis, 
+          ),
+        ),
       ),
     );
   }
@@ -652,10 +661,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     final theme = Theme.of(context);
     final isDarkMode = theme.brightness == Brightness.dark;
 
-    // 🟢 DYNAMIC COLORS BASED ON LIGHT/DARK MODE
     final cardBackgroundColor = isDarkMode 
-        ? const Color(0xFF245E63) // Keep the dark green for Dark Mode
-        : theme.colorScheme.primary.withOpacity(0.08); // Subtle primary tint for Light Mode
+        ? const Color(0xFF245E63) 
+        : theme.colorScheme.primary.withOpacity(0.08); 
         
     final inputFillColor = isDarkMode 
         ? Colors.white10 
@@ -665,7 +673,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     final labelColor = isDarkMode ? Colors.white70 : theme.colorScheme.onSurfaceVariant;
     final activeLabelColor = isDarkMode ? Colors.white : theme.colorScheme.primary;
 
-    // Dynamic Text Styles
     final textStyle = TextStyle(color: textColor, fontWeight: FontWeight.w500);
     final labelStyle = TextStyle(color: labelColor, fontSize: 13, fontWeight: FontWeight.w500);
     final floatingLabelStyle = TextStyle(color: activeLabelColor, fontWeight: FontWeight.bold);
@@ -695,12 +702,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           TextFormField(
             controller: _memberControllers[index]['name'],
             style: textStyle, 
-            readOnly: isLeader, // 🟢 LOCK IT
+            readOnly: isLeader, 
             decoration: InputDecoration(
               labelText: 'Name', 
               labelStyle: labelStyle,
               floatingLabelStyle: floatingLabelStyle,
-              suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, // 🟢 SHOW LOCK
+              suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, 
               isDense: true, 
               filled: true, 
               fillColor: inputFillColor, 
@@ -713,12 +720,12 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
                 child: TextFormField(
               controller: _memberControllers[index]['id'],
               style: textStyle,
-              readOnly: isLeader, // 🟢 LOCK IT
+              readOnly: isLeader, 
               decoration: InputDecoration(
                 labelText: 'ID', 
                 labelStyle: labelStyle,
                 floatingLabelStyle: floatingLabelStyle,
-                suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, // 🟢 SHOW LOCK
+                suffixIcon: isLeader ? Icon(Icons.lock_outline_rounded, size: 16, color: labelColor) : null, 
                 isDense: true, 
                 filled: true, 
                 fillColor: inputFillColor, 
@@ -742,16 +749,13 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             )),
           ]),
           const SizedBox(height: 8),
-          // 3. The Email Field (Now Unlocked!)
           TextFormField(
             controller: _memberControllers[index]['email'],
             style: textStyle,
-            // 🟢 readOnly is completely removed so anyone can edit it
             decoration: InputDecoration(
               labelText: 'Email', 
               labelStyle: labelStyle,
               floatingLabelStyle: floatingLabelStyle,
-              // 🟢 Lock icon removed from the suffix
               isDense: true, 
               filled: true, 
               fillColor: inputFillColor, 
@@ -777,6 +781,92 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SupervisorSearchDialog extends StatefulWidget {
+  final List<dynamic> supervisors;
+  final String title;
+
+  const _SupervisorSearchDialog({
+    required this.supervisors,
+    required this.title,
+  });
+
+  @override
+  State<_SupervisorSearchDialog> createState() => _SupervisorSearchDialogState();
+}
+
+class _SupervisorSearchDialogState extends State<_SupervisorSearchDialog> {
+  String _searchQuery = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    
+    final filteredList = widget.supervisors.where((s) {
+      final name = (s['name'] ?? s['abbreviation'] ?? '').toString().toLowerCase();
+      return name.contains(_searchQuery.toLowerCase());
+    }).toList();
+
+    return AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      title: Text(widget.title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+      contentPadding: const EdgeInsets.only(top: 16, left: 16, right: 16, bottom: 0),
+      // 🟢 FIX 2: Sucked the cancel button down by heavily reducing bottom padding!
+      actionsPadding: const EdgeInsets.only(top: 4, bottom: 8, right: 12),
+      content: SizedBox(
+        width: double.maxFinite,
+        // 🟢 FIX 3: Increased from 0.45 to 0.70 to make the list much taller!
+        height: MediaQuery.of(context).size.height * 0.70,
+        child: Column(
+          children: [
+            TextField(
+              autofocus: true, 
+              decoration: InputDecoration(
+                hintText: 'Search by full name...',
+                prefixIcon: const Icon(Icons.search_rounded),
+                filled: true,
+                fillColor: theme.brightness == Brightness.dark ? Colors.white10 : Colors.grey.shade100,
+                contentPadding: const EdgeInsets.symmetric(vertical: 0),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+              onChanged: (val) => setState(() => _searchQuery = val),
+            ),
+            const SizedBox(height: 12),
+            Expanded(
+              child: ListView.separated(
+                itemCount: filteredList.length,
+                separatorBuilder: (_, __) => Divider(height: 1, color: theme.colorScheme.outline.withOpacity(0.2)),
+                itemBuilder: (context, index) {
+                  final sup = filteredList[index];
+                  final name = sup['name'] ?? sup['abbreviation'] ?? 'Unknown Supervisor';
+                  final designation = sup['designation'];
+                  
+                  return ListTile(
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
+                    title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: designation != null 
+                        ? Text(designation, style: const TextStyle(fontSize: 12)) 
+                        : null,
+                    onTap: () => Navigator.pop(context, sup['_id']),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancel', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
     );
   }
 }

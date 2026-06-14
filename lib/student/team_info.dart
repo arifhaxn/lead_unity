@@ -177,6 +177,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               physics: const AlwaysScrollableScrollPhysics(),
               padding: const EdgeInsets.all(20),
               children: [
+
                 // 🟢 ACTIVE PROPOSAL LABEL MOVED HERE
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
@@ -393,7 +394,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('LEADER',
+                        child: const Text('Me',
                             style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,

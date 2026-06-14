@@ -1,10 +1,9 @@
-import 'dart:convert'; // 🟢 ADDED: For Base64 encoding/decoding
-import 'dart:typed_data'; // 🟢 ADDED: For Uint8List (cross-platform bytes)
+import 'dart:convert'; 
+import 'dart:typed_data'; 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-// 🔴 REMOVED: dart:io and path_provider as they break Web compilation
 
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
@@ -23,7 +22,6 @@ class AppDrawer extends StatefulWidget {
 class _AppDrawerState extends State<AppDrawer> {
   final _storage = const FlutterSecureStorage();
   
-  // 🟢 UPDATED: Using bytes instead of a File object
   Uint8List? _profileImageBytes;
   String _savedIdentifier = 'SUP';
 
@@ -34,7 +32,6 @@ class _AppDrawerState extends State<AppDrawer> {
   }
 
   Future<void> _loadInitialData() async {
-    // 🟢 UPDATED: Reading the Base64 string instead of a file path
     String? base64Image = await _storage.read(key: 'profile_image_base64');
     String? ident = await _storage.read(key: 'login_identifier');
 
@@ -56,14 +53,12 @@ class _AppDrawerState extends State<AppDrawer> {
       final pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
       if (pickedFile != null) {
-        // 🟢 UPDATED: Read as cross-platform bytes directly from the picker
         final bytes = await pickedFile.readAsBytes();
 
         setState(() {
           _profileImageBytes = bytes;
         });
         
-        // Convert to a string to save in storage so it persists across reloads
         final base64String = base64Encode(bytes);
         await _storage.write(key: 'profile_image_base64', value: base64String);
       }
@@ -160,7 +155,6 @@ class _AppDrawerState extends State<AppDrawer> {
                       child: CircleAvatar(
                         radius: 42,
                         backgroundColor: theme.colorScheme.surface,
-                        // 🟢 UPDATED: Use MemoryImage for bytes instead of FileImage
                         backgroundImage: _profileImageBytes != null
                             ? MemoryImage(_profileImageBytes!) as ImageProvider
                             : (isEbrahimSir
@@ -426,12 +420,26 @@ class _AppDrawerState extends State<AppDrawer> {
               title: "Logout",
               isDestructive: true,
               onTap: () async {
-                Navigator.pop(context);
-                Provider.of<AuthProvider>(context, listen: false).logout();
-                Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (context) => const HomePage()),
-                  (route) => false,
-                );
+                // 1. Grab the provider (listen MUST be false)
+                final auth = Provider.of<AuthProvider>(context, listen: false);
+                
+                // 2. CLEAR THE TOKEN FIRST! 
+                // We use 'await' to ensure the user is 100% logged out before we move.
+                await auth.logout();
+                
+                // 3. NOW snap to the HomePage. 
+                // Because the token is already gone, HomePage will skip the Dashboard 
+                // redirect and instantly show the login options.
+                if (context.mounted) {
+                  Navigator.of(context, rootNavigator: true).pushAndRemoveUntil(
+                    PageRouteBuilder(
+                      pageBuilder: (context, animation, secondaryAnimation) => const HomePage(),
+                      transitionDuration: Duration.zero,
+                      reverseTransitionDuration: Duration.zero,
+                    ),
+                    (route) => false,
+                  );
+                }
               },
             ),
           ),
