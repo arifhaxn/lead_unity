@@ -284,6 +284,7 @@ class _TeamListScreenState extends State<TeamListScreen> {
                 ),
                 Expanded(
                   child: TabBarView(
+                    
                     children: _courseTabs.map((courseCode) {
                       final courseOrdered =
                           _getTeamsForCourse(_processedTeams, courseCode);

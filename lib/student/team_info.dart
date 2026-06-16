@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/widgets/animated_dialog.dart'; // 🟢 ADDED for the instructions pop-up
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-import 'package:link_unity/widgets/notification_bell.dart';
+// 🟢 REMOVED: notification_bell.dart
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart'; 
@@ -28,6 +29,37 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     });
   }
 
+  // 🟢 ADDED: Instructions Dialog tailored for the Team Info screen
+  void _showInstructions() {
+    showAnimatedDialog(
+      context: context,
+      dialog: AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.info_outline_rounded,
+                color: Theme.of(context).colorScheme.primary),
+            const SizedBox(width: 8),
+            const Text("Team Info Guide"),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Text(
+            "• Active Proposal: Displays your currently active team, assigned supervisor, and project status.\n\n"
+            "• Team Members: View the details of everyone in your group. The leader is marked with a special badge.\n\n"
+            "• My Submitted Proposals: Expand the cards at the bottom to view the history of past team requests you have submitted.",
+            style: TextStyle(height: 1.5),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Got it!"),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -51,7 +83,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           ),
         ),
         actions: [
-          const NotificationBell(),
+          // 🟢 UPDATED: Notification icon removed, replaced with consistent Theme & Info buttons
           IconButton(
             icon: Icon(
               themeProvider.isDarkMode
@@ -60,6 +92,12 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               color: theme.colorScheme.onSurfaceVariant,
             ),
             onPressed: themeProvider.toggleTheme,
+            tooltip: themeProvider.isDarkMode ? 'Switch to light mode' : 'Switch to dark mode',
+          ),
+          IconButton(
+            icon: Icon(Icons.info_outline_rounded, color: theme.colorScheme.primary),
+            onPressed: _showInstructions,
+            tooltip: 'Instructions',
           ),
         ],
       ),
@@ -178,7 +216,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               padding: const EdgeInsets.all(20),
               children: [
 
-                // 🟢 ACTIVE PROPOSAL LABEL MOVED HERE
+                // ACTIVE PROPOSAL LABEL 
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
                   child: Row(
@@ -291,7 +329,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                       isLeader: false,
                     )),
 
-                // 🟢 Render Historical Proposals (All collapsed)
+                // Render Historical Proposals (All collapsed)
                 if (myProposals.isNotEmpty) ...[
                   const SizedBox(height: 30),
                   Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
@@ -374,7 +412,6 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               children: [
                 Row(
                   children: [
-                    // 🟢 Changed from Expanded to Flexible
                     Flexible(
                       child: Text(
                         name,
@@ -382,11 +419,11 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                             color: Colors.white),
-                        overflow: TextOverflow.ellipsis, // Adds "..." if the name is too long
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
                     if (isLeader) ...[
-                      const SizedBox(width: 8), // 🟢 Adds a tiny gap between the name and the badge
+                      const SizedBox(width: 8), 
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
@@ -394,7 +431,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                           color: Colors.white.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: const Text('Me',
+                        child: const Text('LEADER',
                             style: TextStyle(
                                 fontSize: 10,
                                 fontWeight: FontWeight.bold,
@@ -555,7 +592,7 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
   }
 }
 
-// ── 🟢 Expandable Proposal Card Widget (Now always starts collapsed) ─────────
+// ── Expandable Proposal Card Widget ─────────
 class _ExpandableProposalCard extends StatefulWidget {
   final Map<String, dynamic> proposal;
   final ThemeData theme;
@@ -579,7 +616,6 @@ class _ExpandableProposalCard extends StatefulWidget {
 }
 
 class _ExpandableProposalCardState extends State<_ExpandableProposalCard> {
-  // 🟢 Always defaults to collapsed now
   bool _isExpanded = false;
 
   @override
@@ -645,7 +681,7 @@ class _ExpandableProposalCardState extends State<_ExpandableProposalCard> {
           // HEADER (Always Visible & Clickable)
           GestureDetector(
             onTap: () => setState(() => _isExpanded = !_isExpanded),
-            behavior: HitTestBehavior.opaque, // Ensures the entire empty space is clickable
+            behavior: HitTestBehavior.opaque, 
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -684,9 +720,8 @@ class _ExpandableProposalCardState extends State<_ExpandableProposalCard> {
                       ),
                     ),
                     const SizedBox(height: 12),
-                    // Smoothly rotating Chevron!
                     AnimatedRotation(
-                      turns: _isExpanded ? 0.5 : 0.0, // Rotates 180 degrees
+                      turns: _isExpanded ? 0.5 : 0.0, 
                       duration: const Duration(milliseconds: 300),
                       child: Icon(Icons.keyboard_arrow_down_rounded, color: labelColor),
                     ),
@@ -709,7 +744,6 @@ class _ExpandableProposalCardState extends State<_ExpandableProposalCard> {
                 
                 widget.buildInfoRow('Assigned Supervisor', supName, textColor: textColor, labelColor: labelColor),
                 const SizedBox(height: 12),
-                // We keep the body outside the GestureDetector so links still perfectly register clicks!
                 widget.buildInfoRow('Description/Link', widget.proposal['description'] ?? 'No link provided', isLink: true, textColor: textColor, labelColor: labelColor),
                 
                 const SizedBox(height: 20),

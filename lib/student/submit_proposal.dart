@@ -50,7 +50,7 @@ class _SubmitProposalScreenState extends State<SubmitProposalScreen> {
             "• First, select your Target Course from the top dropdown.\n\n"
             "• Provide a valid Google Drive link containing your proposal documents. Ensure the link access is set to 'Anyone with the link'.\n\n"
             "• Select 3 distinct supervisors in your preferred order.\n\n"
-            "• Fill in the details for at least 3 team members. You can submit info for 3 or 4 members. Leave unused cards blank.\n\n"
+            "• Fill in the details for at least 3 team members. Leave unused cards blank.\n\n"
             "• Note: You can only submit one proposal per course.",
             style: TextStyle(height: 1.5),
           ),
@@ -609,14 +609,25 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     );
   }
 
-  Widget _buildSearchableSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
+Widget _buildSearchableSupDropdown(int index, String? value, ValueChanged<String?> onChanged) {
     final theme = Theme.of(context);
     
     String displayName = 'Select';
     if (value != null) {
       final found = widget.supervisors.firstWhere((s) => s['_id'] == value, orElse: () => null);
       if (found != null) {
-        displayName = (found['name'] ?? found['abbreviation'] ?? 'Unknown').toString();
+        // 🟢 FIX: Prioritize short forms/abbreviations for the selected box!
+        // It checks multiple possible backend keys for the short form, and falls back to name if needed.
+        displayName = [
+          found['abbreviation'],
+          found['abbr'],
+          found['shortName'],
+          found['initials'],
+          found['name'], 
+        ].map((v) => (v ?? '').toString().trim()).firstWhere(
+              (v) => v.isNotEmpty,
+              orElse: () => 'Unknown',
+            );
       }
     }
 
@@ -640,7 +651,6 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
             contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
           ),
-          // 🟢 FIX 1: Search Icon removed completely! Just the text remains.
           child: Text(
             displayName,
             style: TextStyle(
