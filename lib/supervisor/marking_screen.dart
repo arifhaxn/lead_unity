@@ -769,6 +769,18 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
 
   Widget _buildTotalBox(BuildContext context, double total) {
     final theme = Theme.of(context);
+    
+    // 🟢 NEW: Calculate the dynamic max total by adding up all criteria!
+    int dynamicMaxTotal = 0;
+    for (var c in widget.criteriaList) {
+      dynamicMaxTotal += (c['max'] as num).toInt();
+    }
+
+    // Clean formatting logic (removes .0 if it's a whole number)
+    final String displayTotal = total == total.toInt() 
+        ? total.toInt().toString() 
+        : total.toString();
+
     return Container(
       padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
@@ -789,13 +801,14 @@ class _StudentMarkingCardState extends State<StudentMarkingCard> {
                   fontWeight: FontWeight.bold,
                   color: Colors.white70)),
           const SizedBox(height: 4),
-          Text(total.toStringAsFixed(0),
+          Text(displayTotal,
               style: const TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w900,
                   color: Colors.white)),
-          Text("/${widget.totalMarks}",
-              style: TextStyle(fontSize: 10, color: Colors.white70)),
+          // 🟢 FIX: Displays dynamic total instead of widget.totalMarks
+          Text("/$dynamicMaxTotal",
+              style: const TextStyle(fontSize: 10, color: Colors.white70)),
         ],
       ),
     );
