@@ -144,10 +144,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
       drawer: const AppDrawer(),
       appBar: AppBar(
         title: const Text('LeadUnity'),
-        // 🟢 ADDED: Custom hamburger menu with notification badge
         leading: Builder(
           builder: (context) {
-            // Check if there are any unread notifications in the DataProvider
             final bool hasUnread = dp.notifications
                     ?.any((n) => n['isRead'] == false || n['read'] == false) ??
                 false;
@@ -416,50 +414,75 @@ class _StudentDashboardState extends State<StudentDashboard> {
               offset: const Offset(0, 4))
         ],
       ),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(
-          children: [
-            Expanded(
-              flex: 2,
-              child: _buildInfoChip(
-                icon: Icons.book_rounded,
-                label: 'Course',
-                value: courseCode ?? 'N/A',
-                color: const Color(0xFF2563EB),
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final double maxW = constraints.maxWidth;
+          
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // 🟢 Row 1: Course & Schedule (50/50 split)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      icon: Icons.book_rounded,
+                      label: 'Course',
+                      value: courseCode ?? 'N/A',
+                      color: const Color(0xFF2563EB),
+                      maxWidth: maxW,
+                    ),
+                  ),
+                  if (isApproved || proposal['defenseDate'] != null) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInfoChip(
+                        icon: Icons.event_available_rounded,
+                        label: 'Defense',
+                        value: formattedDate,
+                        color: const Color(0xFFEA580C),
+                        maxWidth: maxW,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-            ),
-            if (isApproved || proposal['defenseDate'] != null) ...[
-              const SizedBox(width: 12),
-              Expanded(
-                flex: 3,
-                child: _buildInfoChip(
-                  icon: Icons.event_available_rounded,
-                  label: 'Defense',
-                  value: formattedDate,
-                  color: const Color(0xFFEA580C),
-                ),
+              const SizedBox(height: 12),
+              
+              // 🟢 Row 2: Supervisor & Room (50/50 split)
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: _buildInfoChip(
+                      icon: Icons.person_pin_rounded,
+                      label: 'Supervisor',
+                      value: supName,
+                      color: const Color(0xFF7C3AED),
+                      maxWidth: maxW,
+                      maxLines: 3, // 🟢 Allowed up to 3 lines just for supervisor
+                    ),
+                  ),
+                  if (proposal['room'] != null &&
+                      proposal['room'].toString().trim().isNotEmpty) ...[
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: _buildInfoChip(
+                        icon: Icons.meeting_room_rounded,
+                        label: 'Room',
+                        value: proposal['room'].toString(),
+                        color: const Color(0xFF059669),
+                        maxWidth: maxW,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ],
-          ],
-        ),
-        const SizedBox(height: 12),
-        _buildInfoChip(
-          icon: Icons.person_pin_rounded,
-          label: 'Supervisor',
-          value: supName,
-          color: const Color(0xFF7C3AED),
-        ),
-        if (proposal['room'] != null &&
-            proposal['room'].toString().trim().isNotEmpty) ...[
-          const SizedBox(height: 12),
-          _buildInfoChip(
-            icon: Icons.meeting_room_rounded,
-            label: 'Room',
-            value: proposal['room'].toString(),
-            color: const Color(0xFF059669),
-          ),
-        ],
-      ]),
+          );
+        },
+      ),
     );
   }
 
@@ -468,48 +491,55 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required String label,
     required String value,
     required Color color,
+    required double maxWidth, 
+    int maxLines = 2, // 🟢 Added optional maxLines parameter (defaults to 2)
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.15),
-            borderRadius: BorderRadius.circular(8),
+    return ConstrainedBox(
+      constraints: BoxConstraints(maxWidth: maxWidth),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: color),
           ),
-          child: Icon(icon, size: 16, color: color),
-        ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label.toUpperCase(),
-                style: TextStyle(
-                  fontSize: 9,
-                  fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                  letterSpacing: 0.5,
+          const SizedBox(width: 10),
+          Flexible(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label.toUpperCase(),
+                  style: TextStyle(
+                    fontSize: 9,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
+                    letterSpacing: 0.5,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white : Colors.black87,
+                const SizedBox(height: 2),
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                  maxLines: maxLines, // 🟢 Applies the custom maxLines
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
