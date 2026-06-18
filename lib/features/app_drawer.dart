@@ -7,7 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 import '../providers/auth_provider.dart';
 import '../providers/data_provider.dart';
-import '../student/notifications_screen.dart';
+import '../widgets/notifications_screen.dart';
 import '../home_page.dart';
 import '../theme/theme_provider.dart';
 import 'about_app_screen.dart';

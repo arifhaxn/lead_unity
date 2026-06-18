@@ -4,7 +4,6 @@ import 'package:link_unity/services/notification_service.dart';
 import 'package:link_unity/student/submit_proposal.dart';
 import 'package:link_unity/student/request_team_screen.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-// 🟢 REMOVED: NotificationBell import is no longer needed here
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -23,19 +22,19 @@ class StudentDashboard extends StatefulWidget {
 class _StudentDashboardState extends State<StudentDashboard> {
   Timer? _timer;
 
-@override
+  @override
   void initState() {
     super.initState();
 
     _startTickingClock();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final dp = Provider.of<DataProvider>(context, listen: false);
-      final ap = Provider.of<AuthProvider>(context, listen: false); 
+      final ap = Provider.of<AuthProvider>(context, listen: false);
 
       NotificationService.setupPushNotifications(context, ap.token ?? "");
 
       dp.fetchDeadlineIfNeeded();
-      dp.fetchMyTeamIfNeeded(); 
+      dp.fetchMyTeamIfNeeded();
       dp.fetchMyProposalsIfNeeded();
       dp.fetchSupervisorsIfNeeded();
       dp.fetchNotificationsIfNeeded();
@@ -149,8 +148,9 @@ class _StudentDashboardState extends State<StudentDashboard> {
         leading: Builder(
           builder: (context) {
             // Check if there are any unread notifications in the DataProvider
-            final bool hasUnread = dp.notifications?.any((n) => 
-                n['isRead'] == false || n['read'] == false) ?? false;
+            final bool hasUnread = dp.notifications
+                    ?.any((n) => n['isRead'] == false || n['read'] == false) ??
+                false;
 
             return IconButton(
               icon: Stack(
@@ -168,9 +168,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                           color: Colors.redAccent,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: theme.scaffoldBackgroundColor, 
-                            width: 1.5
-                          ),
+                              color: theme.scaffoldBackgroundColor, width: 1.5),
                         ),
                       ),
                     ),
@@ -418,43 +416,50 @@ class _StudentDashboardState extends State<StudentDashboard> {
               offset: const Offset(0, 4))
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(
+          children: [
+            Expanded(
+              flex: 2,
+              child: _buildInfoChip(
+                icon: Icons.book_rounded,
+                label: 'Course',
+                value: courseCode ?? 'N/A',
+                color: const Color(0xFF2563EB),
+              ),
+            ),
+            if (isApproved || proposal['defenseDate'] != null) ...[
+              const SizedBox(width: 12),
               Expanded(
-                flex: 2,
+                flex: 3,
                 child: _buildInfoChip(
-                  icon: Icons.book_rounded,
-                  label: 'Course',
-                  value: courseCode ?? 'N/A',
-                  color: const Color(0xFF2563EB),
+                  icon: Icons.event_available_rounded,
+                  label: 'Defense',
+                  value: formattedDate,
+                  color: const Color(0xFFEA580C),
                 ),
               ),
-              if (isApproved || proposal['defenseDate'] != null) ...[
-                const SizedBox(width: 12),
-                Expanded(
-                  flex: 3,
-                  child: _buildInfoChip(
-                    icon: Icons.event_available_rounded,
-                    label: 'Defense',
-                    value: formattedDate,
-                    color: const Color(0xFFEA580C),
-                  ),
-                ),
-              ],
             ],
-          ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        _buildInfoChip(
+          icon: Icons.person_pin_rounded,
+          label: 'Supervisor',
+          value: supName,
+          color: const Color(0xFF7C3AED),
+        ),
+        if (proposal['room'] != null &&
+            proposal['room'].toString().trim().isNotEmpty) ...[
           const SizedBox(height: 12),
           _buildInfoChip(
-            icon: Icons.person_pin_rounded,
-            label: 'Supervisor',
-            value: supName,
-            color: const Color(0xFF7C3AED),
+            icon: Icons.meeting_room_rounded,
+            label: 'Room',
+            value: proposal['room'].toString(),
+            color: const Color(0xFF059669),
           ),
         ],
-      ),
+      ]),
     );
   }
 
@@ -498,7 +503,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                   fontWeight: FontWeight.w700,
                   color: isDark ? Colors.white : Colors.black87,
                 ),
-                maxLines: 2, 
+                maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
             ],

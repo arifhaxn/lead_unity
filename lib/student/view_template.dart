@@ -20,18 +20,25 @@ class ViewTemplateScreen extends StatelessWidget {
     'assets/template/page8.png',
   ];
 
-  Future<void> _launchDownload(BuildContext context) async {
+Future<void> _launchDownload(BuildContext context) async {
     final Uri url = Uri.parse(templateDownloadUrl);
     try {
-      if (await canLaunchUrl(url)) {
-        await launchUrl(url, mode: LaunchMode.externalApplication);
-      } else {
+      // 🟢 FIX: We bypass the strict `canLaunchUrl` check entirely.
+      // We just directly command the OS to open the link in the browser.
+      final bool launched = await launchUrl(
+        url, 
+        mode: LaunchMode.externalApplication,
+      );
+      
+      if (!launched) {
         throw 'Could not launch download link.';
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 

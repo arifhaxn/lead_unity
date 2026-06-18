@@ -26,26 +26,6 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
     });
   }
 
-  int _designationPriority(String? designation) {
-    final value = (designation ?? '').trim().toLowerCase();
-
-    if (value.contains('head') ||
-        value.contains('hod') ||
-        value.contains('chair')) {
-      return 0;
-    }
-    if (value.contains('professor') &&
-        !value.contains('associate') &&
-        !value.contains('assistant')) {
-      return 1;
-    }
-    if (value.contains('associate professor')) return 2;
-    if (value.contains('assistant professor')) return 3;
-    if (value.contains('lecturer')) return 4;
-    if (value.contains('adjunct')) return 5;
-    return 99;
-  }
-
   String _fullName(dynamic supervisor) {
     final name = (supervisor['name'] ?? '').toString().trim();
     if (name.isNotEmpty) return name;
@@ -70,17 +50,8 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
 
     _cachedRawSups = rawSups;
     
-    _processedSups = [...rawSups]..sort((a, b) {
-      final rankA = _designationPriority(
-          (a['designation'] ?? a['title'])?.toString());
-      final rankB = _designationPriority(
-          (b['designation'] ?? b['title'])?.toString());
-      if (rankA != rankB) return rankA.compareTo(rankB);
-
-      final nameA = _fullName(a).toLowerCase();
-      final nameB = _fullName(b).toLowerCase();
-      return nameA.compareTo(nameB);
-    });
+    // 🟢 FIX: Directly mirrors the backend's exact order without local sorting
+    _processedSups = [...rawSups];
   }
 
   @override
