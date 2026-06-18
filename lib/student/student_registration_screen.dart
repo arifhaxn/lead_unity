@@ -162,7 +162,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
           "• You MUST input your exact Student ID (must be at least 10 digits).\n\n"
           "• Provide your current Batch and Section.\n\n"
           "• Passwords must be 8+ characters and contain at least one uppercase, one lowercase, one number, and one special character.\n\n"
-          "• After clicking Register, an OTP will be sent to your email.",
+          "• After clicking Register, an OTP will be sent to your email (Also check spam folder).",
           style: TextStyle(height: 1.5),
         ),
         actions: [

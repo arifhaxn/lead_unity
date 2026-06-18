@@ -52,51 +52,78 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
 
     return Scaffold(
       appBar: AppBar(elevation: 0, backgroundColor: Colors.transparent),
-      body: AnimationLimiter(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: AnimationConfiguration.toStaggeredList(
-              duration: const Duration(milliseconds: 400),
-              childAnimationBuilder: (widget) => SlideAnimation(
-                verticalOffset: 40.0,
-                child: FadeInAnimation(child: widget),
-              ),
-              children: [
-                const Text(
-                  "Forgot Password",
-                  style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+      // 🟢 FIX 1: Added SingleChildScrollView so the keyboard doesn't crush the layout
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: AnimationLimiter(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: AnimationConfiguration.toStaggeredList(
+                duration: const Duration(milliseconds: 400),
+                childAnimationBuilder: (widget) => SlideAnimation(
+                  verticalOffset: 40.0,
+                  child: FadeInAnimation(child: widget),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  "Enter your registered email to receive a 6-digit recovery code.",
-                  style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
-                ),
-                const SizedBox(height: 40),
-                TextField(
-                  controller: _emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: "Email Address",
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    focusedBorder: OutlineInputBorder(
-                      borderSide: BorderSide(color: themeColor),
+                children: [
+                  const Text(
+                    "Forgot Password",
+                    style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    "Enter your registered email to receive a 6-digit recovery code.",
+                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant),
+                  ),
+                  const SizedBox(height: 40),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: "Email Address",
+                      prefixIcon: const Icon(Icons.email_outlined),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: themeColor),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  width: double.infinity,
-                  height: 54,
-                  child: AnimatedSubmitButton(
-                    state: _submitState,
-                    title: "Send OTP",
-                    onPressed: _handleSendOtp,
-                    backgroundColor: themeColor,
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: AnimatedSubmitButton(
+                      state: _submitState,
+                      title: "Send OTP",
+                      onPressed: _handleSendOtp,
+                      backgroundColor: themeColor,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.info_outline_rounded, 
+                        size: 16, 
+                        color: theme.colorScheme.onSurfaceVariant
+                      ),
+                      const SizedBox(width: 8),
+                      // 🟢 FIX 2: Wrapped text in Flexible so it wraps to the next line safely
+                      Flexible(
+                        child: Text(
+                          "Don't see the email? Please check your spam folder.",
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 40), // Added padding at bottom for safety
+                ],
+              ),
             ),
           ),
         ),

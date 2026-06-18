@@ -507,8 +507,17 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                   ? Uri.tryParse('https://$value') 
                   : uri;
                   
-              if (launchUri != null && await canLaunchUrl(launchUri)) {
-                await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+              if (launchUri != null) {
+                try {
+                  // 🟢 FIX: Directly launch the URL without checking canLaunchUrl first!
+                  await launchUrl(launchUri, mode: LaunchMode.externalApplication);
+                } catch (e) {
+                  if (context.mounted) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Error launching link: $e'), backgroundColor: Colors.red),
+                    );
+                  }
+                }
               }
             },
             child: Text(
