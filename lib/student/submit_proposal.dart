@@ -285,16 +285,20 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
   bool _showFourthMember = false;
   String? _sup1, _sup2, _sup3;
 
-  @override
+@override
   void initState() {
     super.initState();
+    // Auto-fill the leader's name, studentId, and email from their logged-in account.
+    // This guarantees the studentId in teamMembers[] always matches the populated
+    // student object, so cgpa and mobile show correctly in Team Info.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.user;
       if (user != null) {
-        _memberControllers[0]['name']!.text  = user.name ?? '';
-        _memberControllers[0]['id']!.text    = user.studentId ?? '';
-        _memberControllers[0]['email']!.text = user.email ?? '';
+        _memberControllers[0]['name']!.text  = user.name;
+        // 🟢 FIX: studentId is nullable in your model, so it still needs the fallback!
+        _memberControllers[0]['id']!.text    = user.studentId ?? ''; 
+        _memberControllers[0]['email']!.text = user.email;
       }
     });
   }

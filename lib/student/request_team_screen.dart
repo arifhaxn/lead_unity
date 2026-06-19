@@ -282,7 +282,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
   bool _showSecondMember = false;
   String? _sup1, _sup2, _sup3;
 
-  @override
+@override
   void initState() {
     super.initState();
     // Auto-fill the leader's name, studentId, and email from their logged-in account.
@@ -292,9 +292,10 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       final auth = Provider.of<AuthProvider>(context, listen: false);
       final user = auth.user;
       if (user != null) {
-        _memberControllers[0]['name']!.text  = user.name        ?? '';
-        _memberControllers[0]['id']!.text    = user.studentId   ?? '';
-        _memberControllers[0]['email']!.text = user.email       ?? '';
+        _memberControllers[0]['name']!.text  = user.name;
+        // 🟢 FIX: studentId is nullable in your model, so it still needs the fallback!
+        _memberControllers[0]['id']!.text    = user.studentId ?? ''; 
+        _memberControllers[0]['email']!.text = user.email;
       }
     });
   }

@@ -289,14 +289,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
                       final courseOrdered =
                           _getTeamsForCourse(_processedTeams, courseCode);
 
-                      final serialByTeamKeyInCourse = <String, int>{
-                        for (int i = 0; i < courseOrdered.length; i++)
-                          _teamKey(courseOrdered[i] as Map<String, dynamic>):
-                              i + 1,
-                      };
-
-                      final normalizedQuery = _searchQuery.toLowerCase();
-
                       final filteredWithCardId = courseOrdered.where((team) {
                         final teamMap = team as Map<String, dynamic>;
                         // Pass the team, the search query, and the dataProvider to our new helper!
@@ -481,16 +473,6 @@ class _TeamListScreenState extends State<TeamListScreen> {
         ),
       ],
     );
-  }
-
-  String _teamKey(Map<String, dynamic> team) {
-    final key =
-        (team['_id'] ?? team['id'] ?? team['proposalId'] ?? '').toString();
-    if (key.isNotEmpty) return key;
-    final title = (team['title'] ?? '').toString();
-    final createdAt =
-        (team['createdAt'] ?? team['submittedAt'] ?? '').toString();
-    return '$title|$createdAt';
   }
 
   List<String> _extractCourseTabs(List<dynamic> teams) {
