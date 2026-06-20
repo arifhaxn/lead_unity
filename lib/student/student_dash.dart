@@ -137,7 +137,24 @@ class _StudentDashboardState extends State<StudentDashboard> {
         .take(2)
         .join(' ');
 
-    final proposal = dp.myTeam;
+    Map<String, dynamic>? proposal = dp.myTeam;
+
+    // 🟢 FIX: Force the dashboard to always look at the newest proposal 
+    // instead of letting the backend default to the oldest one.
+    if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
+      final sortedProposals = List<dynamic>.from(dp.myProposals!);
+      
+      sortedProposals.sort((a, b) {
+        // Fallback to Epoch 0 if date strings are missing, preventing crashes
+        final dateA = DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        final dateB = DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+        
+        return dateB.compareTo(dateA); // Descending order (Newest first)
+      });
+      
+      // Grab the most recent submission
+      proposal = sortedProposals.first as Map<String, dynamic>?;
+    }
 
     return Scaffold(
       backgroundColor: theme.scaffoldBackgroundColor,
@@ -417,7 +434,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       child: LayoutBuilder(
         builder: (context, constraints) {
           final double maxW = constraints.maxWidth;
-          
+
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -449,7 +466,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // 🟢 Row 2: Supervisor & Room (50/50 split)
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -461,7 +478,8 @@ class _StudentDashboardState extends State<StudentDashboard> {
                       value: supName,
                       color: const Color(0xFF7C3AED),
                       maxWidth: maxW,
-                      maxLines: 3, // 🟢 Allowed up to 3 lines just for supervisor
+                      maxLines:
+                          3, // 🟢 Allowed up to 3 lines just for supervisor
                     ),
                   ),
                   if (proposal['room'] != null &&
@@ -491,7 +509,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
     required String label,
     required String value,
     required Color color,
-    required double maxWidth, 
+    required double maxWidth,
     int maxLines = 2, // 🟢 Added optional maxLines parameter (defaults to 2)
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;

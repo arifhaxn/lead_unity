@@ -61,12 +61,12 @@ dev_dependencies:
     sdk: flutter
   flutter_launcher_icons: ^0.14.4
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
   ios: true
   image_path: "assets/logo/logo.png"
   adaptive_icon_background: "#222733"
-  adaptive_icon_foreground: "assets/logo/logo_foreground.png"
+  adaptive_icon_foreground: "assets/logo/logo_copy.png"
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -102,7 +102,6 @@ flutter:
     - assets/template/crew/araf.jpeg
     - assets/template/crew/pfp.jpeg
     - assets/logo/logo.png
-
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

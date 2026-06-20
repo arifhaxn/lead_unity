@@ -173,7 +173,19 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
           }
 
           // ── Success state (Has Active Team) ──────────────────────────────
-          final proposal = dp.myTeam!;
+          // 🟢 FIX: Force the main card to look at the newest proposal from the list,
+          // instead of relying on the backend's default oldest 'myTeam' fetch.
+          Map<String, dynamic> proposal = dp.myTeam!;
+          if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
+            final sortedForActive = List<dynamic>.from(dp.myProposals!);
+            sortedForActive.sort((a, b) {
+              final dateA = DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+              final dateB = DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+              return dateB.compareTo(dateA); // Newest first
+            });
+            proposal = sortedForActive.first as Map<String, dynamic>;
+          }
+          
           final course = proposal['course'] ?? {};
 
           final dynamic supervisor = proposal['assignedSupervisor'];
