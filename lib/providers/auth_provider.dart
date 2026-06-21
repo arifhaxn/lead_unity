@@ -36,7 +36,8 @@ class AuthProvider with ChangeNotifier {
   }
 
   //Login with Name Correction & ID
-  Future<void> login(String identifier, String password, {String? role}) async {
+  // 🟢 FIX: Added BuildContext context
+  Future<void> login(BuildContext context, String identifier, String password, {String? role}) async {
     _setLoading(true);
     try {
       final data = await _apiService.login(identifier, password);
@@ -120,14 +121,17 @@ class AuthProvider with ChangeNotifier {
       _setLoading(false);
     } catch (e) {
       _setLoading(false);
-      // 🟢 Show Error on Login Failure (and clean up the text)
-      CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+      // 🟢 FIX: Passed context to CustomSnackBar, and added mounted check
+      if (context.mounted) {
+         CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
+      }
       rethrow;
     }
   }
 
   //Registration
-  Future<void> register(String name, String email, String password, String sid,
+  // 🟢 FIX: Added BuildContext context
+  Future<void> register(BuildContext context, String name, String email, String password, String sid,
       String batch, String section, String otp) async {
     _setLoading(true);
     try {
@@ -184,25 +188,34 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
       _setLoading(false);
 
-      // 🟢 Show Success on Registration
-      CustomSnackBar.showSuccess('Account created successfully!');
+      // 🟢 FIX: Passed context to CustomSnackBar, and added mounted check
+      if (context.mounted) {
+        CustomSnackBar.showSuccess(context, 'Account created successfully!');
+      }
     } catch (e) {
       _setLoading(false);
-      // 🟢 Show Error on Registration Failure
-      CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+      // 🟢 FIX: Passed context to CustomSnackBar, and added mounted check
+      if (context.mounted) {
+         CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
+      }
       rethrow;
     }
   }
 
   //OTP Helper
-  Future<void> sendOtp(String email) async {
+  // 🟢 FIX: Added BuildContext context
+  Future<void> sendOtp(BuildContext context, String email) async {
     try {
       await _apiService.sendOtp(email);
-      // 🟢 Show Success when OTP is sent
-      CustomSnackBar.showSuccess('OTP sent successfully to $email');
+      // 🟢 FIX: Context is now available and passed
+      if (context.mounted) {
+         CustomSnackBar.showSuccess(context, 'OTP sent successfully to $email');
+      }
     } catch (e) {
-      // 🟢 Show Error if OTP fails
-      CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+      // 🟢 FIX: Context is now available and passed
+      if (context.mounted) {
+         CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
+      }
       rethrow;
     }
   }

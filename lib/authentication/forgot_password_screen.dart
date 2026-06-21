@@ -21,7 +21,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   void _handleSendOtp() async {
     final email = _emailController.text.trim();
     if (email.isEmpty || !email.contains('@')) {
-      CustomSnackBar.showError("Please enter a valid email address");
+      CustomSnackBar.showError(context, "Please enter a valid email address");
       return;
     }
 
@@ -40,7 +40,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         FadeScaleRoute(page: ResetPasswordScreen(email: email)),
       );
     } catch (e) {
-      CustomSnackBar.showError(e.toString());
+      CustomSnackBar.showError(context, e.toString());
       setState(() => _submitState = SubmitState.idle);
     }
   }

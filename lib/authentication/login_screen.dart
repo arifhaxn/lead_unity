@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleLogin() async {
+void _handleLogin() async {
     final isStudent = widget.role == 'student';
     final identifier = isStudent
         ? _identifierController.text.trim()
@@ -59,15 +59,16 @@ class _LoginScreenState extends State<LoginScreen> {
     final password = _passController.text;
 
     if (identifier.isEmpty || password.isEmpty) {
-      CustomSnackBar.showInfo("Please enter both ID/Abbreviation and Password");
+      CustomSnackBar.showInfo(context, "Please enter both ID/Abbreviation and Password");
       return;
     }
 
     setState(() => _submitState = SubmitState.loading);
 
     try {
+      // 🟢 FIX: Passed context here
       await Provider.of<AuthProvider>(context, listen: false)
-          .login(identifier, password, role: widget.role);
+          .login(context, identifier, password, role: widget.role);
 
       const storage = FlutterSecureStorage();
       await storage.write(key: 'login_identifier', value: identifier);
@@ -94,12 +95,13 @@ class _LoginScreenState extends State<LoginScreen> {
             FadeScaleRoute(page: const SupervisorDashboard()),
             (route) => false);
       } else {
-        CustomSnackBar.showError("Role mismatch or invalid credentials");
+        CustomSnackBar.showError(context, "Role mismatch or invalid credentials");
         Provider.of<AuthProvider>(context, listen: false).logout();
         setState(() => _submitState = SubmitState.idle);
       }
     } catch (e) {
-      CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+      // Note: AuthProvider already shows the snackbar internally now, 
+      // but if you want a fallback here, it's safe.
       setState(() => _submitState = SubmitState.idle);
     }
   }

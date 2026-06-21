@@ -41,7 +41,7 @@ class _SupervisorFirstLoginScreenState
         setState(() => _submitState = SubmitState.success);
         
         // 🟢 Using CustomSnackBar Success
-        CustomSnackBar.showSuccess("Password Updated! Please Login.");
+        CustomSnackBar.showSuccess(context, "Password Updated! Please Login.");
         
         await Future.delayed(const Duration(milliseconds: 1000));
         if (mounted) Navigator.pop(context); 
@@ -51,7 +51,7 @@ class _SupervisorFirstLoginScreenState
         setState(() => _submitState = SubmitState.idle);
         
         // 🟢 Using CustomSnackBar Error
-        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+        CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
       }
     }
   }

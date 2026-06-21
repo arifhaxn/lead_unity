@@ -77,7 +77,7 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingSupervisors = false;
   bool get isLoadingSupervisors => _isLoadingSupervisors;
 
-  Future<void> fetchSupervisorsIfNeeded({bool forceRefresh = false}) async {
+  Future<void> fetchSupervisorsIfNeeded({BuildContext? context, bool forceRefresh = false}) async {
     if (!forceRefresh && _allSupervisors == null) {
       _isLoadingSupervisors = true;
       notifyListeners();
@@ -111,7 +111,10 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching supervisors: $e");
       if (_allSupervisors == null) _allSupervisors = [];
-      if (forceRefresh) CustomSnackBar.showError('Failed to refresh supervisors.');
+      // 🟢 FIX: Check if context exists and is mounted before showing toast
+      if (forceRefresh && context != null && context.mounted) {
+        CustomSnackBar.showError(context, 'Failed to refresh supervisors.');
+      }
     } finally {
       _isLoadingSupervisors = false;
       notifyListeners();
@@ -125,7 +128,7 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingCourses = false;
   bool get isLoadingCourses => _isLoadingCourses;
 
-  Future<void> fetchCoursesIfNeeded({bool forceRefresh = false}) async {
+  Future<void> fetchCoursesIfNeeded({BuildContext? context, bool forceRefresh = false}) async {
     if (!forceRefresh && _allCourses == null) {
       _isLoadingCourses = true;
       notifyListeners();
@@ -154,7 +157,9 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       if (_allCourses == null) _allCourses = [];
-      if (forceRefresh) CustomSnackBar.showError('Failed to refresh courses.');
+      if (forceRefresh && context != null && context.mounted) {
+        CustomSnackBar.showError(context, 'Failed to refresh courses.');
+      }
     } finally {
       _isLoadingCourses = false;
       notifyListeners();
@@ -210,7 +215,7 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingDeadline = false;
   bool get isLoadingDeadline => _isLoadingDeadline;
 
-  Future<void> fetchDeadlineIfNeeded({bool forceRefresh = false}) async {
+  Future<void> fetchDeadlineIfNeeded({BuildContext? context, bool forceRefresh = false}) async {
     // 1. Instant cache load
     if (!forceRefresh && _deadline == null) {
       _isLoadingDeadline = true;
@@ -250,7 +255,10 @@ class DataProvider with ChangeNotifier {
       }
     } catch (e) {
       debugPrint("Error fetching deadline: $e");
-      if (forceRefresh) CustomSnackBar.showError('Failed to refresh submission deadline.');
+     // 🟢 FIX: Context check
+      if (forceRefresh && context != null && context.mounted) {
+        CustomSnackBar.showError(context, 'Failed to refresh submission deadline.');
+      }
     } finally {
       _isLoadingDeadline = false;
       notifyListeners();
@@ -267,7 +275,11 @@ class DataProvider with ChangeNotifier {
   bool _isLoadingNotifications = false;
   bool get isLoadingNotifications => _isLoadingNotifications;
 
-  Future<void> fetchNotificationsIfNeeded({bool forceRefresh = false}) async {
+// ── NOTIFICATIONS CACHE ────────────────────────────────────────────────────
+  // ... (keep your variables _notifications, _unreadCount, etc. exactly the same)
+
+  // 🟢 FIX: Added BuildContext? context to the signature
+  Future<void> fetchNotificationsIfNeeded({BuildContext? context, bool forceRefresh = false}) async {
     // 1. Instant cache load from SharedPreferences
     if (!forceRefresh && _notifications == null) {
       _isLoadingNotifications = true;
@@ -294,6 +306,25 @@ class DataProvider with ChangeNotifier {
 
     try {
       final fresh = await _apiService.getNotifications();
+      
+      // 🟢 NEW LOGIC: Check if any of these fetched notifications are brand new
+      if (forceRefresh && _notifications != null && context != null && context.mounted) {
+        // Create a quick list of all the IDs we already knew about
+        final oldIds = _notifications!.map((n) => n['_id'].toString()).toSet();
+
+        // Check if the fresh data has anything that isn't in our old list
+        final newArrivals = fresh.where((n) => !oldIds.contains(n['_id'].toString())).toList();
+
+        // If we found new ones, drop the purple pill for the most recent one!
+        if (newArrivals.isNotEmpty) {
+          final latestNew = newArrivals.first;
+          CustomSnackBar.showPushNotification(
+            context, 
+            latestNew['title']?.toString() ?? "New Notification",
+          );
+        }
+      }
+
       final prefs = await SharedPreferences.getInstance();
       final freshString = json.encode(fresh);
 
@@ -305,6 +336,11 @@ class DataProvider with ChangeNotifier {
     } catch (e) {
       debugPrint("Error fetching notifications: $e");
       if (_notifications == null) _notifications = [];
+      
+      // Optional: Show error if the refresh fails
+      if (forceRefresh && context != null && context.mounted) {
+        CustomSnackBar.showError(context, 'Failed to refresh notifications.');
+      }
     } finally {
       _isLoadingNotifications = false;
       notifyListeners();

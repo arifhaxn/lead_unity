@@ -195,14 +195,17 @@ class _StudentDashboardState extends State<StudentDashboard> {
           },
         ),
       ),
-      body: RefreshIndicator(
+body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
-            dp.fetchDeadlineIfNeeded(forceRefresh: true),
+            // 🟢 Passed context to the ones we updated!
+            dp.fetchDeadlineIfNeeded(context: context, forceRefresh: true),
             dp.fetchMyTeamIfNeeded(forceRefresh: true),
             dp.fetchMyProposalsIfNeeded(forceRefresh: true),
-            dp.fetchSupervisorsIfNeeded(forceRefresh: true),
-            dp.fetchNotificationsIfNeeded(forceRefresh: true),
+            dp.fetchSupervisorsIfNeeded(context: context, forceRefresh: true),
+            
+            // 🟣 THIS is the one that triggers the purple push pill!
+            dp.fetchNotificationsIfNeeded(context: context, forceRefresh: true), 
           ]);
         },
         child: SingleChildScrollView(

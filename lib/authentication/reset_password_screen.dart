@@ -20,11 +20,11 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
 
   void _handleReset() async {
     if (_otpController.text.length < 6) {
-      CustomSnackBar.showError("Enter the 6-digit OTP");
+      CustomSnackBar.showError(context, "Enter the 6-digit OTP");
       return;
     }
     if (_newPassController.text.length < 6) {
-      CustomSnackBar.showError("Password must be at least 6 characters");
+      CustomSnackBar.showError(context, "Password must be at least 6 characters");
       return;
     }
 
@@ -41,10 +41,10 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       await Future.delayed(const Duration(milliseconds: 1000));
       if (!mounted) return;
 
-      CustomSnackBar.showSuccess("Password updated! Please login.");
+      CustomSnackBar.showSuccess(context, "Password updated! Please login.");
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      CustomSnackBar.showError(e.toString());
+      CustomSnackBar.showError(context, e.toString());
       setState(() => _submitState = SubmitState.idle);
     }
   }

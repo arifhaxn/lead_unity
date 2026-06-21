@@ -7,7 +7,6 @@ import '../providers/auth_provider.dart';
 import 'student_dash.dart';
 import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
-import '../widgets/custom_snackbar.dart'; // 🟢 Added import
 
 class StudentRegistrationScreen extends StatefulWidget {
   const StudentRegistrationScreen({Key? key}) : super(key: key);
@@ -33,8 +32,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       setState(() => _submitState = SubmitState.loading);
 
       try {
+        // 🟢 FIX: Passed context as the first argument
         await Provider.of<AuthProvider>(context, listen: false)
-            .sendOtp(_formData['email']);
+            .sendOtp(context, _formData['email']);
 
         if (!mounted) return;
 
@@ -52,8 +52,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       } catch (e) {
         // Reset on error
         setState(() => _submitState = SubmitState.idle);
-        // 🟢 Use the custom snackbar
-        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+        // Note: AuthProvider handles the error snackbar now, so no double-toast!
       }
     }
   }
@@ -117,7 +116,9 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
   void _finalizeRegistration(String otp, BuildContext dialogContext) async {
     try {
+      // 🟢 FIX: Passed context as the first argument
       await Provider.of<AuthProvider>(context, listen: false).register(
+        context,
         _formData['name'],
         _formData['email'],
         _formData['password'],
@@ -139,9 +140,7 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     } catch (e) {
       Navigator.pop(dialogContext);
       
-      // 🟢 Use the custom snackbar
-      CustomSnackBar.showError(
-          "Registration Failed: ${e.toString().replaceAll('Exception: ', '')}");
+      // Note: AuthProvider handles the error snackbar now!
     }
   }
 

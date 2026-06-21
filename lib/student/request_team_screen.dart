@@ -316,19 +316,17 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedCourseId == null) {
-      CustomSnackBar.showError(
-          'Please select a course at the top of the form.');
+      CustomSnackBar.showError(context, 'Please select a course at the top of the form.');
       return;
     }
 
     if (widget.submittedCourseIds.contains(_selectedCourseId)) {
-      CustomSnackBar.showError(
-          'You have already submitted a proposal/request for this course.');
+      CustomSnackBar.showError(context, 'You have already submitted a proposal/request for this course.');
       return;
     }
 
     if (_sup1 == null || _sup2 == null || _sup3 == null) {
-      CustomSnackBar.showError('Please select all 3 supervisor preferences.');
+      CustomSnackBar.showError(context, 'Please select all 3 supervisor preferences.');
       return;
     }
 
@@ -351,21 +349,21 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
           email.isEmpty ||
           mobile.isEmpty) {
         setState(() => _submitState = SubmitState.idle);
-        CustomSnackBar.showError(
+        CustomSnackBar.showError(context,
             'Please complete all fields for Member ${i + 1}.');
         return;
       }
 
       if (uniqueIds.contains(id)) {
         setState(() => _submitState = SubmitState.idle);
-        CustomSnackBar.showError('Duplicate Student ID: $id');
+        CustomSnackBar.showError(context, 'Duplicate Student ID: $id');
         return;
       }
 
       final cgpa = double.tryParse(cgpaRaw);
       if (cgpa == null) {
         setState(() => _submitState = SubmitState.idle);
-        CustomSnackBar.showError('Invalid CGPA for Member ${i + 1}.');
+        CustomSnackBar.showError(context, 'Invalid CGPA for Member ${i + 1}.');
         return;
       }
 
@@ -402,7 +400,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
 
         setState(() => _submitState = SubmitState.success);
 
-        CustomSnackBar.showSuccess('Team Request Submitted Successfully!');
+        CustomSnackBar.showSuccess(context, 'Team Request Submitted Successfully!');
 
         await Future.delayed(const Duration(seconds: 1));
 
@@ -410,7 +408,7 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
       }
     } catch (e) {
       if (mounted) {
-        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+        CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
     }

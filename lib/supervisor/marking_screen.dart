@@ -123,7 +123,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        CustomSnackBar.showError(
+        CustomSnackBar.showError(context,
             "Error loading evaluation data: ${e.toString().replaceAll('Exception: ', '')}");
         setState(() => _isScreenLoading = false);
       }
@@ -148,7 +148,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
     }
 
     if (hasEmptyBox) {
-      CustomSnackBar.showError(
+      CustomSnackBar.showError(context,
           "Please fill all marks for $missingStudentName, or mark them absent.");
       return;
     }
@@ -174,7 +174,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
       if (!mounted) return;
 
       setState(() => _submitState = SubmitState.success);
-      CustomSnackBar.showSuccess("Marks submitted successfully!");
+      CustomSnackBar.showSuccess(context, "Marks submitted successfully!");
 
       await Future.delayed(const Duration(seconds: 1));
 
@@ -183,7 +183,7 @@ class _MarkingScreenState extends State<MarkingScreen> {
       }
     } catch (e) {
       if (mounted) {
-        CustomSnackBar.showError(e.toString().replaceAll('Exception: ', ''));
+        CustomSnackBar.showError(context, e.toString().replaceAll('Exception: ', ''));
         setState(() => _submitState = SubmitState.idle);
       }
     }

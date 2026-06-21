@@ -5,16 +5,18 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // 🟢 NEW
+import 'package:flutter_local_notifications/flutter_local_notifications.dart'; 
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart';
 import 'theme/app_theme.dart';
 import 'theme/theme_provider.dart';
 import 'widgets/network_overlay.dart';
-import 'widgets/custom_snackbar.dart';
+import 'widgets/custom_snackbar.dart'; // 🟢 1. Imported the CustomSnackBar
 
-// 🟢 This MUST be a top-level function (outside of any classes)
+// 🟢 2. Created the Master Key for global context
+final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Re-initialize Firebase because this runs in a separate isolate
@@ -60,6 +62,25 @@ void main() async {
   // Register the background message handler
   FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
+  // 🟢 3. Listen for notifications arriving WHILE the app is OPEN
+  FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    if (message.notification != null) {
+      // Grab the current active screen's context using our master key
+      final context = globalNavigatorKey.currentContext;
+      
+      if (context != null && context.mounted) {
+        // Trigger the beautiful top-sliding pill!
+        CustomSnackBar.showPushNotification(
+          context, 
+          message.notification!.title ?? "New Notification",
+        );
+        
+        // Auto-refresh the notification data so the unread badge (red dot) updates instantly
+        Provider.of<DataProvider>(context, listen: false).fetchNotificationsIfNeeded(forceRefresh: true);
+      }
+    }
+  });
+
   SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
     statusBarColor: Colors.transparent,
     statusBarIconBrightness: Brightness.dark,
@@ -89,6 +110,9 @@ class LeadUnityApp extends StatelessWidget {
     return Consumer<ThemeProvider>(
       builder: (context, themeProvider, _) {
         return MaterialApp(
+          // 🟢 4. Attach the master key to your app!
+          navigatorKey: globalNavigatorKey, 
+          
           debugShowCheckedModeBanner: false,
           title: 'LeadUnity',
           theme: AppTheme.lightTheme,
@@ -97,9 +121,6 @@ class LeadUnityApp extends StatelessWidget {
 
           // Attach the observer to track screens automatically
           navigatorObservers: <NavigatorObserver>[observer],
-
-          // Allows calling CustomSnackBar.showError() from anywhere
-          scaffoldMessengerKey: CustomSnackBar.messengerKey,
 
           // Wraps every screen with the NetworkOverlay
           builder: (context, child) {
