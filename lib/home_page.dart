@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/features/about_app_screen.dart';
+import 'package:link_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'authentication/login_screen.dart';
 import 'theme/theme_provider.dart';
@@ -63,49 +64,51 @@ class HomePage extends StatelessWidget {
                     ),
                   );
                 },
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    const Center(child: _AnimatedAppLogo()),
-                    const SizedBox(height: 24),
-                    Text(
-                      'LeadUnity',
-                      style: theme.textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: -0.8,
+                child: WebConstraint(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      const Center(child: _AnimatedAppLogo()),
+                      const SizedBox(height: 24),
+                      Text(
+                        'LeadUnity',
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: -0.8,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Leading Innovations. Uniting Teams.',
-                      style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant,
-                        fontWeight: FontWeight.w500,
+                      const SizedBox(height: 8),
+                      Text(
+                        'Leading Innovations. Uniting Teams.',
+                        style: theme.textTheme.bodyLarge?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        textAlign: TextAlign.center,
                       ),
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: 60),
-                    _buildLoginOptionCard(
-                      context: context,
-                      title: 'Student',
-                      subtitle: 'Submit proposals, build a team and connect.',
-                      icon: Icons.school_rounded,
-                      bgColor: const Color(0xFF475569),
-                      onTap: () => _navigateToStudentLogin(context),
-                    ),
-                    const SizedBox(height: 24),
-                    _buildLoginOptionCard(
-                      context: context,
-                      title: 'Supervisor',
-                      subtitle:
-                          'Evaluate, review, and track student projects.',
-                      icon: Icons.security_rounded,
-                      bgColor: const Color(0xFF1E3A8A),
-                      onTap: () => _navigateToAdminLogin(context),
-                    ),
-                  ],
+                      const SizedBox(height: 60),
+                      _buildLoginOptionCard(
+                        context: context,
+                        title: 'Student',
+                        subtitle: 'Submit proposals, build a team and connect.',
+                        icon: Icons.school_rounded,
+                        bgColor: const Color(0xFF475569),
+                        onTap: () => _navigateToStudentLogin(context),
+                      ),
+                      const SizedBox(height: 24),
+                      _buildLoginOptionCard(
+                        context: context,
+                        title: 'Supervisor',
+                        subtitle:
+                            'Evaluate, review, and track student projects.',
+                        icon: Icons.security_rounded,
+                        bgColor: const Color(0xFF1E3A8A),
+                        onTap: () => _navigateToAdminLogin(context),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

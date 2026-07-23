@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; 
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'firebase_options.dart';
 import 'providers/auth_provider.dart';
 import 'providers/data_provider.dart';
@@ -15,7 +15,8 @@ import 'widgets/network_overlay.dart';
 import 'widgets/custom_snackbar.dart'; // 🟢 1. Imported the CustomSnackBar
 
 // 🟢 2. Created the Master Key for global context
-final GlobalKey<NavigatorState> globalNavigatorKey = GlobalKey<NavigatorState>();
+final GlobalKey<NavigatorState> globalNavigatorKey =
+    GlobalKey<NavigatorState>();
 
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -41,7 +42,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       message.notification!.body,
       const NotificationDetails(
         android: AndroidNotificationDetails(
-          'leadunity_channel',       // must match the channel id in AndroidManifest.xml
+          'leadunity_channel', // must match the channel id in AndroidManifest.xml
           'LeadUnity Notifications', // user-visible channel name
           importance: Importance.high,
           priority: Priority.high,
@@ -67,16 +68,17 @@ void main() async {
     if (message.notification != null) {
       // Grab the current active screen's context using our master key
       final context = globalNavigatorKey.currentContext;
-      
+
       if (context != null && context.mounted) {
         // Trigger the beautiful top-sliding pill!
         CustomSnackBar.showPushNotification(
-          context, 
+          context,
           message.notification!.title ?? "New Notification",
         );
-        
+
         // Auto-refresh the notification data so the unread badge (red dot) updates instantly
-        Provider.of<DataProvider>(context, listen: false).fetchNotificationsIfNeeded(forceRefresh: true);
+        Provider.of<DataProvider>(context, listen: false)
+            .fetchNotificationsIfNeeded(forceRefresh: true);
       }
     }
   });
@@ -111,8 +113,8 @@ class LeadUnityApp extends StatelessWidget {
       builder: (context, themeProvider, _) {
         return MaterialApp(
           // 🟢 4. Attach the master key to your app!
-          navigatorKey: globalNavigatorKey, 
-          
+          navigatorKey: globalNavigatorKey,
+
           debugShowCheckedModeBanner: false,
           title: 'LeadUnity',
           theme: AppTheme.lightTheme,

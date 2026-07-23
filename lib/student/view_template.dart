@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:link_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/theme_provider.dart';
@@ -71,21 +72,23 @@ Future<void> _launchDownload(BuildContext context) async {
         padding: const EdgeInsets.all(10),
         itemCount: templateImages.length,
         itemBuilder: (context, index) {
-          return Padding(
-            padding: const EdgeInsets.only(bottom: 10.0),
-            child: Card(
-              elevation: 0,
-              child: Image.asset(
-                templateImages[index],
-                fit: BoxFit.cover,
-
-                errorBuilder: (context, error, stackTrace) {
-                  return Container(
-                    height: 200,
-                    color: theme.colorScheme.surfaceContainerHighest,
-                    child: const Center(child: Text('Image Page Missing')),
-                  );
-                },
+          return WebConstraint(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 10.0),
+              child: Card(
+                elevation: 0,
+                child: Image.asset(
+                  templateImages[index],
+                  fit: BoxFit.cover,
+                  
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: theme.colorScheme.surfaceContainerHighest,
+                      child: const Center(child: Text('Image Page Missing')),
+                    );
+                  },
+                ),
               ),
             ),
           );

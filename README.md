@@ -1,6 +1,6 @@
 # link_unity
 
-A new Flutter project.
+Total lines of code = 11512 
 
 ## Getting Started
 

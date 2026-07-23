@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:link_unity/widgets/animated_dialog.dart'; // 🟢 ADDED for the instructions pop-up
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:link_unity/widgets/web_constrain.dart';
 // 🟢 REMOVED: notification_bell.dart
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
@@ -102,15 +103,119 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
         ],
       ),
       floatingActionButton: const BreathingChatbotFab(),
-      body: Builder(
-        builder: (context) {
-          // Loading
-          if (dp.isLoadingMyTeam && dp.myTeam == null) {
-            return _buildSkeletonLoader(theme);
-          }
-
-          // ── Empty state (No Active Team) ──────────────────────────────────
-          if (dp.myTeam == null) {
+      body: WebConstraint(
+        child: Builder(
+          builder: (context) {
+            // Loading
+            if (dp.isLoadingMyTeam && dp.myTeam == null) {
+              return _buildSkeletonLoader(theme);
+            }
+        
+            // ── Empty state (No Active Team) ──────────────────────────────────
+            if (dp.myTeam == null) {
+              return RefreshIndicator(
+                onRefresh: () async {
+                  await Future.wait([
+                    dp.fetchMyTeamIfNeeded(forceRefresh: true),
+                    dp.fetchSupervisorsIfNeeded(forceRefresh: true),
+                    dp.fetchMyProposalsIfNeeded(forceRefresh: true),
+                  ]);
+                },
+                child: ListView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * (myProposals.isEmpty ? 0.3 : 0.1)),
+                    Icon(Icons.diversity_3_outlined,
+                        size: 80,
+                        color: theme.brightness == Brightness.dark
+                            ? Colors.white38
+                            : Colors.grey[300]),
+                    const SizedBox(height: 16),
+                    const Center(
+                      child: Text('No Active Team Found',
+                          style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.grey)),
+                    ),
+                    const SizedBox(height: 8),
+                    Center(
+                      child: Text(
+                        'Submit a proposal or wait for your team to be formed.',
+                        style: TextStyle(
+                            color: theme.colorScheme.onSurfaceVariant),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    
+                    // Historical Proposals (All collapsed)
+                    if (myProposals.isNotEmpty) ...[
+                      const SizedBox(height: 40),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
+                      ),
+                      const SizedBox(height: 12),
+                      ...myProposals.map((p) => Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 20),
+                            child: _ExpandableProposalCard(
+                              proposal: p,
+                              theme: theme,
+                              buildInfoRow: _buildInfoRow,
+                              buildMemberCard: _buildMemberCard,
+                              resolveField: _resolveField,
+                              getStatusColor: _getStatusColor,
+                            ),
+                          )),
+                      const SizedBox(height: 20),
+                    ]
+                  ],
+                ),
+              );
+            }
+        
+            // ── Success state (Has Active Team) ──────────────────────────────
+            // 🟢 FIX: Force the main card to look at the newest proposal from the list,
+            // instead of relying on the backend's default oldest 'myTeam' fetch.
+            Map<String, dynamic> proposal = dp.myTeam!;
+            if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
+              final sortedForActive = List<dynamic>.from(dp.myProposals!);
+              sortedForActive.sort((a, b) {
+                final dateA = DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+                final dateB = DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
+                return dateB.compareTo(dateA); // Newest first
+              });
+              proposal = sortedForActive.first as Map<String, dynamic>;
+            }
+            
+            final course = proposal['course'] ?? {};
+        
+            final dynamic supervisor = proposal['assignedSupervisor'];
+            String supName = 'Not Assigned';
+            
+            if (supervisor is Map) {
+              supName = supervisor['name'] ?? supervisor['abbreviation'] ?? 'Not Assigned';
+            } else if (supervisor != null && dp.allSupervisors != null) {
+              final found = dp.allSupervisors!.firstWhere(
+                (s) => s['_id']?.toString() == supervisor.toString(),
+                orElse: () => null,
+              );
+              if (found != null) {
+                supName = (found['name'] ?? found['abbreviation'] ?? 'Not Assigned').toString();
+              }
+            }
+        
+            final leaderMap = proposal['student'];
+            final String? leaderStudentId =
+                leaderMap is Map ? leaderMap['studentId']?.toString() : null;
+        
+            final rawMembers = (proposal['teamMembers'] as List? ?? []);
+            final otherMembers = rawMembers.where((m) {
+              if (m is! Map) return false;
+              final sid = m['studentId']?.toString();
+              return sid != null && sid != leaderStudentId;
+            }).toList();
+        
             return RefreshIndicator(
               onRefresh: () async {
                 await Future.wait([
@@ -119,247 +224,145 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
                   dp.fetchMyProposalsIfNeeded(forceRefresh: true),
                 ]);
               },
+              color: theme.colorScheme.primary,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.all(20),
                 children: [
-                  SizedBox(height: MediaQuery.of(context).size.height * (myProposals.isEmpty ? 0.3 : 0.1)),
-                  Icon(Icons.diversity_3_outlined,
-                      size: 80,
-                      color: theme.brightness == Brightness.dark
-                          ? Colors.white38
-                          : Colors.grey[300]),
-                  const SizedBox(height: 16),
-                  const Center(
-                    child: Text('No Active Team Found',
-                        style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey)),
-                  ),
-                  const SizedBox(height: 8),
-                  Center(
-                    child: Text(
-                      'Submit a proposal or wait for your team to be formed.',
-                      style: TextStyle(
-                          color: theme.colorScheme.onSurfaceVariant),
-                      textAlign: TextAlign.center,
-                    ),
-                  ),
-                  
-                  // Historical Proposals (All collapsed)
-                  if (myProposals.isNotEmpty) ...[
-                    const SizedBox(height: 40),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 20),
-                      child: Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
-                    ),
-                    const SizedBox(height: 12),
-                    ...myProposals.map((p) => Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: _ExpandableProposalCard(
-                            proposal: p,
-                            theme: theme,
-                            buildInfoRow: _buildInfoRow,
-                            buildMemberCard: _buildMemberCard,
-                            resolveField: _resolveField,
-                            getStatusColor: _getStatusColor,
+        
+                  // ACTIVE PROPOSAL LABEL 
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
+                    child: Row(
+                      children: [
+                        Icon(Icons.star_rounded, size: 16, color: theme.colorScheme.primary),
+                        const SizedBox(width: 6),
+                        Text(
+                          'ACTIVE PROPOSAL',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1.0,
+                            color: theme.colorScheme.primary,
                           ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    decoration: const BoxDecoration(
+                      color: Color(0xFF245E63),
+                      borderRadius: AppRadii.card,
+                      boxShadow: AppShadows.level1,
+                    ),
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Chip(
+                              label: Text(course['courseCode'] ?? 'N/A'),
+                              backgroundColor: const Color(0xFF1A4A4F),
+                              labelStyle: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                              side: BorderSide.none,
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 10, vertical: 5),
+                              decoration: BoxDecoration(
+                                  color: _getStatusColor(proposal['status']),
+                                  borderRadius: BorderRadius.circular(12)),
+                              child: Text(
+                                (proposal['status'] ?? 'PENDING')
+                                    .toString()
+                                    .toUpperCase(),
+                                style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        const Text('Project Title',
+                            style:
+                                TextStyle(fontSize: 12, color: Colors.white70)),
+                        Text(
+                          proposal['title'] ?? 'Untitled Project',
+                          style: Theme.of(context)
+                              .textTheme
+                              .headlineSmall
+                              ?.copyWith(color: Colors.white),
+                        ),
+                        const SizedBox(height: 8),
+                        const Divider(color: Colors.white24),
+                        const SizedBox(height: 8),
+                        _buildInfoRow('Assigned Supervisor', supName),
+                        const SizedBox(height: 12),
+                        _buildInfoRow('Description/Link',
+                            proposal['description'] ?? 'No link provided', isLink: true),
+                      ],
+                    ),
+                  ),
+        
+                  const SizedBox(height: 24),
+                  Text('Team Members', style: theme.textTheme.titleLarge),
+                  const SizedBox(height: 12),
+        
+                  if (leaderMap is Map)
+                    _buildMemberCard(
+                      name: leaderMap['name']?.toString() ?? 'Unknown',
+                      studentId: leaderMap['studentId']?.toString() ?? 'N/A',
+                      email: leaderMap['email']?.toString() ?? 'N/A',
+                      mobile: _resolveField(
+                        fromPopulated: leaderMap['mobile'],
+                        rawMembers: rawMembers,
+                        studentId: leaderStudentId,
+                        field: 'mobile',
+                      ),
+                      cgpa: _resolveField(
+                        fromPopulated: leaderMap['cgpa'],
+                        rawMembers: rawMembers,
+                        studentId: leaderStudentId,
+                        field: 'cgpa',
+                      ),
+                      isLeader: true,
+                    ),
+        
+                  ...otherMembers.map((m) => _buildMemberCard(
+                        name: m['name']?.toString() ?? 'Unknown',
+                        studentId: m['studentId']?.toString() ?? 'N/A',
+                        email: m['email']?.toString() ?? 'N/A',
+                        mobile: m['mobile']?.toString(),
+                        cgpa: m['cgpa']?.toString(),
+                        isLeader: false,
+                      )),
+        
+                  // Render Historical Proposals (All collapsed)
+                  if (myProposals.isNotEmpty) ...[
+                    const SizedBox(height: 30),
+                    Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
+                    const SizedBox(height: 12),
+                    ...myProposals.map((p) => _ExpandableProposalCard(
+                          proposal: p,
+                          theme: theme,
+                          buildInfoRow: _buildInfoRow,
+                          buildMemberCard: _buildMemberCard,
+                          resolveField: _resolveField,
+                          getStatusColor: _getStatusColor,
                         )),
                     const SizedBox(height: 20),
                   ]
                 ],
               ),
             );
-          }
-
-          // ── Success state (Has Active Team) ──────────────────────────────
-          // 🟢 FIX: Force the main card to look at the newest proposal from the list,
-          // instead of relying on the backend's default oldest 'myTeam' fetch.
-          Map<String, dynamic> proposal = dp.myTeam!;
-          if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
-            final sortedForActive = List<dynamic>.from(dp.myProposals!);
-            sortedForActive.sort((a, b) {
-              final dateA = DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-              final dateB = DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-              return dateB.compareTo(dateA); // Newest first
-            });
-            proposal = sortedForActive.first as Map<String, dynamic>;
-          }
-          
-          final course = proposal['course'] ?? {};
-
-          final dynamic supervisor = proposal['assignedSupervisor'];
-          String supName = 'Not Assigned';
-          
-          if (supervisor is Map) {
-            supName = supervisor['name'] ?? supervisor['abbreviation'] ?? 'Not Assigned';
-          } else if (supervisor != null && dp.allSupervisors != null) {
-            final found = dp.allSupervisors!.firstWhere(
-              (s) => s['_id']?.toString() == supervisor.toString(),
-              orElse: () => null,
-            );
-            if (found != null) {
-              supName = (found['name'] ?? found['abbreviation'] ?? 'Not Assigned').toString();
-            }
-          }
-
-          final leaderMap = proposal['student'];
-          final String? leaderStudentId =
-              leaderMap is Map ? leaderMap['studentId']?.toString() : null;
-
-          final rawMembers = (proposal['teamMembers'] as List? ?? []);
-          final otherMembers = rawMembers.where((m) {
-            if (m is! Map) return false;
-            final sid = m['studentId']?.toString();
-            return sid != null && sid != leaderStudentId;
-          }).toList();
-
-          return RefreshIndicator(
-            onRefresh: () async {
-              await Future.wait([
-                dp.fetchMyTeamIfNeeded(forceRefresh: true),
-                dp.fetchSupervisorsIfNeeded(forceRefresh: true),
-                dp.fetchMyProposalsIfNeeded(forceRefresh: true),
-              ]);
-            },
-            color: theme.colorScheme.primary,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.all(20),
-              children: [
-
-                // ACTIVE PROPOSAL LABEL 
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8.0, left: 4.0),
-                  child: Row(
-                    children: [
-                      Icon(Icons.star_rounded, size: 16, color: theme.colorScheme.primary),
-                      const SizedBox(width: 6),
-                      Text(
-                        'ACTIVE PROPOSAL',
-                        style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 1.0,
-                          color: theme.colorScheme.primary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  decoration: const BoxDecoration(
-                    color: Color(0xFF245E63),
-                    borderRadius: AppRadii.card,
-                    boxShadow: AppShadows.level1,
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Chip(
-                            label: Text(course['courseCode'] ?? 'N/A'),
-                            backgroundColor: const Color(0xFF1A4A4F),
-                            labelStyle: const TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                            side: BorderSide.none,
-                          ),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 5),
-                            decoration: BoxDecoration(
-                                color: _getStatusColor(proposal['status']),
-                                borderRadius: BorderRadius.circular(12)),
-                            child: Text(
-                              (proposal['status'] ?? 'PENDING')
-                                  .toString()
-                                  .toUpperCase(),
-                              style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      const Text('Project Title',
-                          style:
-                              TextStyle(fontSize: 12, color: Colors.white70)),
-                      Text(
-                        proposal['title'] ?? 'Untitled Project',
-                        style: Theme.of(context)
-                            .textTheme
-                            .headlineSmall
-                            ?.copyWith(color: Colors.white),
-                      ),
-                      const SizedBox(height: 8),
-                      const Divider(color: Colors.white24),
-                      const SizedBox(height: 8),
-                      _buildInfoRow('Assigned Supervisor', supName),
-                      const SizedBox(height: 12),
-                      _buildInfoRow('Description/Link',
-                          proposal['description'] ?? 'No link provided', isLink: true),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 24),
-                Text('Team Members', style: theme.textTheme.titleLarge),
-                const SizedBox(height: 12),
-
-                if (leaderMap is Map)
-                  _buildMemberCard(
-                    name: leaderMap['name']?.toString() ?? 'Unknown',
-                    studentId: leaderMap['studentId']?.toString() ?? 'N/A',
-                    email: leaderMap['email']?.toString() ?? 'N/A',
-                    mobile: _resolveField(
-                      fromPopulated: leaderMap['mobile'],
-                      rawMembers: rawMembers,
-                      studentId: leaderStudentId,
-                      field: 'mobile',
-                    ),
-                    cgpa: _resolveField(
-                      fromPopulated: leaderMap['cgpa'],
-                      rawMembers: rawMembers,
-                      studentId: leaderStudentId,
-                      field: 'cgpa',
-                    ),
-                    isLeader: true,
-                  ),
-
-                ...otherMembers.map((m) => _buildMemberCard(
-                      name: m['name']?.toString() ?? 'Unknown',
-                      studentId: m['studentId']?.toString() ?? 'N/A',
-                      email: m['email']?.toString() ?? 'N/A',
-                      mobile: m['mobile']?.toString(),
-                      cgpa: m['cgpa']?.toString(),
-                      isLeader: false,
-                    )),
-
-                // Render Historical Proposals (All collapsed)
-                if (myProposals.isNotEmpty) ...[
-                  const SizedBox(height: 30),
-                  Text('My Submitted Proposals', style: theme.textTheme.titleLarge),
-                  const SizedBox(height: 12),
-                  ...myProposals.map((p) => _ExpandableProposalCard(
-                        proposal: p,
-                        theme: theme,
-                        buildInfoRow: _buildInfoRow,
-                        buildMemberCard: _buildMemberCard,
-                        resolveField: _resolveField,
-                        getStatusColor: _getStatusColor,
-                      )),
-                  const SizedBox(height: 20),
-                ]
-              ],
-            ),
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -569,44 +572,46 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
     final baseColor = isDark ? Colors.grey[800]! : Colors.grey[300]!;
     final highlightColor = isDark ? Colors.grey[700]! : Colors.grey[100]!;
 
-    return Shimmer.fromColors(
-      baseColor: baseColor,
-      highlightColor: highlightColor,
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
+    return WebConstraint(
+      child: Shimmer.fromColors(
+        baseColor: baseColor,
+        highlightColor: highlightColor,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 200,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              height: 24,
-              width: 140,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+              const SizedBox(height: 24),
+              Container(
+                height: 24,
+                width: 140,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
               ),
-            ),
-            const SizedBox(height: 16),
-            ...List.generate(
-                3,
-                (i) => Container(
-                      margin: const EdgeInsets.only(bottom: 12),
-                      height: 110,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                    )),
-          ],
+              const SizedBox(height: 16),
+              ...List.generate(
+                  3,
+                  (i) => Container(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        height: 110,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                      )),
+            ],
+          ),
         ),
       ),
     );

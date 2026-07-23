@@ -3,7 +3,8 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/authentication/forgot_password_screen.dart';
 import 'package:link_unity/supervisor/sup_dashboard.dart';
-import 'package:link_unity/supervisor/sup_login_screen.dart';
+import 'package:link_unity/supervisor/cng_temp_pass_screen.dart';
+import 'package:link_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_services.dart';
@@ -50,7 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-void _handleLogin() async {
+  void _handleLogin() async {
     final isStudent = widget.role == 'student';
     final identifier = isStudent
         ? _identifierController.text.trim()
@@ -59,7 +60,8 @@ void _handleLogin() async {
     final password = _passController.text;
 
     if (identifier.isEmpty || password.isEmpty) {
-      CustomSnackBar.showInfo(context, "Please enter both ID/Abbreviation and Password");
+      CustomSnackBar.showInfo(
+          context, "Please enter both ID/Abbreviation and Password");
       return;
     }
 
@@ -95,12 +97,13 @@ void _handleLogin() async {
             FadeScaleRoute(page: const SupervisorDashboard()),
             (route) => false);
       } else {
-        CustomSnackBar.showError(context, "Role mismatch or invalid credentials");
+        CustomSnackBar.showError(
+            context, "Role mismatch or invalid credentials");
         Provider.of<AuthProvider>(context, listen: false).logout();
         setState(() => _submitState = SubmitState.idle);
       }
     } catch (e) {
-      // Note: AuthProvider already shows the snackbar internally now, 
+      // Note: AuthProvider already shows the snackbar internally now,
       // but if you want a fallback here, it's safe.
       setState(() => _submitState = SubmitState.idle);
     }
@@ -147,240 +150,245 @@ void _handleLogin() async {
                   : 'Switch to dark mode',
             )
           ]),
-      body: CustomScrollView(
-        slivers: [
-          SliverFillRemaining(
-            hasScrollBody: false,
-            child: AnimationLimiter(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: AnimationConfiguration.toStaggeredList(
-                    duration: const Duration(milliseconds: 400),
-                    childAnimationBuilder: (widget) => SlideAnimation(
-                      verticalOffset: 40.0,
-                      child: FadeInAnimation(
-                        child: widget,
-                      ),
-                    ),
-                    children: [
-                      const SizedBox(height: 20),
-                      Text(
-                        isStudent ? 'Student Login' : 'Supervisor Login',
-                        style: const TextStyle(
-                            fontSize: 28, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Welcome back! Please sign in to continue.',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: theme.colorScheme.onSurfaceVariant),
-                      ),
-                      const SizedBox(height: 40),
-                      TextField(
-                        controller: _identifierController,
-                        keyboardType: keyboardType,
-                        textCapitalization: isStudent
-                            ? TextCapitalization.none
-                            : TextCapitalization.characters,
-                        decoration: InputDecoration(
-                            labelText: labelText,
-                            prefixIcon: Icon(prefixIcon),
-                            focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: themeColor))),
-                      ),
-                      const SizedBox(height: 20),
-                      TextField(
-                        controller: _passController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline_rounded),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscurePassword
-                                    ? Icons.visibility_off_rounded
-                                    : Icons.visibility_rounded,
-                                color: theme.colorScheme.onSurfaceVariant,
-                              ),
-                              onPressed: () {
-                                setState(() {
-                                  _obscurePassword = !_obscurePassword;
-                                });
-                              },
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                                borderSide: BorderSide(color: themeColor))),
-                      ),
-                      const SizedBox(height: 40),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 54,
-                        child: AnimatedSubmitButton(
-                          state: _submitState,
-                          title: "Login",
-                          onPressed: _handleLogin,
-                          backgroundColor: themeColor,
+      body: WebConstraint(
+        child: CustomScrollView(
+          slivers: [
+            SliverFillRemaining(
+              hasScrollBody: false,
+              child: AnimationLimiter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: AnimationConfiguration.toStaggeredList(
+                      duration: const Duration(milliseconds: 400),
+                      childAnimationBuilder: (widget) => SlideAnimation(
+                        verticalOffset: 40.0,
+                        child: FadeInAnimation(
+                          child: widget,
                         ),
                       ),
-
-                      const SizedBox(height: 20),
-
-                      // 🟢 SUPERVISOR: Forgot Password / Change Temp Password
-                      if (widget.role == 'supervisor')
-                        Center(
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              TextButton(
-                                onPressed: () => Navigator.push(
-                                    context,
-                                    FadeScaleRoute(
-                                        page: const ForgotPasswordScreen())),
-                                child: Text("Forgot Password?",
-                                    style: TextStyle(
-                                        color: theme.colorScheme.onSurface, // Made white
-                                        fontWeight: FontWeight.w600)),
+                      children: [
+                        const SizedBox(height: 20),
+                        Text(
+                          isStudent ? 'Student Login' : 'Supervisor Login',
+                          style: const TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Welcome back! Please sign in to continue.',
+                          style: TextStyle(
+                              fontSize: 14,
+                              color: theme.colorScheme.onSurfaceVariant),
+                        ),
+                        const SizedBox(height: 40),
+                        TextField(
+                          controller: _identifierController,
+                          keyboardType: keyboardType,
+                          textCapitalization: isStudent
+                              ? TextCapitalization.none
+                              : TextCapitalization.characters,
+                          decoration: InputDecoration(
+                              labelText: labelText,
+                              prefixIcon: Icon(prefixIcon),
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: themeColor))),
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: _passController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                              labelText: 'Password',
+                              prefixIcon:
+                                  const Icon(Icons.lock_outline_rounded),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility_off_rounded
+                                      : Icons.visibility_rounded,
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    _obscurePassword = !_obscurePassword;
+                                  });
+                                },
                               ),
-                              Text(
-                                " / ",
-                                style: TextStyle(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                    fontWeight: FontWeight.bold),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.push(
-                                    context,
-                                    FadeScaleRoute(
-                                        page:
-                                            const SupervisorFirstLoginScreen())),
-                                child: Text("Change Temp\nPassword",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        color: themeColor,
-                                        fontWeight: FontWeight.w600)),
-                              ),
-                            ],
+                              focusedBorder: OutlineInputBorder(
+                                  borderSide: BorderSide(color: themeColor))),
+                        ),
+                        const SizedBox(height: 40),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 54,
+                          child: AnimatedSubmitButton(
+                            state: _submitState,
+                            title: "Login",
+                            onPressed: _handleLogin,
+                            backgroundColor: themeColor,
                           ),
                         ),
 
-                      // 🟢 STUDENT: Forgot Password / Register Now
-                      if (widget.role == 'student')
-                        Center(
-                          child: Column(
-                            children: [
-                              if (!_isRegOpen)
-                                Container(
-                                  margin: const EdgeInsets.only(bottom: 12),
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 16, vertical: 10),
-                                  decoration: BoxDecoration(
-                                      color: theme.colorScheme.error
-                                          .withOpacity(0.1),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: theme.colorScheme.error
-                                              .withOpacity(0.3))),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.lock_clock_rounded,
-                                          size: 18,
-                                          color: theme.colorScheme.error),
-                                      const SizedBox(width: 8),
-                                      Text("Registration Closed",
-                                          style: TextStyle(
-                                              color: theme.colorScheme.error,
-                                              fontWeight: FontWeight.bold)),
-                                    ],
-                                  ),
+                        const SizedBox(height: 20),
+
+                        // 🟢 SUPERVISOR: Forgot Password / Change Temp Password
+                        if (widget.role == 'supervisor')
+                          Center(
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                TextButton(
+                                  onPressed: () => Navigator.push(
+                                      context,
+                                      FadeScaleRoute(
+                                          page: const ForgotPasswordScreen())),
+                                  child: Text("Forgot Password?",
+                                      style: TextStyle(
+                                          color: theme.colorScheme
+                                              .onSurface, // Made white
+                                          fontWeight: FontWeight.w600)),
                                 ),
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  TextButton(
-                                    onPressed: () => Navigator.push(
-                                        context,
-                                        FadeScaleRoute(
-                                            page:
-                                                const ForgotPasswordScreen())),
-                                    child: Text(
-                                      "Forgot Password?",
+                                Text(
+                                  " / ",
+                                  style: TextStyle(
+                                      color: theme.colorScheme.onSurfaceVariant,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.push(
+                                      context,
+                                      FadeScaleRoute(
+                                          page:
+                                              const SupervisorFirstLoginScreen())),
+                                  child: Text("Change Temp\nPassword",
+                                      textAlign: TextAlign.center,
                                       style: TextStyle(
-                                          color: theme.colorScheme.onSurface, // Made white
-                                          fontWeight: FontWeight.w600),
+                                          color: themeColor,
+                                          fontWeight: FontWeight.w600)),
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        // 🟢 STUDENT: Forgot Password / Register Now
+                        if (widget.role == 'student')
+                          Center(
+                            child: Column(
+                              children: [
+                                if (!_isRegOpen)
+                                  Container(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16, vertical: 10),
+                                    decoration: BoxDecoration(
+                                        color: theme.colorScheme.error
+                                            .withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: theme.colorScheme.error
+                                                .withOpacity(0.3))),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(Icons.lock_clock_rounded,
+                                            size: 18,
+                                            color: theme.colorScheme.error),
+                                        const SizedBox(width: 8),
+                                        Text("Registration Closed",
+                                            style: TextStyle(
+                                                color: theme.colorScheme.error,
+                                                fontWeight: FontWeight.bold)),
+                                      ],
                                     ),
                                   ),
-                                  if (_isRegOpen) ...[
-                                    Text(
-                                      " / ",
-                                      style: TextStyle(
-                                          color: theme
-                                              .colorScheme.onSurfaceVariant,
-                                          fontWeight: FontWeight.bold),
-                                    ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
                                     TextButton(
                                       onPressed: () => Navigator.push(
                                           context,
                                           FadeScaleRoute(
                                               page:
-                                                  const StudentRegistrationScreen())),
+                                                  const ForgotPasswordScreen())),
                                       child: Text(
-                                        "Register Now",
+                                        "Forgot Password?",
                                         style: TextStyle(
-                                            color: themeColor,
+                                            color: theme.colorScheme
+                                                .onSurface, // Made white
                                             fontWeight: FontWeight.w600),
                                       ),
                                     ),
+                                    if (_isRegOpen) ...[
+                                      Text(
+                                        " / ",
+                                        style: TextStyle(
+                                            color: theme
+                                                .colorScheme.onSurfaceVariant,
+                                            fontWeight: FontWeight.bold),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Navigator.push(
+                                            context,
+                                            FadeScaleRoute(
+                                                page:
+                                                    const StudentRegistrationScreen())),
+                                        child: Text(
+                                          "Register Now",
+                                          style: TextStyle(
+                                              color: themeColor,
+                                              fontWeight: FontWeight.w600),
+                                        ),
+                                      ),
+                                    ],
                                   ],
-                                ],
+                                ),
+                              ],
+                            ),
+                          ),
+
+                        const SizedBox(height: 40),
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.primary.withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                                color:
+                                    theme.colorScheme.primary.withOpacity(0.2)),
+                          ),
+                          child: Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Icon(Icons.info_outline_rounded,
+                                  size: 20, color: theme.colorScheme.primary),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Text(
+                                  isStudent
+                                      ? "Note: New registrations can only be processed while the portal is explicitly opened by the department admin. Otherwise, it will show 'Registration Closed'."
+                                      : "Note: Use your exact capitalized Abbreviation (e.g., EBH). Your initial temporary password will be provided by the department admin.",
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: theme.colorScheme.onSurfaceVariant,
+                                    height: 1.4,
+                                  ),
+                                ),
                               ),
                             ],
                           ),
                         ),
-
-                      const SizedBox(height: 40),
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withOpacity(0.05),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color:
-                                  theme.colorScheme.primary.withOpacity(0.2)),
-                        ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Icon(Icons.info_outline_rounded,
-                                size: 20, color: theme.colorScheme.primary),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                isStudent
-                                    ? "Note: New registrations can only be processed while the portal is explicitly opened by the department admin. Otherwise, it will show 'Registration Closed'."
-                                    : "Note: Use your exact capitalized Abbreviation (e.g., EBH). Your initial temporary password will be provided by the department admin.",
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                  height: 1.4,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(height: 30),
-                    ],
+                        const SizedBox(height: 30),
+                      ],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

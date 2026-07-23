@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
-import 'package:link_unity/widgets/animated_submit_button.dart'; 
+import 'package:link_unity/widgets/animated_submit_button.dart';
+import 'package:link_unity/widgets/web_constrain.dart'; 
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'student_dash.dart';
-import '../theme/app_theme.dart';
 import '../theme/theme_provider.dart';
 
 class StudentRegistrationScreen extends StatefulWidget {
@@ -20,9 +20,20 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
   final _formKey = GlobalKey<FormState>();
   final Map<String, dynamic> _formData = {};
 
+  // 🟢 Added a controller to read the first password for comparison
+  final _passwordController = TextEditingController();
+
   SubmitState _submitState = SubmitState.idle;
 
   bool _obscurePassword = true;
+  // 🟢 Added state for the confirm password visibility toggle
+  bool _obscureConfirmPassword = true;
+
+  @override
+  void dispose() {
+    _passwordController.dispose();
+    super.dispose();
+  }
 
   Future<void> _initiateRegistration() async {
     if (_formKey.currentState!.validate()) {
@@ -32,7 +43,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       setState(() => _submitState = SubmitState.loading);
 
       try {
-        // 🟢 FIX: Passed context as the first argument
         await Provider.of<AuthProvider>(context, listen: false)
             .sendOtp(context, _formData['email']);
 
@@ -52,7 +62,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       } catch (e) {
         // Reset on error
         setState(() => _submitState = SubmitState.idle);
-        // Note: AuthProvider handles the error snackbar now, so no double-toast!
       }
     }
   }
@@ -116,7 +125,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
 
   void _finalizeRegistration(String otp, BuildContext dialogContext) async {
     try {
-      // 🟢 FIX: Passed context as the first argument
       await Provider.of<AuthProvider>(context, listen: false).register(
         context,
         _formData['name'],
@@ -139,8 +147,6 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       );
     } catch (e) {
       Navigator.pop(dialogContext);
-      
-      // Note: AuthProvider handles the error snackbar now!
     }
   }
 
@@ -222,153 +228,190 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       body: AnimationLimiter(
         child: SingleChildScrollView(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: AnimationConfiguration.toStaggeredList(
-                duration: const Duration(milliseconds: 400),
-                childAnimationBuilder: (widget) => SlideAnimation(
-                  verticalOffset: 40.0,
-                  child: FadeInAnimation(
-                    child: widget,
-                  ),
-                ),
-                children: [
-                  const Text(
-                    'Join the Community',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Fill in your details to get started with your research journey.',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                  const SizedBox(height: 30),
-
-                  _buildLabel('Personal Info'),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                        labelText: 'Full Name',
-                        prefixIcon: Icon(Icons.person_outline),
-                        border: OutlineInputBorder()),
-                    onSaved: (v) => _formData['name'] = v,
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                  ),
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                        labelText: 'Email Address',
-                        prefixIcon: Icon(Icons.email_outlined),
-                        border: OutlineInputBorder()),
-                    keyboardType: TextInputType.emailAddress,
-                    onSaved: (v) => _formData['email'] = v,
-                    validator: (v) => v!.isEmpty ? 'Required' : null,
-                  ),
-
-                  const SizedBox(height: 24),
-                  _buildLabel('Academic Info'),
-                  TextFormField(
-                    decoration: const InputDecoration(
-                        labelText: 'Student ID',
-                        prefixIcon: Icon(Icons.badge_outlined),
-                        border: OutlineInputBorder()),
-                    keyboardType: TextInputType.number,
-                    onSaved: (v) => _formData['studentId'] = v,
-                    validator: (v) {
-                      if (v == null || v.isEmpty) return 'Required';
-                      if (v.length < 10) return 'ID must be at least 10 digits';
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                              labelText: 'Batch',
-                              prefixIcon: Icon(Icons.calendar_today_outlined),
-                              border: OutlineInputBorder()),
-                          onSaved: (v) => _formData['batch'] = v,
-                          validator: (v) => v!.isEmpty ? 'Required' : null,
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextFormField(
-                          decoration: const InputDecoration(
-                              labelText: 'Section',
-                              prefixIcon: Icon(Icons.class_outlined),
-                              border: OutlineInputBorder()),
-                          onSaved: (v) => _formData['section'] = v,
-                          validator: (v) => v!.isEmpty ? 'Required' : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-                  _buildLabel('Security'),
-
-                  TextFormField(
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                        labelText: 'Password',
-                        prefixIcon: const Icon(Icons.lock_outline),
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            _obscurePassword
-                                ? Icons.visibility_off_rounded
-                                : Icons.visibility_rounded,
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
-                          onPressed: () {
-                            setState(() {
-                              _obscurePassword = !_obscurePassword;
-                            });
-                          },
-                        ),
-                        border: const OutlineInputBorder()),
-                    onSaved: (v) => _formData['password'] = v,
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please enter a password';
-                      }
-                      if (value.length < 8) {
-                        return 'Must be at least 8 characters long';
-                      }
-                      if (!RegExp(r'(?=.*?[A-Z])').hasMatch(value)) {
-                        return 'Must contain at least one uppercase letter';
-                      }
-                      if (!RegExp(r'(?=.*?[a-z])').hasMatch(value)) {
-                        return 'Must contain at least one lowercase letter';
-                      }
-                      if (!RegExp(r'(?=.*?[0-9])').hasMatch(value)) {
-                        return 'Must contain at least one number';
-                      }
-                      if (!RegExp(r'(?=.*?[!@#\$&*~])').hasMatch(value)) {
-                        return 'Must contain at least one special character (!@#\$&*~)';
-                      }
-                      return null;
-                    },
-                  ),
-
-                  const SizedBox(height: 40),
-
-                  SizedBox(
-                    height: 54, 
-                    width: double.infinity,
-                    child: AnimatedSubmitButton(
-                      state: _submitState,
-                      title: "Register",
-                      onPressed: _initiateRegistration,
-                      backgroundColor: AppColors.primary,
+          child: WebConstraint(
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: AnimationConfiguration.toStaggeredList(
+                  duration: const Duration(milliseconds: 400),
+                  childAnimationBuilder: (widget) => SlideAnimation(
+                    verticalOffset: 40.0,
+                    child: FadeInAnimation(
+                      child: widget,
                     ),
                   ),
-                  const SizedBox(height: 30),
-                ],
+                  children: [
+                    const Text(
+                      'Join the Community',
+                      style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Fill in your details to get started with your research journey.',
+                      style: TextStyle(
+                          fontSize: 14,
+                          color: theme.colorScheme.onSurfaceVariant),
+                    ),
+                    const SizedBox(height: 30),
+                    
+                    _buildLabel('Personal Info', theme),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.person_outline),
+                          border: OutlineInputBorder()),
+                      onSaved: (v) => _formData['name'] = v,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'Email Address',
+                          prefixIcon: Icon(Icons.email_outlined),
+                          border: OutlineInputBorder()),
+                      keyboardType: TextInputType.emailAddress,
+                      onSaved: (v) => _formData['email'] = v,
+                      validator: (v) => v!.isEmpty ? 'Required' : null,
+                    ),
+                    
+                    const SizedBox(height: 24),
+                    _buildLabel('Academic Info', theme),
+                    TextFormField(
+                      decoration: const InputDecoration(
+                          labelText: 'Student ID',
+                          prefixIcon: Icon(Icons.badge_outlined),
+                          border: OutlineInputBorder()),
+                      keyboardType: TextInputType.number,
+                      onSaved: (v) => _formData['studentId'] = v,
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Required';
+                        if (v.length < 10) return 'ID must be at least 10 digits';
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                                labelText: 'Batch',
+                                prefixIcon: Icon(Icons.calendar_today_outlined),
+                                border: OutlineInputBorder()),
+                            onSaved: (v) => _formData['batch'] = v,
+                            validator: (v) => v!.isEmpty ? 'Required' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: TextFormField(
+                            decoration: const InputDecoration(
+                                labelText: 'Section',
+                                prefixIcon: Icon(Icons.class_outlined),
+                                border: OutlineInputBorder()),
+                            onSaved: (v) => _formData['section'] = v,
+                            validator: (v) => v!.isEmpty ? 'Required' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    _buildLabel('Security', theme),
+                    
+                    // 🟢 Attached _passwordController here
+                    TextFormField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                          labelText: 'Password',
+                          prefixIcon: const Icon(Icons.lock_outline),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscurePassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscurePassword = !_obscurePassword;
+                              });
+                            },
+                          ),
+                          border: const OutlineInputBorder()),
+                      onSaved: (v) => _formData['password'] = v,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please enter a password';
+                        }
+                        if (value.length < 8) {
+                          return 'Must be at least 8 characters long';
+                        }
+                        if (!RegExp(r'(?=.*?[A-Z])').hasMatch(value)) {
+                          return 'Must contain at least one uppercase letter';
+                        }
+                        if (!RegExp(r'(?=.*?[a-z])').hasMatch(value)) {
+                          return 'Must contain at least one lowercase letter';
+                        }
+                        if (!RegExp(r'(?=.*?[0-9])').hasMatch(value)) {
+                          return 'Must contain at least one number';
+                        }
+                        if (!RegExp(r'(?=.*?[!@#\$&*~])').hasMatch(value)) {
+                          return 'Must contain at least one special character (!@#\$&*~)';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // 🟢 Added Confirm Password Field
+                    TextFormField(
+                      obscureText: _obscureConfirmPassword,
+                      decoration: InputDecoration(
+                          labelText: 'Confirm Password',
+                          prefixIcon: const Icon(Icons.lock_reset_outlined),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirmPassword
+                                  ? Icons.visibility_off_rounded
+                                  : Icons.visibility_rounded,
+                              color: theme.colorScheme.onSurfaceVariant,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                _obscureConfirmPassword = !_obscureConfirmPassword;
+                              });
+                            },
+                          ),
+                          border: const OutlineInputBorder()),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please confirm your password';
+                        }
+                        if (value != _passwordController.text) {
+                          return 'Passwords do not match';
+                        }
+                        return null;
+                      },
+                    ),
+                    
+                    const SizedBox(height: 40),
+                    
+                    SizedBox(
+                      height: 54, 
+                      width: double.infinity,
+                      child: AnimatedSubmitButton(
+                        state: _submitState,
+                        title: "Register",
+                        onPressed: _initiateRegistration,
+                        backgroundColor: theme.colorScheme.primary, // 🟢 Synced with theme
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                  ],
+                ),
               ),
             ),
           ),
@@ -377,14 +420,14 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
     );
   }
 
-  Widget _buildLabel(String text) {
+  Widget _buildLabel(String text, ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Text(text,
-          style: const TextStyle(
+          style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w600,
-              color: AppColors.primary)),
+              color: theme.colorScheme.primary)), // 🟢 Synced with theme
     );
   }
 }

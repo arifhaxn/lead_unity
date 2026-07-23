@@ -138,32 +138,32 @@ class ApiService {
     }
   }
 
-Future<List<dynamic>> getAllProposals() async {
-  try {
-    // Backend now returns { data, total, page, totalPages }
-    // Fetch all pages and merge into one flat list
-    final firstResponse = await _dio.get('/proposals?page=1&limit=50');
-    final Map<String, dynamic> firstBody = firstResponse.data;
-    final int totalPages = firstBody['totalPages'] ?? 1;
-    List<dynamic> allProposals = List.from(firstBody['data']);
+  Future<List<dynamic>> getAllProposals() async {
+    try {
+      // Backend now returns { data, total, page, totalPages }
+      // Fetch all pages and merge into one flat list
+      final firstResponse = await _dio.get('/proposals?page=1&limit=50');
+      final Map<String, dynamic> firstBody = firstResponse.data;
+      final int totalPages = firstBody['totalPages'] ?? 1;
+      List<dynamic> allProposals = List.from(firstBody['data']);
 
-    if (totalPages > 1) {
-      // Fetch remaining pages in parallel
-      final futures = List.generate(
-        totalPages - 1,
-        (i) => _dio.get('/proposals?page=${i + 2}&limit=50'),
-      );
-      final responses = await Future.wait(futures);
-      for (final res in responses) {
-        allProposals.addAll(res.data['data']);
+      if (totalPages > 1) {
+        // Fetch remaining pages in parallel
+        final futures = List.generate(
+          totalPages - 1,
+          (i) => _dio.get('/proposals?page=${i + 2}&limit=50'),
+        );
+        final responses = await Future.wait(futures);
+        for (final res in responses) {
+          allProposals.addAll(res.data['data']);
+        }
       }
-    }
 
-    return allProposals;
-  } catch (e) {
-    throw Exception('Failed to load all proposals: $e');
+      return allProposals;
+    } catch (e) {
+      throw Exception('Failed to load all proposals: $e');
+    }
   }
-}
 
   // 🟢 Fetches the specific proposal for the logged-in student
   // This is used by the Dashboard to show Supervisor and Defense info

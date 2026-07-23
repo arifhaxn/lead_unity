@@ -3,6 +3,7 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:link_unity/widgets/animated_dialog.dart';
 import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:link_unity/widgets/animated_submit_button.dart';
+import 'package:link_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import '../services/api_services.dart';
@@ -95,71 +96,73 @@ class _RequestTeamScreenState extends State<RequestTeamScreen> {
           elevation: 0,
           bottom: appBarBottomLine,
         ),
-        body: Shimmer.fromColors(
-          baseColor: baseColor,
-          highlightColor: highlightColor,
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                    height: 90,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16))),
-                const SizedBox(height: 30),
-                Container(
-                    height: 55,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8))),
-                const SizedBox(height: 16),
-                Container(
-                    height: 55,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(8))),
-                const SizedBox(height: 24),
-                Container(height: 20, width: 150, color: Colors.white),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                        child: Container(
-                            height: 55,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8)))),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Container(
-                            height: 55,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8)))),
-                    const SizedBox(width: 8),
-                    Expanded(
-                        child: Container(
-                            height: 55,
-                            decoration: BoxDecoration(
-                                color: Colors.white,
-                                borderRadius: BorderRadius.circular(8)))),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                Container(height: 20, width: 120, color: Colors.white),
-                const SizedBox(height: 10),
-                Container(
-                    height: 250,
-                    width: double.infinity,
-                    decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(16))),
-              ],
+        body: WebConstraint(
+          child: Shimmer.fromColors(
+            baseColor: baseColor,
+            highlightColor: highlightColor,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                      height: 90,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16))),
+                  const SizedBox(height: 30),
+                  Container(
+                      height: 55,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8))),
+                  const SizedBox(height: 16),
+                  Container(
+                      height: 55,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(8))),
+                  const SizedBox(height: 24),
+                  Container(height: 20, width: 150, color: Colors.white),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                          child: Container(
+                              height: 55,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8)))),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Container(
+                              height: 55,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8)))),
+                      const SizedBox(width: 8),
+                      Expanded(
+                          child: Container(
+                              height: 55,
+                              decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(8)))),
+                    ],
+                  ),
+                  const SizedBox(height: 30),
+                  Container(height: 20, width: 120, color: Colors.white),
+                  const SizedBox(height: 10),
+                  Container(
+                      height: 250,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16))),
+                ],
+              ),
             ),
           ),
         ),
@@ -423,187 +426,189 @@ class _RequestTeamFormState extends State<RequestTeamForm> {
     return AnimationLimiter(
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(20.0),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: AnimationConfiguration.toStaggeredList(
-              duration: const Duration(milliseconds: 400),
-              childAnimationBuilder: (widget) => SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(child: widget),
-              ),
-              children: <Widget>[
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withOpacity(0.05),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                        color: _selectedCourseId == null
-                            ? theme.colorScheme.primary.withOpacity(0.5)
-                            : (isAlreadySubmitted
-                                ? Colors.redAccent.withOpacity(0.5)
-                                : Colors.green.withOpacity(0.5)),
-                        width: 2),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(
-                            _selectedCourseId == null
-                                ? Icons.school_rounded
-                                : (isAlreadySubmitted
-                                    ? Icons.block_rounded
-                                    : Icons.check_circle_rounded),
-                            color: _selectedCourseId == null
-                                ? theme.colorScheme.primary
-                                : (isAlreadySubmitted
-                                    ? Colors.redAccent
-                                    : Colors.green),
-                            size: 22,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Target Course',
-                            style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: theme.colorScheme.primary),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        value: _selectedCourseId,
-                        hint: const Text("Select a course..."),
-                        isExpanded: true,
-                        decoration: InputDecoration(
-                          contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 12),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          filled: true,
-                          fillColor: theme.colorScheme.surface,
+        child: WebConstraint(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: AnimationConfiguration.toStaggeredList(
+                duration: const Duration(milliseconds: 400),
+                childAnimationBuilder: (widget) => SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(child: widget),
+                ),
+                children: <Widget>[
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: theme.colorScheme.primary.withOpacity(0.05),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                          color: _selectedCourseId == null
+                              ? theme.colorScheme.primary.withOpacity(0.5)
+                              : (isAlreadySubmitted
+                                  ? Colors.redAccent.withOpacity(0.5)
+                                  : Colors.green.withOpacity(0.5)),
+                          width: 2),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              _selectedCourseId == null
+                                  ? Icons.school_rounded
+                                  : (isAlreadySubmitted
+                                      ? Icons.block_rounded
+                                      : Icons.check_circle_rounded),
+                              color: _selectedCourseId == null
+                                  ? theme.colorScheme.primary
+                                  : (isAlreadySubmitted
+                                      ? Colors.redAccent
+                                      : Colors.green),
+                              size: 22,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Target Course',
+                              style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: theme.colorScheme.primary),
+                            ),
+                          ],
                         ),
-                        validator: (value) =>
-                            value == null ? 'Required to submit' : null,
-                        items: widget.courses
-                            .map<DropdownMenuItem<String>>((course) {
-                          return DropdownMenuItem<String>(
-                            value: course['_id'],
-                            child: Text(course['courseCode'],
-                                style: const TextStyle(
-                                    fontWeight: FontWeight.w600)),
-                          );
-                        }).toList(),
-                        onChanged: (newValue) {
-                          setState(() {
-                            _selectedCourseId = newValue;
-                          });
-                        },
-                      ),
-                      if (isAlreadySubmitted)
-                        const Padding(
-                          padding: EdgeInsets.only(top: 8.0),
-                          child: Text(
-                            '⚠️ You have already submitted a proposal for this course.',
-                            style: TextStyle(
-                                color: Colors.redAccent,
-                                fontSize: 13,
-                                fontWeight: FontWeight.bold),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String>(
+                          value: _selectedCourseId,
+                          hint: const Text("Select a course..."),
+                          isExpanded: true,
+                          decoration: InputDecoration(
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 16, vertical: 12),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: theme.colorScheme.surface,
                           ),
+                          validator: (value) =>
+                              value == null ? 'Required to submit' : null,
+                          items: widget.courses
+                              .map<DropdownMenuItem<String>>((course) {
+                            return DropdownMenuItem<String>(
+                              value: course['_id'],
+                              child: Text(course['courseCode'],
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w600)),
+                            );
+                          }).toList(),
+                          onChanged: (newValue) {
+                            setState(() {
+                              _selectedCourseId = newValue;
+                            });
+                          },
+                        ),
+                        if (isAlreadySubmitted)
+                          const Padding(
+                            padding: EdgeInsets.only(top: 8.0),
+                            child: Text(
+                              '⚠️ You have already submitted a proposal for this course.',
+                              style: TextStyle(
+                                  color: Colors.redAccent,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          )
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  TextFormField(
+                      controller: _titleController,
+                      decoration:
+                          const InputDecoration(labelText: 'Project Title'),
+                      validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 16),
+                  TextFormField(
+                      controller: _linkController,
+                      decoration:
+                          const InputDecoration(labelText: 'Google Drive Link'),
+                      validator: (v) => v!.isEmpty ? 'Required' : null),
+                  const SizedBox(height: 24),
+                  Text('Preferred Supervisors',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
+                  const SizedBox(height: 10),
+                  // 🟢 SWAPPED OUT THE NATIVE DROPDOWNS FOR THE SEARCHABLE ONES
+                  Row(children: [
+                    _buildSearchableSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
+                    const SizedBox(width: 8),
+                    _buildSearchableSupDropdown(2, _sup2, (v) => setState(() => _sup2 = v)),
+                    const SizedBox(width: 8),
+                    _buildSearchableSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
+                  ]),
+                  const SizedBox(height: 30),
+                  Text('Team Members',
+                      style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary)),
+                  const SizedBox(height: 10),
+                  _buildMemberCard(0),
+                  if (_showSecondMember) _buildMemberCard(1),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (!_showSecondMember)
+                        TextButton.icon(
+                          onPressed: () =>
+                              setState(() => _showSecondMember = true),
+                          icon: const Icon(Icons.group_add_rounded,
+                              color: Color(0xFF245E63)),
+                          label: const Text('Add 2nd Member',
+                              style: TextStyle(
+                                  color: Color(0xFF245E63),
+                                  fontWeight: FontWeight.bold)),
                         )
+                      else
+                        const SizedBox.shrink(),
+                      if (_showSecondMember)
+                        TextButton.icon(
+                          onPressed: () => setState(() {
+                            for (var controller in _memberControllers[1].values) {
+                              controller.clear();
+                            }
+                            _showSecondMember = false;
+                          }),
+                          icon: Icon(Icons.person_remove_rounded,
+                              color: theme.colorScheme.error),
+                          label: Text('Remove 2nd Member',
+                              style: TextStyle(
+                                  color: theme.colorScheme.error,
+                                  fontWeight: FontWeight.bold)),
+                        ),
                     ],
                   ),
-                ),
-                const SizedBox(height: 30),
-                TextFormField(
-                    controller: _titleController,
-                    decoration:
-                        const InputDecoration(labelText: 'Project Title'),
-                    validator: (v) => v!.isEmpty ? 'Required' : null),
-                const SizedBox(height: 16),
-                TextFormField(
-                    controller: _linkController,
-                    decoration:
-                        const InputDecoration(labelText: 'Google Drive Link'),
-                    validator: (v) => v!.isEmpty ? 'Required' : null),
-                const SizedBox(height: 24),
-                Text('Preferred Supervisors',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary)),
-                const SizedBox(height: 10),
-                // 🟢 SWAPPED OUT THE NATIVE DROPDOWNS FOR THE SEARCHABLE ONES
-                Row(children: [
-                  _buildSearchableSupDropdown(1, _sup1, (v) => setState(() => _sup1 = v)),
-                  const SizedBox(width: 8),
-                  _buildSearchableSupDropdown(2, _sup2, (v) => setState(() => _sup2 = v)),
-                  const SizedBox(width: 8),
-                  _buildSearchableSupDropdown(3, _sup3, (v) => setState(() => _sup3 = v)),
-                ]),
-                const SizedBox(height: 30),
-                Text('Team Members',
-                    style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.primary)),
-                const SizedBox(height: 10),
-                _buildMemberCard(0),
-                if (_showSecondMember) _buildMemberCard(1),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    if (!_showSecondMember)
-                      TextButton.icon(
-                        onPressed: () =>
-                            setState(() => _showSecondMember = true),
-                        icon: const Icon(Icons.group_add_rounded,
-                            color: Color(0xFF245E63)),
-                        label: const Text('Add 2nd Member',
-                            style: TextStyle(
-                                color: Color(0xFF245E63),
-                                fontWeight: FontWeight.bold)),
-                      )
-                    else
-                      const SizedBox.shrink(),
-                    if (_showSecondMember)
-                      TextButton.icon(
-                        onPressed: () => setState(() {
-                          for (var controller in _memberControllers[1].values) {
-                            controller.clear();
-                          }
-                          _showSecondMember = false;
-                        }),
-                        icon: Icon(Icons.person_remove_rounded,
-                            color: theme.colorScheme.error),
-                        label: Text('Remove 2nd Member',
-                            style: TextStyle(
-                                color: theme.colorScheme.error,
-                                fontWeight: FontWeight.bold)),
-                      ),
-                  ],
-                ),
-                const SizedBox(height: 30),
-                SizedBox(
-                  height: 54,
-                  child: AnimatedSubmitButton(
-                    state: _submitState,
-                    title: isAlreadySubmitted
-                        ? 'Already Submitted'
-                        : 'Submit Request',
-                    onPressed: isAlreadySubmitted ? null : _submitRequest,
-                    backgroundColor: const Color(0xFF245E63),
+                  const SizedBox(height: 30),
+                  SizedBox(
+                    height: 54,
+                    child: AnimatedSubmitButton(
+                      state: _submitState,
+                      title: isAlreadySubmitted
+                          ? 'Already Submitted'
+                          : 'Submit Request',
+                      onPressed: isAlreadySubmitted ? null : _submitRequest,
+                      backgroundColor: const Color(0xFF245E63),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 50),
-              ],
+                  const SizedBox(height: 50),
+                ],
+              ),
             ),
           ),
         ),
