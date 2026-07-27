@@ -31,7 +31,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
       final dp = Provider.of<DataProvider>(context, listen: false);
       final ap = Provider.of<AuthProvider>(context, listen: false);
 
-      NotificationService.setupPushNotifications(context, ap.token ?? "");
+      NotificationService.setupPushNotifications(ap.token ?? "");
 
       dp.fetchDeadlineIfNeeded();
       dp.fetchMyTeamIfNeeded();
@@ -198,6 +198,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
 body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
+            authProvider.refreshUserProfile(),
             // 🟢 Passed context to the ones we updated!
             dp.fetchDeadlineIfNeeded(context: context, forceRefresh: true),
             dp.fetchMyTeamIfNeeded(forceRefresh: true),
@@ -210,7 +211,8 @@ body: RefreshIndicator(
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(24.0) +
+              EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

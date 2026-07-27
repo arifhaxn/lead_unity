@@ -1,95 +1,109 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/material.dart';
-import 'package:link_unity/widgets/top_notification.dart';
 
+import 'api_services.dart';
+
+/// Registers this device with FCM and keeps the backend's token list in sync.
+///
+/// Display of incoming messages is NOT handled here — that lives in main.dart
+/// (`showLocalNotification` + the `onMessage` listener). Keeping a second
+/// listener in this class caused every foreground push to render twice.
 class NotificationService {
   static bool _initialized = false;
   static void reset() => _initialized = false;
 
-  // ✅ FIXED — use the same base URL as ApiService, not a placeholder
-  static const String _baseUrl =
-      'https://leading-unity-nest-backend.vercel.app/api';
+  static final ApiService _api = ApiService();
 
-  // ✅ FIXED — replace YOUR_VAPID_KEY with your real VAPID key from:
   // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
   static const String _vapidKey =
-      'BDu0B1pCcMaF8BlK_kB74Ja0oGWvVWGnrxWiq3tFtRo9aa4ARMEx27VbZFDigYEqs0ODyeD7tGNYSdGHaauAyEQ'; // <-- replace this value
+      'BDu0B1pCcMaF8BlK_kB74Ja0oGWvVWGnrxWiq3tFtRo9aa4ARMEx27VbZFDigYEqs0ODyeD7tGNYSdGHaauAyEQ';
 
-  static Future<void> setupPushNotifications(
-      BuildContext context, String userAuthToken) async {
-    if (_initialized) return; // ← prevents duplicate listeners
-    _initialized = true;
+  /// Requests notification permission and registers the device token.
+  ///
+  /// [userAuthToken] is used only as a "is there a live session?" guard — the
+  /// Authorization header itself is attached by ApiService's Dio interceptor.
+  static Future<void> setupPushNotifications(String userAuthToken) async {
+    if (_initialized) return;
 
-    FirebaseMessaging messaging = FirebaseMessaging.instance;
+    // No session yet. Return WITHOUT latching so the next dashboard mount
+    // retries once the JWT is available.
+    if (userAuthToken.isEmpty) {
+      debugPrint('🔕 Skipping FCM setup: no auth token yet.');
+      return;
+    }
 
-    // 1. Request Permission
-    NotificationSettings settings = await messaging.requestPermission(
+    final messaging = FirebaseMessaging.instance;
+
+    final settings = await messaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      // 2. Fetch Initial Token
-      String? token = kIsWeb
-          ? await messaging.getToken(vapidKey: _vapidKey) // ✅ uses real key now
+    final granted =
+        settings.authorizationStatus == AuthorizationStatus.authorized ||
+            settings.authorizationStatus == AuthorizationStatus.provisional;
+
+    // Leave _initialized false so enabling notifications later in system
+    // settings still gets a chance to register on the next mount.
+    if (!granted) {
+      debugPrint(
+          '🔕 Notification permission not granted: ${settings.authorizationStatus}');
+      return;
+    }
+
+    _initialized = true;
+
+    try {
+      final token = kIsWeb
+          ? await messaging.getToken(vapidKey: _vapidKey)
           : await messaging.getToken();
 
-      print("🔥 INITIAL DEVICE TOKEN: $token");
-      if (token != null) _sendTokenToBackend(token, userAuthToken);
+      if (token == null) {
+        debugPrint('❌ FCM returned a null token.');
+        _initialized = false;
+        return;
+      }
 
-      // 3. Listen for token refreshes
-      messaging.onTokenRefresh.listen((newToken) {
-        print("🔄 Token refreshed by Google!");
-        _sendTokenToBackend(newToken, userAuthToken);
-      });
+      // Print the FULL token on debug builds so it can be copied straight into
+      // tools/send-test-push.js or the Firebase Console test sender. Release
+      // builds log only a prefix, to keep the token out of production logs.
+      if (kDebugMode) {
+        debugPrint('🔥 FCM DEVICE TOKEN (copy this):\n$token');
+      } else {
+        debugPrint('🔥 FCM token: ${token.substring(0, 20)}...');
+      }
 
-      // 4. Foreground notifications
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        print("📥 Received a message while app is open!");
-        TopNotification.show(
-          context,
-          title: message.notification?.title ?? "LeadUnity Alert",
-          message: message.notification?.body ?? "You have a new update.",
-        );
-      });
-
-      // 5. Background tap / navigation
-      FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
-        print("👆 User tapped the notification banner!");
-        if (message.data.containsKey('route')) {
-          String routeName = message.data['route'];
-          Navigator.pushNamed(context, routeName);
-        }
-      });
+      await _api.saveFcmToken(token);
+      debugPrint('✅ FCM token registered with backend.');
+    } catch (e) {
+      // Registration failed — un-latch so a later attempt can retry. Without
+      // this the device stays silently unregistered for the whole session.
+      debugPrint('❌ FCM token registration failed: $e');
+      _initialized = false;
+      return;
     }
+
+    // Google rotates tokens periodically; push the new one straight through.
+    messaging.onTokenRefresh.listen((newToken) async {
+      try {
+        await _api.saveFcmToken(newToken);
+        debugPrint('🔄 Refreshed FCM token synced.');
+      } catch (e) {
+        debugPrint('❌ Failed to sync refreshed FCM token: $e');
+      }
+    });
   }
 
-  // ✅ FIXED — was calling wrong URL: 'https://your-api-url.com/api/users/update-fcm-token'
-  // The real backend endpoint is PATCH /api/users/fcm-token
-  static Future<void> _sendTokenToBackend(
-      String fcmToken, String userAuthToken) async {
-    final url = Uri.parse('$_baseUrl/users/fcm-token'); // ✅ correct endpoint
+  /// Returns the current device token so it can be un-registered on logout.
+  static Future<String?> currentToken() async {
     try {
-      final response = await http.patch(
-        // ✅ PATCH, not POST
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $userAuthToken',
-        },
-        body: jsonEncode({'fcmToken': fcmToken}),
-      );
-      if (response.statusCode == 200) {
-        print("✅ Token synced!");
-      } else {
-        print("❌ Token sync failed: ${response.statusCode} ${response.body}");
-      }
+      return kIsWeb
+          ? await FirebaseMessaging.instance.getToken(vapidKey: _vapidKey)
+          : await FirebaseMessaging.instance.getToken();
     } catch (e) {
-      print("❌ Network error syncing token: $e");
+      debugPrint('Could not read FCM token: $e');
+      return null;
     }
   }
 }

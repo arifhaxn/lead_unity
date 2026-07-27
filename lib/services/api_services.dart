@@ -8,6 +8,19 @@ class ApiService {
   final Dio _dio = Dio(BaseOptions(baseUrl: _baseUrl));
   final _storage = const FlutterSecureStorage();
 
+  /// Called when a protected request returns 401 — an expired or otherwise
+  /// rejected token. Wired up once in main.dart to log the user out cleanly and
+  /// return them to login. Static so every ApiService instance shares it.
+  static void Function()? onUnauthorized;
+
+  /// De-dupes the burst of parallel 401s a dashboard produces (several calls
+  /// fire at once) so the logout flow runs only once. Re-armed on next login.
+  static bool _handlingUnauthorized = false;
+
+  /// Re-arms the 401 handler — after a fresh login, or if the handler couldn't
+  /// act yet (e.g. the navigator wasn't ready).
+  static void resetUnauthorizedGuard() => _handlingUnauthorized = false;
+
   ApiService() {
     _dio.interceptors.add(InterceptorsWrapper(
       onRequest: (options, handler) async {
@@ -17,7 +30,81 @@ class ApiService {
         }
         return handler.next(options);
       },
+      onError: (e, handler) {
+        // 401 on a protected endpoint = the session is no longer valid (the
+        // token expired or was rejected). Auth endpoints are excluded so a
+        // wrong-password login still surfaces its own "Login failed" message.
+        final isAuthCall = e.requestOptions.path.startsWith('/auth/');
+        if (e.response?.statusCode == 401 &&
+            !isAuthCall &&
+            !_handlingUnauthorized) {
+          _handlingUnauthorized = true;
+          onUnauthorized?.call();
+        }
+        return handler.next(e);
+      },
     ));
+  }
+
+  /// Turns a backend error payload into ONE clean, human-readable sentence.
+  ///
+  /// NestJS (class-validator) returns `message` as an array of technical
+  /// strings, e.g. ["teamMembers.1.email must be an email"]. Thrown and
+  /// `.toString()`-ed raw, that reaches the user as
+  /// "[teamMembers.1.email must be an email]" — brackets, field paths and all.
+  /// This collapses it into something presentable.
+  static String friendlyError(dynamic data, String fallback) {
+    dynamic msg;
+    if (data is Map) {
+      msg = data['message'] ?? data['error'];
+    } else if (data is String) {
+      msg = data;
+    }
+
+    if (msg is List) {
+      msg = msg.isNotEmpty ? msg.first : null;
+    }
+    if (msg == null) return fallback;
+
+    var text = msg.toString().trim();
+    if (text.isEmpty) return fallback;
+
+    // class-validator prefixes each message with the field path
+    // ("teamMembers.1.email must be an email"). Rewrite that prefix into a
+    // friendly subject so no dotted paths reach the user.
+    final firstSpace = text.indexOf(' ');
+    if (firstSpace > 0) {
+      final path = text.substring(0, firstSpace);
+      final looksLikeField = RegExp(r'^[A-Za-z_][\w.]*$').hasMatch(path) &&
+          RegExp(r'[a-z]').hasMatch(path);
+      if (looksLikeField) {
+        final subject = _friendlyField(path);
+        if (subject.isNotEmpty) {
+          text = '$subject ${text.substring(firstSpace + 1)}';
+        }
+      }
+    }
+
+    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  /// "teamMembers.1.email" -> "Member 2 email"; "studentId" -> "Student id".
+  static String _friendlyField(String path) {
+    final out = <String>[];
+    for (final part in path.split('.')) {
+      if (RegExp(r'^\d+$').hasMatch(part)) {
+        final n = int.parse(part) + 1;
+        if (out.isNotEmpty) out[out.length - 1] = 'Member $n';
+      } else {
+        out.add(part
+            .replaceAllMapped(
+                RegExp(r'([a-z])([A-Z])'), (m) => '${m[1]} ${m[2]}')
+            .toLowerCase());
+      }
+    }
+    final joined = out.join(' ').trim();
+    if (joined.isEmpty) return '';
+    return joined[0].toUpperCase() + joined.substring(1);
   }
 
   Future<dynamic> login(String identifier, String password) async {
@@ -27,9 +114,10 @@ class ApiService {
         'password': password,
       });
       await _storage.write(key: 'jwt_token', value: response.data['token']);
+      _handlingUnauthorized = false; // re-arm for the new session
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Login failed';
+      throw friendlyError(e.response?.data, 'Login failed');
     }
   }
 
@@ -53,9 +141,10 @@ class ApiService {
     try {
       final response = await _dio.post('/auth/register/student', data: data);
       await _storage.write(key: 'jwt_token', value: response.data['token']);
+      _handlingUnauthorized = false; // re-arm for the new session
       return response.data;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Registration failed';
+      throw friendlyError(e.response?.data, 'Registration failed');
     }
   }
 
@@ -72,7 +161,7 @@ class ApiService {
         'newPassword': newPass
       });
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to change password';
+      throw friendlyError(e.response?.data, 'Failed to change password');
     }
   }
 
@@ -117,14 +206,7 @@ class ApiService {
     try {
       await _dio.post('/proposals', data: data);
     } on DioException catch (e) {
-      final payload = e.response?.data;
-      if (payload is Map && payload['message'] != null) {
-        throw payload['message'].toString();
-      }
-      if (payload is String) {
-        throw payload;
-      }
-      throw e.response?.data['message'] ?? 'Submission failed';
+      throw friendlyError(e.response?.data, 'Submission failed');
     }
   }
 
@@ -180,7 +262,7 @@ class ApiService {
     } on DioException catch (e) {
       // If the error is a 404 or empty, we just treat it as "no proposal"
       if (e.response?.statusCode == 404) return null;
-      throw e.response?.data['message'] ?? 'Failed to fetch team status';
+      throw friendlyError(e.response?.data, 'Failed to fetch team status');
     } catch (e) {
       return null;
     }
@@ -222,7 +304,7 @@ class ApiService {
       await _dio.post('/proposals/$proposalId/marks',
           data: {'marks': marksData, 'type': type});
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to save marks';
+      throw friendlyError(e.response?.data, 'Failed to save marks');
     }
   }
 
@@ -231,7 +313,7 @@ class ApiService {
     try {
       await _dio.post('/auth/forgot-password', data: {'email': email});
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to send reset OTP';
+      throw friendlyError(e.response?.data, 'Failed to send reset OTP');
     }
   }
 
@@ -245,7 +327,7 @@ class ApiService {
         'newPassword': newPassword,
       });
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to reset password';
+      throw friendlyError(e.response?.data, 'Failed to reset password');
     }
   }
 
@@ -253,7 +335,7 @@ class ApiService {
     try {
       await _dio.post('/auth/send-otp', data: {'email': email});
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to send OTP';
+      throw friendlyError(e.response?.data, 'Failed to send OTP');
     }
   }
 
@@ -263,7 +345,7 @@ class ApiService {
       final response = await _dio.get('/notifications');
       return response.data as List;
     } on DioException catch (e) {
-      throw e.response?.data['message'] ?? 'Failed to load notifications';
+      throw friendlyError(e.response?.data, 'Failed to load notifications');
     }
   }
 
@@ -291,10 +373,26 @@ class ApiService {
     } catch (_) {}
   }
 
-  Future<void> clearFcmToken(String authToken) async {
+  /// Registers this device's FCM token. The backend stores a SET of tokens, so
+  /// signing in on web no longer evicts the phone's token.
+  Future<void> saveFcmToken(String fcmToken) async {
+    try {
+      await _dio.patch('/users/fcm-token', data: {'fcmToken': fcmToken});
+    } on DioException catch (e) {
+      throw friendlyError(
+          e.response?.data, 'Failed to register this device for notifications');
+    }
+  }
+
+  /// Un-registers ONE device on logout.
+  ///
+  /// The token must be sent explicitly — the backend keeps a list per user and
+  /// otherwise cannot tell which device is signing out.
+  Future<void> clearFcmToken(String authToken, {String? fcmToken}) async {
+    if (fcmToken == null || fcmToken.isEmpty) return;
     await _dio.patch(
-      '/users/fcm-token',
-      data: {'fcmToken': null},
+      '/users/fcm-token/remove',
+      data: {'fcmToken': fcmToken},
       options: Options(headers: {'Authorization': 'Bearer $authToken'}),
     );
   }

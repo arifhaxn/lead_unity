@@ -41,7 +41,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         FadeScaleRoute(page: ResetPasswordScreen(email: email)),
       );
     } catch (e) {
-      CustomSnackBar.showError(context, e.toString());
+      CustomSnackBar.showError(
+          context, e.toString().replaceAll('Exception: ', ''));
       setState(() => _submitState = SubmitState.idle);
     }
   }
@@ -54,12 +55,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Scaffold(
       appBar: AppBar(elevation: 0, backgroundColor: Colors.transparent),
       // 🟢 FIX 1: Added SingleChildScrollView so the keyboard doesn't crush the layout
-      body: WebConstraint(
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
+      body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: WebConstraint(
           child: AnimationLimiter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              padding: const EdgeInsets.symmetric(horizontal: 24.0) +
+                  EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: AnimationConfiguration.toStaggeredList(

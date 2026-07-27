@@ -116,7 +116,8 @@ class _SupervisorListScreenState extends State<SupervisorListScreen> {
             return AnimationLimiter(
               child: ListView.builder(
                 itemCount: _processedSups.length,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20) +
+                    EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
                 itemBuilder: (context, index) {
                   final s = _processedSups[index];
                   final name = _fullName(s);

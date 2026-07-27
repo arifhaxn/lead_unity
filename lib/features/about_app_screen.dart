@@ -82,7 +82,8 @@ class AboutAppScreen extends StatelessWidget {
       // 🟢 AnimationLimiter added for the entire page
       body: AnimationLimiter(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0) +
+              EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.center,
             // 🟢 Staggered List conversion for Column children

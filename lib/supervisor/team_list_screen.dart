@@ -319,7 +319,10 @@ class _TeamListScreenState extends State<TeamListScreen> {
                         child: AnimationLimiter(
                           child: ListView.builder(
                             physics: const AlwaysScrollableScrollPhysics(),
-                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+                            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20) +
+                                EdgeInsets.only(
+                                    bottom:
+                                        MediaQuery.of(context).padding.bottom),
                             itemCount: filteredWithCardId.length,
                             itemBuilder: (context, index) {
                               final teamMap = filteredWithCardId[index]

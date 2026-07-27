@@ -150,14 +150,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   : 'Switch to dark mode',
             )
           ]),
-      body: WebConstraint(
-        child: CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
+      body: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: WebConstraint(
               child: AnimationLimiter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0) +
+                      EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: AnimationConfiguration.toStaggeredList(
@@ -387,8 +389,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

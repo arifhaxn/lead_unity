@@ -69,7 +69,8 @@ Future<void> _launchDownload(BuildContext context) async {
       ),
       // --- Image List ---
       body: ListView.builder(
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(10) +
+            EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         itemCount: templateImages.length,
         itemBuilder: (context, index) {
           return WebConstraint(

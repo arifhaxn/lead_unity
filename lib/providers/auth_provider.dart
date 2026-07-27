@@ -29,9 +29,73 @@ class AuthProvider with ChangeNotifier {
       _token = savedToken;
       _user = User.fromJson(json.decode(userDataString));
       notifyListeners();
+
+      // Cache-first: the line above loads the snapshot saved at last login.
+      // Kick off a background refresh so account info (name, ID, designation…)
+      // isn't frozen until the next manual logout+login. Not awaited — the UI
+      // shows cached data instantly and updates if/when the server responds.
+      refreshUserProfile();
+
       return true;
     } catch (e) {
       return false;
+    }
+  }
+
+  /// Re-fetches the logged-in user's own profile from the backend and updates
+  /// both the in-memory user and the cached `user_data`.
+  ///
+  /// Without this, [tryAutoLogin] keeps showing whatever was stored at login
+  /// time — the reported bug where a user's info only refreshes after logging
+  /// out and back in. Safe to call any time; it only rebuilds the UI when
+  /// something actually changed.
+  Future<void> refreshUserProfile() async {
+    final current = _user;
+    if (current == null || _token == null) return;
+
+    try {
+      // The backend has no dedicated "current user" route, so pull the user
+      // list (already fetched elsewhere) and locate this account by id.
+      final users = await _apiService.getUsers();
+
+      Map<String, dynamic>? me;
+      for (final u in users) {
+        if (u is Map && u['_id']?.toString() == current.id) {
+          me = Map<String, dynamic>.from(u);
+          break;
+        }
+      }
+      // Fallback: match by email when the id didn't line up.
+      if (me == null && current.email.isNotEmpty) {
+        for (final u in users) {
+          if (u is Map && u['email']?.toString() == current.email) {
+            me = Map<String, dynamic>.from(u);
+            break;
+          }
+        }
+      }
+      if (me == null) return; // couldn't locate the account — keep the cache
+
+      final refreshed = User.fromJson(me);
+      final userMap = {
+        '_id': refreshed.id,
+        'name': refreshed.name,
+        'email': refreshed.email,
+        'role': refreshed.role,
+        'studentId': refreshed.studentId,
+        'designation': refreshed.designation,
+      };
+      final encoded = json.encode(userMap);
+
+      // Only rewrite storage / rebuild the UI when the profile changed.
+      final existing = await _storage.read(key: 'user_data');
+      if (encoded == existing) return;
+
+      _user = refreshed;
+      await _storage.write(key: 'user_data', value: encoded);
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Could not refresh user profile: $e');
     }
   }
 
@@ -222,9 +286,12 @@ class AuthProvider with ChangeNotifier {
 
   Future<void> logout() async {
   try {
-    // ✅ Tell backend to wipe FCM token before we delete the JWT
+    // ✅ Un-register ONLY this device's FCM token before we delete the JWT.
+    // Sending the specific token matters: the backend stores one entry per
+    // device, so a logout on web must not silence the user's phone.
     if (_token != null) {
-      await _apiService.clearFcmToken(_token!);
+      final deviceToken = await NotificationService.currentToken();
+      await _apiService.clearFcmToken(_token!, fcmToken: deviceToken);
     }
     await _apiService.logout();
   } catch (e) {

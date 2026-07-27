@@ -95,15 +95,16 @@ class _SupervisorFirstLoginScreenState
           )
         ],
       ),
-      body: WebConstraint(
-        // 🟢 Swapped to CustomScrollView architecture for perfect web sizing
-        child: CustomScrollView(
-          slivers: [
-            SliverFillRemaining(
-              hasScrollBody: false,
+      body: CustomScrollView(
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: WebConstraint(
               child: AnimationLimiter(
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 24.0) +
+                      EdgeInsets.only(
+                          bottom: MediaQuery.of(context).padding.bottom),
                   child: Form(
                     key: _formKey,
                     child: Column(
@@ -253,8 +254,8 @@ class _SupervisorFirstLoginScreenState
                 ),
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

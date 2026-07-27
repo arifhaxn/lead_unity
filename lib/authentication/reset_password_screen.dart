@@ -44,7 +44,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
       CustomSnackBar.showSuccess(context, "Password updated! Please login.");
       Navigator.popUntil(context, (route) => route.isFirst);
     } catch (e) {
-      CustomSnackBar.showError(context, e.toString());
+      CustomSnackBar.showError(
+          context, e.toString().replaceAll('Exception: ', ''));
       setState(() => _submitState = SubmitState.idle);
     }
   }
@@ -56,7 +57,8 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text("Reset Password"), elevation: 0),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
+        padding: const EdgeInsets.all(24.0) +
+            EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: Column(
           children: [
             TextField(

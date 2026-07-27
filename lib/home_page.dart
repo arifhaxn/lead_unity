@@ -50,7 +50,8 @@ class HomePage extends StatelessWidget {
         children: [
           Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(32.0),
+              padding: const EdgeInsets.all(32.0) +
+                  EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
               child: TweenAnimationBuilder(
                 tween: Tween<double>(begin: 0, end: 1),
                 duration: const Duration(milliseconds: 800),

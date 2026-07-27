@@ -227,7 +227,8 @@ class _StudentRegistrationScreenState extends State<StudentRegistrationScreen> {
       ),
       body: AnimationLimiter(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10) +
+              EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
           child: WebConstraint(
             child: Form(
               key: _formKey,

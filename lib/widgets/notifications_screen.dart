@@ -160,7 +160,8 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 dp.fetchNotificationsIfNeeded(forceRefresh: true),
             color: theme.colorScheme.primary,
             child: ListView.separated(
-              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16) +
+                  EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
               itemCount: notifs.length,
               separatorBuilder: (_, __) => const SizedBox(height: 8),
               itemBuilder: (context, i) {

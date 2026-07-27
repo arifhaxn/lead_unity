@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart'; 
+import 'package:flutter/services.dart';
 import '../home_page.dart'; // Ensure this points to your home_page.dart
 import '../widgets/custom_page_route.dart';
 
@@ -11,7 +11,8 @@ class SplashScreen extends StatefulWidget {
   State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderStateMixin {
+class _SplashScreenState extends State<SplashScreen>
+    with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
   late Animation<double> _opacityAnimation;
@@ -36,13 +37,13 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
     _controller.forward();
 
     // 🟢 Keep the haptic thump for a premium feel
-    HapticFeedback.lightImpact(); 
+    HapticFeedback.lightImpact();
 
     Timer(const Duration(milliseconds: 1000), () {
       if (!mounted) return;
       Navigator.pushReplacement(
         context,
-        FadeScaleRoute(page: const HomePage()), 
+        FadeScaleRoute(page: const HomePage()),
       );
     });
   }

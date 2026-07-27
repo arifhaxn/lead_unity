@@ -316,6 +316,9 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
     super.dispose();
   }
 
+  bool _isValidEmail(String email) =>
+      RegExp(r'^[\w.\-]+@([\w\-]+\.)+[\w\-]{2,}$').hasMatch(email);
+
   Future<void> _submitProposal() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -355,6 +358,13 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
           return;
         }
 
+        if (!_isValidEmail(email)) {
+          setState(() => _submitState = SubmitState.idle);
+          CustomSnackBar.showError(
+              context, 'Please enter a valid email for Member ${i + 1}.');
+          return;
+        }
+
         if (uniqueIds.contains(id)) {
           setState(() => _submitState = SubmitState.idle);
           CustomSnackBar.showError(context, 'Duplicate Student ID: $id');
@@ -364,7 +374,7 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
         final cgpa = double.tryParse(cgpaRaw);
         if (cgpa == null) {
           setState(() => _submitState = SubmitState.idle);
-          CustomSnackBar.showError(context, 'Invalid CGPA for Member ${i + 1}.');
+          CustomSnackBar.showError(context, 'Please enter a valid CGPA for Member ${i + 1}.');
           return;
         }
 
@@ -428,7 +438,8 @@ class _SingleProposalFormState extends State<SingleProposalForm> {
 
     return AnimationLimiter(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
+        padding: const EdgeInsets.all(20.0) +
+            EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: WebConstraint(
           child: Form(
             key: _formKey,

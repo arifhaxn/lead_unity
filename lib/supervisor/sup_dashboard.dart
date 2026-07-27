@@ -28,7 +28,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
           Provider.of<AuthProvider>(context, listen: false); // ← add this
 
       // ✅ Register FCM token for supervisor — was completely missing
-      NotificationService.setupPushNotifications(context, ap.token ?? "");
+      NotificationService.setupPushNotifications(ap.token ?? "");
 
       dp.fetchDeadlineIfNeeded();
       dp.fetchTeamsIfNeeded();
@@ -153,7 +153,8 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
         ),
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24),
+        padding: const EdgeInsets.all(24) +
+            EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

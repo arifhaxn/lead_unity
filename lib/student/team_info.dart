@@ -227,7 +227,8 @@ class _TeamInfoScreenState extends State<TeamInfoScreen> {
               color: theme.colorScheme.primary,
               child: ListView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(20) +
+                    EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
                 children: [
         
                   // ACTIVE PROPOSAL LABEL 

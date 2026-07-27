@@ -47,7 +47,8 @@ class SupervisorTeamDetailsScreen extends StatelessWidget {
         bottom: appBarBottomLine, // Bottom border added here
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(20) +
+            EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
