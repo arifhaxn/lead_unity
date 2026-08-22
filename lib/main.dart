@@ -36,7 +36,8 @@ final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 const AndroidNotificationChannel kLeadUnityChannel = AndroidNotificationChannel(
   'leadunity_channel',
   'LeadUnity Notifications',
-  description: 'Proposal updates, supervisor assignments and defense schedules.',
+  description:
+      'Proposal updates, supervisor assignments and defense schedules.',
   importance: Importance.high,
 );
 
