@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:link_unity/services/notification_service.dart';
+import 'package:lead_unity/services/notification_service.dart';
 import '../services/api_services.dart';
 import '../../models/user_model.dart';
 import '../widgets/custom_snackbar.dart'; // 🟢 Import the custom snackbar!

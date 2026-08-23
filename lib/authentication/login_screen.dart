@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:link_unity/authentication/forgot_password_screen.dart';
-import 'package:link_unity/supervisor/sup_dashboard.dart';
-import 'package:link_unity/supervisor/cng_temp_pass_screen.dart';
-import 'package:link_unity/widgets/web_constrain.dart';
+import 'package:lead_unity/authentication/forgot_password_screen.dart';
+import 'package:lead_unity/supervisor/sup_dashboard.dart';
+import 'package:lead_unity/supervisor/cng_temp_pass_screen.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../services/api_services.dart';

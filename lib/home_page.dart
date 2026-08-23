@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/features/about_app_screen.dart';
-import 'package:link_unity/widgets/web_constrain.dart';
+import 'package:lead_unity/features/about_app_screen.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'authentication/login_screen.dart';
 import 'theme/theme_provider.dart';

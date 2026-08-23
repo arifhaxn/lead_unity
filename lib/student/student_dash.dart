@@ -1,9 +1,9 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:link_unity/services/notification_service.dart';
-import 'package:link_unity/student/submit_proposal.dart';
-import 'package:link_unity/student/request_team_screen.dart';
-import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:lead_unity/services/notification_service.dart';
+import 'package:lead_unity/student/submit_proposal.dart';
+import 'package:lead_unity/student/request_team_screen.dart';
+import 'package:lead_unity/widgets/breathing_chatbot_fab.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';

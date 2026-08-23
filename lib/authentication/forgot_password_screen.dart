@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:link_unity/authentication/reset_password_screen.dart';
-import 'package:link_unity/widgets/web_constrain.dart';
+import 'package:lead_unity/authentication/reset_password_screen.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import '../services/api_services.dart';
 import '../../widgets/animated_submit_button.dart';
 import '../../widgets/custom_snackbar.dart';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/widgets/animated_dialog.dart'; // 🟢 ADDED for the instructions pop-up
-import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-import 'package:link_unity/widgets/web_constrain.dart';
+import 'package:lead_unity/widgets/animated_dialog.dart'; // 🟢 ADDED for the instructions pop-up
+import 'package:lead_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 // 🟢 REMOVED: notification_bell.dart
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';

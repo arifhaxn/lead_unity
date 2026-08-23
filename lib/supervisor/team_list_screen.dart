@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:link_unity/supervisor/sup_team_details.dart';
-import 'package:link_unity/widgets/animated_dialog.dart';
+import 'package:lead_unity/supervisor/sup_team_details.dart';
+import 'package:lead_unity/widgets/animated_dialog.dart';
 import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';

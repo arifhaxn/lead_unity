@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/widgets/web_constrain.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../theme/theme_provider.dart';

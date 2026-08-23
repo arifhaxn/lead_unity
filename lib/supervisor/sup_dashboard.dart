@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:link_unity/widgets/breathing_chatbot_fab.dart';
-import 'package:link_unity/widgets/registration_status_badge.dart';
+import 'package:lead_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:lead_unity/widgets/registration_status_badge.dart';
 // 🟢 REMOVED: NotificationBell import is no longer needed here
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';

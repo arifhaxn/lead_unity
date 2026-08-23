@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:link_unity/widgets/animated_dialog.dart';
-import 'package:link_unity/widgets/animated_submit_button.dart';
-import 'package:link_unity/widgets/web_constrain.dart'; 
+import 'package:lead_unity/widgets/animated_dialog.dart';
+import 'package:lead_unity/widgets/animated_submit_button.dart';
+import 'package:lead_unity/widgets/web_constrain.dart'; 
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import 'student_dash.dart';
