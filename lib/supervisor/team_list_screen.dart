@@ -61,12 +61,15 @@ class _TeamListScreenState extends State<TeamListScreen> {
       }).toList();
     }
 
-    // 2. Filter for Approved "Official Teams"
+    // 2. Filter for Approved "Official Teams".
+    //    Max 4 members is a real academic rule, so it stays. There is
+    //    deliberately NO lower bound: the old `memberCount >= 3` guard hid
+    //    admin-approved teams of 1-2 members from supervisors entirely.
     teams = teams.where((t) {
       final status = (t['status'] ?? '').toString().toLowerCase().trim();
       final List? members = t['teamMembers'] is List ? t['teamMembers'] : null;
       final int memberCount = members?.length ?? 0;
-      return status == 'approved' && memberCount >= 3 && memberCount <= 4;
+      return status == 'approved' && memberCount <= 4;
     }).toList();
 
     // 3. New Sorting Logic: 1. Upcoming -> 2. No Date (TBD) -> 3. Past (Very Bottom)

@@ -73,7 +73,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
             t['teamMembers'] is List ? t['teamMembers'] : null;
         final int memberCount = members?.length ?? 0;
 
-        if (status == 'approved' && memberCount >= 3 && memberCount <= 4) {
+        // Must stay in sync with TeamListScreen: approved, max 4 members, no
+        // lower bound — or this stat disagrees with the visible list.
+        if (status == 'approved' && memberCount <= 4) {
           final assigned = (t['assignedSupervisor'] is Map)
               ? t['assignedSupervisor']['_id']
               : t['assignedSupervisor'];
