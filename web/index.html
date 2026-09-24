@@ -5,6 +5,11 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
+
+  <!-- Google Search Console ownership verification. Must stay here permanently:
+       removing it un-verifies the property. -->
+  <meta name="google-site-verification" content="Me_i9-86GRS7HneWRM7jK9gI-5cOJORDyVNicmd6I3g" />
+
   <meta name="description" content="LeadUnity is the academic portal for thesis and project proposals — form your team, submit proposals, get matched with a supervisor, and track every approval in one place.">
 
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,8 +47,120 @@
   <meta name="theme-color" content="#10B981" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#0F172A" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://leadunity.vercel.app/">
+
+  <!-- Structured data: tells Google what this site *is*, since the app itself
+       renders to a <canvas> and exposes no readable text to crawlers. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "WebApplication",
+    "name": "LeadUnity",
+    "alternateName": "LeadUnity Portal",
+    "url": "https://leadunity.vercel.app/",
+    "description": "LeadUnity is the academic portal for thesis and project proposals. Students form teams and submit proposals, supervisors review and mark them, and the department tracks every approval in one place.",
+    "applicationCategory": "EducationalApplication",
+    "applicationSubCategory": "Academic Project Management",
+    "operatingSystem": "Web, Android",
+    "browserRequirements": "Requires JavaScript",
+    "inLanguage": "en",
+    "isAccessibleForFree": true,
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "USD"
+    },
+    "image": "https://leadunity.vercel.app/og-card.png",
+    "screenshot": "https://leadunity.vercel.app/og-card.png",
+    "featureList": [
+      "Student team formation and team requests",
+      "Thesis and project proposal submission",
+      "Supervisor assignment and matching",
+      "Proposal review, approval tracking and marking",
+      "Submission deadline tracking",
+      "Push notifications for proposal updates"
+    ],
+    "author": [
+      { "@type": "Person", "name": "Arif Hasan" },
+      { "@type": "Person", "name": "Shomo Shahriar Araf" },
+      { "@type": "Person", "name": "Omio Mahim" }
+    ]
+  }
+  </script>
+
+  <style>
+    /* Pre-boot screen. The Flutter bundle is ~3 MB, so users genuinely wait
+       here — and it is the only readable text a search crawler ever gets,
+       because CanvasKit paints the real UI into a <canvas>. Removed as soon
+       as Flutter mounts its first view (see the observer below). */
+    #app-loading {
+      position: fixed; inset: 0; z-index: 2147483647;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 14px; padding: 32px 24px; margin: 0;
+      background: #0F172A; color: #E2E8F0;
+      font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      text-align: center;
+    }
+    #app-loading img { width: 76px; height: 76px; border-radius: 18px; }
+    #app-loading h1 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.01em; color: #fff; }
+    #app-loading p { margin: 0; max-width: 46ch; color: #94A3B8; }
+    #app-loading ul {
+      margin: 4px 0 0; padding: 0; list-style: none;
+      max-width: 52ch; color: #94A3B8; font-size: 14px;
+    }
+    #app-loading li { display: inline; }
+    #app-loading li:not(:last-child)::after { content: " · "; color: #475569; }
+    #app-loading .spinner {
+      margin-top: 10px; width: 26px; height: 26px; border-radius: 50%;
+      border: 3px solid rgba(255,255,255,.18); border-top-color: #10B981;
+      animation: app-spin .9s linear infinite;
+    }
+    @keyframes app-spin { to { transform: rotate(360deg); } }
+    @media (prefers-reduced-motion: reduce) { #app-loading .spinner { animation: none; } }
+  </style>
 </head>
 <body>
+  <div id="app-loading">
+    <img src="apple-touch-icon.png" width="76" height="76" alt="LeadUnity logo">
+    <h1>LeadUnity</h1>
+    <p>
+      The academic portal for thesis and project proposals. Form your team,
+      submit a proposal, get matched with a supervisor, and track every
+      approval in one place.
+    </p>
+    <ul>
+      <li>Team formation</li>
+      <li>Proposal submission</li>
+      <li>Supervisor matching</li>
+      <li>Approval tracking</li>
+      <li>Marking</li>
+    </ul>
+    <div class="spinner" role="status" aria-label="Loading LeadUnity"></div>
+    <noscript>
+      <p style="color:#F87171">
+        LeadUnity needs JavaScript to run. Please enable JavaScript, or install
+        the Android app.
+      </p>
+    </noscript>
+  </div>
+
+  <script>
+    // Drop the pre-boot screen the moment Flutter mounts its view, so it never
+    // sits on top of the running app.
+    (function () {
+      var el = document.getElementById('app-loading');
+      if (!el) return;
+      function done() { if (el && el.parentNode) { el.parentNode.removeChild(el); el = null; } }
+      if (document.querySelector('flutter-view, flt-glass-pane')) return done();
+      var obs = new MutationObserver(function () {
+        if (document.querySelector('flutter-view, flt-glass-pane')) { obs.disconnect(); done(); }
+      });
+      obs.observe(document.body, { childList: true, subtree: true });
+      // Safety net: never trap the user behind the splash if detection fails.
+      setTimeout(function () { obs.disconnect(); done(); }, 20000);
+    })();
+  </script>
+
   <script src="flutter_bootstrap.js" async></script>
 
   <script>
