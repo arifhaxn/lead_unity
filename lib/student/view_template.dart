@@ -7,8 +7,12 @@ import '../theme/theme_provider.dart';
 class ViewTemplateScreen extends StatelessWidget {
   ViewTemplateScreen({super.key});
 
-  final String templateDownloadUrl =
-      "https://docs.google.com/document/d/1BPCYOcpawc7uii39VChTyUF9Z0H-erCR/edit?usp=sharing&ouid=105632695343912870187&rtpof=true&sd=true";
+  /// Shared Drive folder holding every proposal document.
+  /// Deliberately has no `/u/0/` segment: that means "first Google account
+  /// signed in on this device", so a student on a different account would be
+  /// sent to their own Drive and see an error instead of these files.
+  final String templateFolderUrl =
+      "https://drive.google.com/drive/folders/1_5wyjqRpZ81YVP8R2SJNjohdUw6YP9Dg";
 
   final List<String> templateImages = [
     'assets/template/page1.png',
@@ -22,7 +26,7 @@ class ViewTemplateScreen extends StatelessWidget {
   ];
 
 Future<void> _launchDownload(BuildContext context) async {
-    final Uri url = Uri.parse(templateDownloadUrl);
+    final Uri url = Uri.parse(templateFolderUrl);
     try {
       // 🟢 FIX: We bypass the strict `canLaunchUrl` check entirely.
       // We just directly command the OS to open the link in the browser.
@@ -98,8 +102,8 @@ Future<void> _launchDownload(BuildContext context) async {
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _launchDownload(context),
         backgroundColor: theme.colorScheme.primary,
-        icon: const Icon(Icons.download, color: Colors.white),
-        label: const Text('Download Template',
+        icon: const Icon(Icons.folder_open, color: Colors.white),
+        label: const Text('Get All Templates',
             style: TextStyle(color: Colors.white)),
       ),
     );
