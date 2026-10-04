@@ -103,7 +103,7 @@ Future<void> _launchDownload(BuildContext context) async {
         onPressed: () => _launchDownload(context),
         backgroundColor: theme.colorScheme.primary,
         icon: const Icon(Icons.folder_open, color: Colors.white),
-        label: const Text('Get All Templates',
+        label: const Text('Download Templates',
             style: TextStyle(color: Colors.white)),
       ),
     );
