@@ -8,8 +8,17 @@ plugins {
     id "dev.flutter.flutter-gradle-plugin"
 }
 
+// Release signing credentials. Must sit AFTER the plugins {} block — Gradle
+// forbids statements before it. Kept out of git (see android/.gitignore) so the
+// keystore password never lands in the repo.
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
 android {
-    namespace = "com.example.link_unity"
+    namespace = "com.arifhaxn.leadunity"
     compileSdk = 36
     ndkVersion = "28.2.13676358"
 
@@ -25,8 +34,10 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId "com.example.leadunity"
+        // PERMANENT: Google Play locks this to the app forever at first publish,
+        // and it must keep matching the Android app registered in Firebase
+        // (google-services.json) or FCM push silently stops working.
+        applicationId "com.arifhaxn.leadunity"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdkVersion = flutter.minSdkVersion
@@ -35,11 +46,24 @@ android {
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        release {
+            if (keystorePropertiesFile.exists()) {
+                keyAlias = keystoreProperties['keyAlias']
+                keyPassword = keystoreProperties['keyPassword']
+                storeFile = file(keystoreProperties['storeFile'])
+                storePassword = keystoreProperties['storePassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.debug
+            // Falls back to debug signing only when key.properties is absent,
+            // so a fresh clone can still run `flutter run --release` locally.
+            signingConfig = keystorePropertiesFile.exists()
+                ? signingConfigs.release
+                : signingConfigs.debug
         }
     }
 }
