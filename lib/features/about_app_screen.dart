@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart'; // 🟢 NEW IMPORT
 import 'package:lead_unity/theme/theme_provider.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:provider/provider.dart';
@@ -82,80 +83,87 @@ class AboutAppScreen extends StatelessWidget {
       // 🟢 AnimationLimiter added for the entire page
       body: AnimationLimiter(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0) +
+          padding: const EdgeInsets.symmetric(
+                  horizontal: 24.0, vertical: 20.0) +
               EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            // 🟢 Staggered List conversion for Column children
-            children: AnimationConfiguration.toStaggeredList(
-              duration: const Duration(milliseconds: 400),
-              childAnimationBuilder: (widget) => SlideAnimation(
-                verticalOffset: 50.0,
-                child: FadeInAnimation(child: widget),
+          // Scroll view outside, WebConstraint inside — see WebConstraint docs.
+          // Uses the wider dashboard cap so the crew cards have room to breathe.
+          child: WebConstraint(
+            maxWidth: WebConstraint.dashboardMaxWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              // 🟢 Staggered List conversion for Column children
+              children: AnimationConfiguration.toStaggeredList(
+                duration: const Duration(milliseconds: 400),
+                childAnimationBuilder: (widget) => SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(child: widget),
+                ),
+                children: [
+                  // 🟢 Animated Logo (Pulses like the Home Page)
+                  const _AnimatedAppLogo(),
+
+                  const SizedBox(height: 16),
+                  Text(
+                    "LeadUnity",
+                    style: theme.textTheme.headlineMedium
+                        ?.copyWith(fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 4),
+                  Text("Version 1.0.0",
+                      style:
+                          TextStyle(color: theme.colorScheme.onSurfaceVariant)),
+                  const SizedBox(height: 24),
+
+                  const Text(
+                    "LeadUnity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(fontSize: 15, height: 1.6),
+                  ),
+                  const SizedBox(height: 40),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Meet the Developers",
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Card items are included in the staggered mapping
+                  ...developers.map((dev) => _buildDeveloperCard(theme, dev)),
+
+                  const SizedBox(height: 30),
+
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Supervised By",
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSupervisorCard(theme, supervisor),
+
+                  const SizedBox(height: 40),
+
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Text(
+                    "Inspired by the previous \"LU Dissertation\" app.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontStyle: FontStyle.italic,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  const SizedBox(height: 40),
+                ],
               ),
-              children: [
-                // 🟢 Animated Logo (Pulses like the Home Page)
-                const _AnimatedAppLogo(),
-                
-                const SizedBox(height: 16),
-                Text(
-                  "LeadUnity",
-                  style: theme.textTheme.headlineMedium
-                      ?.copyWith(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 4),
-                Text("Version 1.0.0",
-                    style: TextStyle(color: theme.colorScheme.onSurfaceVariant)),
-                const SizedBox(height: 24),
-
-                const Text(
-                  "LeadUnity is a comprehensive project and proposal management system designed to seamlessly connect students and supervisors, streamlining the academic evaluation process.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 15, height: 1.6),
-                ),
-                const SizedBox(height: 40),
-
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Meet the Developers",
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 16),
-
-                // Card items are included in the staggered mapping
-                ...developers.map((dev) => _buildDeveloperCard(theme, dev)),
-
-                const SizedBox(height: 30),
-
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    "Supervised By",
-                    style: theme.textTheme.titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                _buildSupervisorCard(theme, supervisor),
-
-                const SizedBox(height: 40),
-
-                const Divider(),
-                const SizedBox(height: 16),
-                Text(
-                  "Inspired by the previous \"LU Dissertation\" app.",
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontStyle: FontStyle.italic,
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                const SizedBox(height: 40),
-              ],
             ),
           ),
         ),
