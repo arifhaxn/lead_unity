@@ -266,11 +266,44 @@ class DataProvider with ChangeNotifier {
   }
 
   // ── NOTIFICATIONS CACHE ────────────────────────────────────────────────────
+  /// Raw server list. Never filtered in place — `notifications` applies the
+  /// cleared-id filter on read so a later refresh can still see every row.
   List<dynamic>? _notifications;
-  List<dynamic>? get notifications => _notifications;
+
+  /// Ids the user cleared on THIS device.
+  ///
+  /// The backend has no delete endpoint (only `/notifications/read-all`), so
+  /// "Clear all" is device-local: we remember what was dismissed and hide it.
+  /// Swap this for a real `DELETE /notifications` call when the backend grows
+  /// one — `clearAllNotifications()` is the only place that needs to change.
+  Set<String> _clearedNotificationIds = {};
+  static const _clearedKey = 'cleared_notification_ids';
+
+  List<dynamic>? get notifications {
+    if (_notifications == null) return null;
+    if (_clearedNotificationIds.isEmpty) return _notifications;
+    return _notifications!
+        .where((n) => !_clearedNotificationIds.contains(n['_id']?.toString()))
+        .toList();
+  }
+
+  /// True when there is anything on screen to clear.
+  bool get hasVisibleNotifications => (notifications?.isNotEmpty ?? false);
 
   int _unreadCount = 0;
   int get unreadCount => _unreadCount;
+
+  /// Unread count must ignore cleared rows, or the bell badge keeps counting
+  /// notifications the user can no longer see.
+  void _recomputeUnreadCount() {
+    _unreadCount =
+        (notifications ?? []).where((n) => n['isRead'] == false).length;
+  }
+
+  Future<void> _loadClearedIds(SharedPreferences prefs) async {
+    _clearedNotificationIds =
+        (prefs.getStringList(_clearedKey) ?? const <String>[]).toSet();
+  }
 
   bool _isLoadingNotifications = false;
   bool get isLoadingNotifications => _isLoadingNotifications;
@@ -286,13 +319,12 @@ class DataProvider with ChangeNotifier {
       notifyListeners();
 
       final prefs = await SharedPreferences.getInstance();
+      await _loadClearedIds(prefs);
       final cached = prefs.getString('cached_notifications');
 
       if (cached != null) {
         _notifications = json.decode(cached);
-        _unreadCount = _notifications!
-            .where((n) => n['isRead'] == false)
-            .length;
+        _recomputeUnreadCount();
         _isLoadingNotifications = false;
         notifyListeners();
       }
@@ -326,11 +358,22 @@ class DataProvider with ChangeNotifier {
       }
 
       final prefs = await SharedPreferences.getInstance();
+      await _loadClearedIds(prefs);
       final freshString = json.encode(fresh);
 
       // Always update — notifications change frequently (isRead state etc.)
       _notifications = fresh;
-      _unreadCount = fresh.where((n) => n['isRead'] == false).length;
+
+      // Drop cleared ids the server no longer returns, so this set cannot grow
+      // without bound as old notifications age out.
+      final liveIds = fresh.map((n) => n['_id']?.toString()).toSet();
+      final pruned = _clearedNotificationIds.intersection(liveIds.cast<String>());
+      if (pruned.length != _clearedNotificationIds.length) {
+        _clearedNotificationIds = pruned;
+        await prefs.setStringList(_clearedKey, pruned.toList());
+      }
+
+      _recomputeUnreadCount();
       await prefs.setString('cached_notifications', freshString);
       notifyListeners();
     } catch (e) {
@@ -356,9 +399,7 @@ class DataProvider with ChangeNotifier {
           break;
         }
       }
-      _unreadCount = _notifications!
-          .where((n) => n['isRead'] == false)
-          .length;
+      _recomputeUnreadCount();
 
       // Persist updated state to cache
       final prefs = await SharedPreferences.getInstance();
@@ -383,6 +424,49 @@ class DataProvider with ChangeNotifier {
       notifyListeners();
     }
     await _apiService.markAllNotificationsRead();
+  }
+
+  /// Hide every currently visible notification on this device.
+  ///
+  /// Device-local by necessity: the backend exposes no delete route, so the
+  /// rows still exist server-side and will still appear on other devices. We
+  /// also mark them read so the server-side unread count agrees with what the
+  /// user just did.
+  ///
+  /// Returns the ids that were cleared, so the caller can offer an undo.
+  Future<List<String>> clearAllNotifications() async {
+    final visible = notifications ?? [];
+    if (visible.isEmpty) return const [];
+
+    final ids = visible
+        .map((n) => n['_id']?.toString())
+        .whereType<String>()
+        .toList();
+
+    _clearedNotificationIds.addAll(ids);
+    for (final n in _notifications!) {
+      if (ids.contains(n['_id']?.toString())) n['isRead'] = true;
+    }
+    _recomputeUnreadCount();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_clearedKey, _clearedNotificationIds.toList());
+    await prefs.setString('cached_notifications', json.encode(_notifications));
+    notifyListeners();
+
+    await _apiService.markAllNotificationsRead();
+    return ids;
+  }
+
+  /// Undo a [clearAllNotifications] — puts the given ids back on screen.
+  Future<void> restoreClearedNotifications(List<String> ids) async {
+    if (ids.isEmpty) return;
+    _clearedNotificationIds.removeAll(ids);
+    _recomputeUnreadCount();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList(_clearedKey, _clearedNotificationIds.toList());
+    notifyListeners();
   }
 
   // data_provider.dart - Add team info cache

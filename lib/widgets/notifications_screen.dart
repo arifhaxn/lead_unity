@@ -59,6 +59,59 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
   }
 
+  /// Clearing is not reversible from the server's side (there is no delete
+  /// endpoint — see DataProvider.clearAllNotifications), so confirm first and
+  /// then offer a local undo.
+  Future<void> _confirmClearAll() async {
+    final dp = Provider.of<DataProvider>(context, listen: false);
+    final count = dp.notifications?.length ?? 0;
+    if (count == 0) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Clear all notifications?'),
+        content: Text(
+          count == 1
+              ? 'This removes 1 notification from this device.'
+              : 'This removes all $count notifications from this device.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(ctx).colorScheme.error,
+            ),
+            child: const Text('Clear all'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    final cleared = await dp.clearAllNotifications();
+    if (!mounted || cleared.isEmpty) return;
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          cleared.length == 1
+              ? '1 notification cleared'
+              : '${cleared.length} notifications cleared',
+        ),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () => dp.restoreClearedNotifications(cleared),
+        ),
+      ),
+    );
+  }
+
   String _timeAgo(String? isoString) {
     if (isoString == null) return '';
     final dt = DateTime.tryParse(isoString)?.toLocal();
@@ -103,6 +156,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   fontWeight: FontWeight.w600,
                 ),
               ),
+            ),
+          if (dp.hasVisibleNotifications)
+            IconButton(
+              icon: const Icon(Icons.delete_sweep_rounded),
+              tooltip: 'Clear all',
+              color: theme.colorScheme.onSurfaceVariant,
+              onPressed: _confirmClearAll,
             ),
         ],
       ),
