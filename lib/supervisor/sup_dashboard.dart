@@ -8,6 +8,7 @@ import '../providers/data_provider.dart';
 import 'team_list_screen.dart';
 import 'sup_list_screen.dart';
 import '../theme/app_theme.dart';
+import '../widgets/web_constrain.dart';
 import '../features/app_drawer.dart';
 import '../services/notification_service.dart';
 
@@ -121,8 +122,9 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
         leading: Builder(
           builder: (context) {
             // Check if there are any unread notifications in the DataProvider
-            final bool hasUnread = dp.notifications?.any((n) => 
-                n['isRead'] == false || n['read'] == false) ?? false;
+            final bool hasUnread = dp.notifications
+                    ?.any((n) => n['isRead'] == false || n['read'] == false) ??
+                false;
 
             return IconButton(
               icon: Stack(
@@ -140,9 +142,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                           color: Colors.redAccent,
                           shape: BoxShape.circle,
                           border: Border.all(
-                            color: theme.scaffoldBackgroundColor, 
-                            width: 1.5
-                          ),
+                              color: theme.scaffoldBackgroundColor, width: 1.5),
                         ),
                       ),
                     ),
@@ -157,87 +157,93 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24) +
             EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text('Welcome Back,',
-                          style: TextStyle(
-                              fontSize: 14,
-                              color: theme.colorScheme.onSurfaceVariant)),
-                      Text(
-                        displayName,
-                        style: theme.textTheme.displaySmall
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                    ],
+        // Scroll view outside, WebConstraint inside — see WebConstraint docs.
+        // Dashboards use the wider cap; 700 leaves the stat cards cramped.
+        child: WebConstraint(
+          maxWidth: WebConstraint.dashboardMaxWidth,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Welcome Back,',
+                            style: TextStyle(
+                                fontSize: 14,
+                                color: theme.colorScheme.onSurfaceVariant)),
+                        Text(
+                          displayName,
+                          style: theme.textTheme.displaySmall
+                              ?.copyWith(fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                if (!(dp.deadline == null && dp.isLoadingDeadline))
-                  RegistrationStatusBadge(deadline: dp.deadline),
-              ],
-            ),
-            const SizedBox(height: 30),
-            dp.isLoadingTeams && allTeamsList.isEmpty
-                ? _buildSkeletonProgressBanner(theme)
-                : _buildProgressBanner(
-                    theme, totalAssigned, completed, pending, progressPercent),
-            const SizedBox(height: 24),
-            _AnimatedDashboardCard(
-              title: "My Teams",
-              subtitle: "Personal Markings",
-              icon: Icons.groups_rounded,
-              bgColor: const Color(0xFF4338CA),
-              iconColor: const Color.fromARGB(255, 24, 255, 143),
-              height: 120,
-              horizontalLayout: true,
-              onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (_) => const TeamListScreen(onlyMyTeams: true))),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _AnimatedDashboardCard(
-                    title: "All Teams",
-                    subtitle: "Board Markings",
-                    icon: Icons.format_list_bulleted_rounded,
-                    bgColor: const Color.fromARGB(255, 74, 65, 91),
-                    iconColor: const Color.fromARGB(255, 255, 156, 252),
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) =>
-                                const TeamListScreen(onlyMyTeams: false))),
+                  if (!(dp.deadline == null && dp.isLoadingDeadline))
+                    RegistrationStatusBadge(deadline: dp.deadline),
+                ],
+              ),
+              const SizedBox(height: 30),
+              dp.isLoadingTeams && allTeamsList.isEmpty
+                  ? _buildSkeletonProgressBanner(theme)
+                  : _buildProgressBanner(theme, totalAssigned, completed,
+                      pending, progressPercent),
+              const SizedBox(height: 24),
+              _AnimatedDashboardCard(
+                title: "My Teams",
+                subtitle: "Personal Markings",
+                icon: Icons.groups_rounded,
+                bgColor: const Color(0xFF4338CA),
+                iconColor: const Color.fromARGB(255, 24, 255, 143),
+                height: 120,
+                horizontalLayout: true,
+                onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (_) =>
+                            const TeamListScreen(onlyMyTeams: true))),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Expanded(
+                    child: _AnimatedDashboardCard(
+                      title: "All Teams",
+                      subtitle: "Board Markings",
+                      icon: Icons.format_list_bulleted_rounded,
+                      bgColor: const Color.fromARGB(255, 74, 65, 91),
+                      iconColor: const Color.fromARGB(255, 255, 156, 252),
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) =>
+                                  const TeamListScreen(onlyMyTeams: false))),
+                    ),
                   ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: _AnimatedDashboardCard(
-                    title: "Supervisors",
-                    subtitle: "Colleagues",
-                    icon: Icons.person_pin_circle_rounded,
-                    bgColor: const Color(0xFF0E7490),
-                    iconColor: Colors.cyanAccent,
-                    onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const SupervisorListScreen())),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: _AnimatedDashboardCard(
+                      title: "Supervisors",
+                      subtitle: "Colleagues",
+                      icon: Icons.person_pin_circle_rounded,
+                      bgColor: const Color(0xFF0E7490),
+                      iconColor: Colors.cyanAccent,
+                      onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                              builder: (_) => const SupervisorListScreen())),
+                    ),
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 40),
-          ],
+                ],
+              ),
+              const SizedBox(height: 40),
+            ],
+          ),
         ),
       ),
       floatingActionButton: const BreathingChatbotFab(),
@@ -251,7 +257,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
       decoration: BoxDecoration(
         color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(16), 
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
             color: theme.colorScheme.primary.withOpacity(0.15), width: 1.5),
         boxShadow: [
@@ -272,7 +278,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 "Assigned Progress",
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
-                  fontSize: 15, 
+                  fontSize: 15,
                   color: theme.colorScheme.onSurface,
                 ),
               ),
@@ -280,14 +286,13 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
                 "${(progress * 100).toInt()}%",
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  fontSize: 16, 
+                  fontSize: 16,
                   color: theme.colorScheme.primary,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-
           Container(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(10),
@@ -300,7 +305,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               borderRadius: BorderRadius.circular(9),
               child: LinearProgressIndicator(
                 value: progress,
-                minHeight: 6, 
+                minHeight: 6,
                 backgroundColor: theme.colorScheme.primary.withOpacity(0.05),
                 valueColor: AlwaysStoppedAnimation<Color>(
                   progress == 1.0 && total > 0
@@ -311,7 +316,6 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
             ),
           ),
           const SizedBox(height: 12),
-
           Row(
             children: [
               _buildStatColumn(
@@ -352,7 +356,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
 
   Widget _buildVerticalDivider() {
     return Container(
-      height: 20, 
+      height: 20,
       width: 1,
       color: Colors.grey.withOpacity(0.3),
       margin: const EdgeInsets.symmetric(horizontal: 10),
@@ -367,17 +371,17 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
           Text(
             value,
             style: TextStyle(
-              fontSize: 19, 
+              fontSize: 19,
               fontWeight: FontWeight.bold,
               color: theme.colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 2), 
+          const SizedBox(height: 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
-                width: 6, 
+                width: 6,
                 height: 6,
                 decoration: BoxDecoration(
                   color: color,
@@ -388,7 +392,7 @@ class _SupervisorDashboardState extends State<SupervisorDashboard> {
               Text(
                 label,
                 style: TextStyle(
-                  fontSize: 12, 
+                  fontSize: 12,
                   color: theme.colorScheme.onSurfaceVariant,
                   fontWeight: FontWeight.w500,
                 ),

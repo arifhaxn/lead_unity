@@ -4,6 +4,7 @@ import 'package:lead_unity/services/notification_service.dart';
 import 'package:lead_unity/student/submit_proposal.dart';
 import 'package:lead_unity/student/request_team_screen.dart';
 import 'package:lead_unity/widgets/breathing_chatbot_fab.dart';
+import 'package:lead_unity/widgets/web_constrain.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/auth_provider.dart';
@@ -139,19 +140,23 @@ class _StudentDashboardState extends State<StudentDashboard> {
 
     Map<String, dynamic>? proposal = dp.myTeam;
 
-    // 🟢 FIX: Force the dashboard to always look at the newest proposal 
+    // 🟢 FIX: Force the dashboard to always look at the newest proposal
     // instead of letting the backend default to the oldest one.
     if (dp.myProposals != null && dp.myProposals!.isNotEmpty) {
       final sortedProposals = List<dynamic>.from(dp.myProposals!);
-      
+
       sortedProposals.sort((a, b) {
         // Fallback to Epoch 0 if date strings are missing, preventing crashes
-        final dateA = DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        final dateB = DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ?? DateTime.fromMillisecondsSinceEpoch(0);
-        
+        final dateA =
+            DateTime.tryParse(a['updatedAt'] ?? a['createdAt'] ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+        final dateB =
+            DateTime.tryParse(b['updatedAt'] ?? b['createdAt'] ?? '') ??
+                DateTime.fromMillisecondsSinceEpoch(0);
+
         return dateB.compareTo(dateA); // Descending order (Newest first)
       });
-      
+
       // Grab the most recent submission
       proposal = sortedProposals.first as Map<String, dynamic>?;
     }
@@ -195,7 +200,7 @@ class _StudentDashboardState extends State<StudentDashboard> {
           },
         ),
       ),
-body: RefreshIndicator(
+      body: RefreshIndicator(
         onRefresh: () async {
           await Future.wait([
             authProvider.refreshUserProfile(),
@@ -204,41 +209,46 @@ body: RefreshIndicator(
             dp.fetchMyTeamIfNeeded(forceRefresh: true),
             dp.fetchMyProposalsIfNeeded(forceRefresh: true),
             dp.fetchSupervisorsIfNeeded(context: context, forceRefresh: true),
-            
+
             // 🟣 THIS is the one that triggers the purple push pill!
-            dp.fetchNotificationsIfNeeded(context: context, forceRefresh: true), 
+            dp.fetchNotificationsIfNeeded(context: context, forceRefresh: true),
           ]);
         },
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.all(24.0) +
               EdgeInsets.only(bottom: MediaQuery.of(context).padding.bottom),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Hello,', style: theme.textTheme.titleLarge),
-                        Text(displayName,
-                            style: theme.textTheme.displaySmall
-                                ?.copyWith(fontWeight: FontWeight.bold)),
-                      ],
+          // Scroll view outside, WebConstraint inside — see WebConstraint docs.
+          // Dashboards use the wider cap; 700 leaves the stat cards cramped.
+          child: WebConstraint(
+            maxWidth: WebConstraint.dashboardMaxWidth,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Hello,', style: theme.textTheme.titleLarge),
+                          Text(displayName,
+                              style: theme.textTheme.displaySmall
+                                  ?.copyWith(fontWeight: FontWeight.bold)),
+                        ],
+                      ),
                     ),
-                  ),
-                  _buildTeamStatusBadge(proposal, dp),
-                ],
-              ),
-              const SizedBox(height: 20),
-              _buildStatusBanner(proposal, dp),
-              const SizedBox(height: 30),
-              _buildActionCards(dp.deadline),
-            ],
+                    _buildTeamStatusBadge(proposal, dp),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                _buildStatusBanner(proposal, dp),
+                const SizedBox(height: 30),
+                _buildActionCards(dp.deadline),
+              ],
+            ),
           ),
         ),
       ),
