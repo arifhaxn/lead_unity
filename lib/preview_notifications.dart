@@ -1,10 +1,4 @@
-// TEMPORARY preview entry point — not part of the app.
-// Renders the real NotificationsScreen against fake cached data so the
-// Clear-all button can be reviewed without logging in.
-//
-//   flutter run -d chrome -t lib/preview_notifications.dart
-//
-// Delete this file once the design is signed off.
+// TEMPORARY preview entry point — deleted after visual check.
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -15,8 +9,7 @@ import 'providers/data_provider.dart';
 import 'theme/app_theme.dart';
 import 'widgets/notifications_screen.dart';
 
-String _ago(Duration d) =>
-    DateTime.now().subtract(d).toUtc().toIso8601String();
+String _ago(Duration d) => DateTime.now().subtract(d).toUtc().toIso8601String();
 
 final _fake = [
   {
@@ -55,10 +48,6 @@ final _fake = [
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Seed the cache, then let DataProvider load from it. The screen's own
-  // forceRefresh will fail (no backend here) but the catch preserves whatever
-  // the cache already populated.
   SharedPreferences.setMockInitialValues({
     'cached_notifications': json.encode(_fake),
   });

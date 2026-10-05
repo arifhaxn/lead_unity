@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/data_provider.dart';
+import 'custom_snackbar.dart';
 
 class NotificationsScreen extends StatefulWidget {
   const NotificationsScreen({super.key});
@@ -97,18 +98,16 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     final cleared = await dp.clearAllNotifications();
     if (!mounted || cleared.isEmpty) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          cleared.length == 1
-              ? '1 notification cleared'
-              : '${cleared.length} notifications cleared',
-        ),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () => dp.restoreClearedNotifications(cleared),
-        ),
-      ),
+    // Uses the app's own top pill (same component as the purple push toast and
+    // the network banner) rather than a Material SnackBar, which rendered as a
+    // white box at the bottom and did not match anything else in the app.
+    CustomSnackBar.showSuccess(
+      context,
+      cleared.length == 1
+          ? '1 notification cleared'
+          : '${cleared.length} notifications cleared',
+      actionLabel: 'Undo',
+      onAction: () => dp.restoreClearedNotifications(cleared),
     );
   }
 

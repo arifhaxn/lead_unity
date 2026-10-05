@@ -10,10 +10,18 @@ class CustomSnackBar {
     required String message,
     required IconData icon,
     required Color color,
+    String? actionLabel,
+    VoidCallback? onAction,
   }) {
     // 1. Clear any existing snackbar immediately
     _currentOverlay?.remove();
     _timer?.cancel();
+
+    void dismiss() {
+      _timer?.cancel();
+      _currentOverlay?.remove();
+      _currentOverlay = null;
+    }
 
     // 2. Create the new Overlay
     _currentOverlay = OverlayEntry(
@@ -21,6 +29,13 @@ class CustomSnackBar {
         message: message,
         icon: icon,
         color: color,
+        actionLabel: actionLabel,
+        onAction: onAction == null
+            ? null
+            : () {
+                dismiss();
+                onAction();
+              },
         onDismissed: () {
           _currentOverlay?.remove();
           _currentOverlay = null;
@@ -31,13 +46,17 @@ class CustomSnackBar {
     // 3. Inject it into the screen
     Overlay.of(context).insert(_currentOverlay!);
 
-    // 4. Auto-remove after 3 seconds
-    _timer = Timer(const Duration(seconds: 3), () {
-      if (_currentOverlay != null) {
-        _currentOverlay?.remove();
-        _currentOverlay = null;
-      }
-    });
+    // 4. Auto-remove. A pill with an action gets a little longer so the user
+    //    has time to actually reach for it.
+    _timer = Timer(
+      Duration(seconds: actionLabel == null ? 3 : 5),
+      () {
+        if (_currentOverlay != null) {
+          _currentOverlay?.remove();
+          _currentOverlay = null;
+        }
+      },
+    );
   }
 
   // 🔴 Error Message (Solid Vibrant Red)
@@ -51,12 +70,22 @@ class CustomSnackBar {
   }
 
   // 🟢 Success Message (Solid Vibrant Green)
-  static void showSuccess(BuildContext context, String message) {
+  //
+  // [actionLabel] / [onAction] are optional — pass them for an inline button
+  // (e.g. "UNDO"). Existing call sites are unaffected.
+  static void showSuccess(
+    BuildContext context,
+    String message, {
+    String? actionLabel,
+    VoidCallback? onAction,
+  }) {
     _showCustomBar(
       context: context,
       message: message,
       icon: Icons.check_circle_outline_rounded,
       color: const Color(0xFF10B981),
+      actionLabel: actionLabel,
+      onAction: onAction,
     );
   }
 
@@ -87,12 +116,16 @@ class _TopSlidingToast extends StatefulWidget {
   final IconData icon;
   final Color color;
   final VoidCallback onDismissed;
+  final String? actionLabel;
+  final VoidCallback? onAction;
 
   const _TopSlidingToast({
     required this.message,
     required this.icon,
     required this.color,
     required this.onDismissed,
+    this.actionLabel,
+    this.onAction,
   });
 
   @override
@@ -121,11 +154,16 @@ class _TopSlidingToastState extends State<_TopSlidingToast> with SingleTickerPro
 
     _controller.forward();
 
-    Future.delayed(const Duration(milliseconds: 2500), () {
-      if (mounted) {
-        _controller.reverse().then((_) => widget.onDismissed());
-      }
-    });
+    // Stay up longer when there is an action to tap. Must remain shorter than
+    // the matching timer in _showCustomBar so the slide-out finishes first.
+    Future.delayed(
+      Duration(milliseconds: widget.actionLabel == null ? 2500 : 4500),
+      () {
+        if (mounted) {
+          _controller.reverse().then((_) => widget.onDismissed());
+        }
+      },
+    );
   }
 
   
@@ -181,6 +219,34 @@ class _TopSlidingToastState extends State<_TopSlidingToast> with SingleTickerPro
                         ),
                       ),
                     ),
+                    if (widget.actionLabel != null) ...[
+                      const SizedBox(width: 10),
+                      // Hairline divider so the label reads as a button rather
+                      // than a run-on of the message.
+                      Container(
+                        width: 1,
+                        height: 16,
+                        color: Colors.white.withOpacity(0.35),
+                      ),
+                      const SizedBox(width: 4),
+                      InkWell(
+                        onTap: widget.onAction,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 4),
+                          child: Text(
+                            widget.actionLabel!.toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.6,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ),

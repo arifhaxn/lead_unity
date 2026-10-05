@@ -88,56 +88,45 @@
   </script>
 
   <style>
-    /* Pre-boot screen. The Flutter bundle is ~3 MB, so users genuinely wait
-       here — and it is the only readable text a search crawler ever gets,
-       because CanvasKit paints the real UI into a <canvas>. Removed as soon
-       as Flutter mounts its first view (see the observer below). */
+    /* Pre-boot splash. Deliberately mirrors lib/widgets/splash_screen.dart —
+       same logo, same centring, same backgrounds — so the handover to Flutter
+       is invisible rather than looking like a second screen.
+       It also carries the only text a crawler can read: CanvasKit paints the
+       real UI into a <canvas>, so without this the page has no indexable
+       content at all. Removed the moment Flutter mounts (observer below).
+
+       Colours track AppTheme exactly:
+         light  scaffoldBackgroundColor = AppColors.surfaceAlt   #ECFDF5
+         dark   scaffoldBackgroundColor = AppColors.nightSurface #0F172A
+       Getting this wrong flashes dark->light on light-mode devices. */
     #app-loading {
       position: fixed; inset: 0; z-index: 2147483647;
       display: flex; flex-direction: column;
       align-items: center; justify-content: center;
-      gap: 14px; padding: 32px 24px; margin: 0;
-      background: #0F172A; color: #E2E8F0;
+      gap: 18px; padding: 32px 24px; margin: 0;
+      background: #ECFDF5; color: #0F172A;
       font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
       text-align: center;
+      animation: app-fade .45s ease-out both;
     }
-    #app-loading img { width: 76px; height: 76px; border-radius: 18px; }
-    #app-loading h1 { margin: 6px 0 0; font-size: 26px; letter-spacing: -0.01em; color: #fff; }
-    #app-loading p { margin: 0; max-width: 46ch; color: #94A3B8; }
-    #app-loading ul {
-      margin: 4px 0 0; padding: 0; list-style: none;
-      max-width: 52ch; color: #94A3B8; font-size: 14px;
+    #app-loading img { width: auto; height: 150px; }  /* matches splash_screen.dart */
+    #app-loading h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+    #app-loading p { margin: 0; max-width: 42ch; font-size: 15px; color: #475569; }
+    @keyframes app-fade { from { opacity: 0 } to { opacity: 1 } }
+    @media (prefers-color-scheme: dark) {
+      #app-loading { background: #0F172A; color: #F1F5F9; }
+      #app-loading p { color: #CBD5E1; }
     }
-    #app-loading li { display: inline; }
-    #app-loading li:not(:last-child)::after { content: " · "; color: #475569; }
-    #app-loading .spinner {
-      margin-top: 10px; width: 26px; height: 26px; border-radius: 50%;
-      border: 3px solid rgba(255,255,255,.18); border-top-color: #10B981;
-      animation: app-spin .9s linear infinite;
-    }
-    @keyframes app-spin { to { transform: rotate(360deg); } }
-    @media (prefers-reduced-motion: reduce) { #app-loading .spinner { animation: none; } }
+    @media (prefers-reduced-motion: reduce) { #app-loading { animation: none } }
   </style>
 </head>
 <body>
   <div id="app-loading">
-    <img src="apple-touch-icon.png" width="76" height="76" alt="LeadUnity logo">
+    <img src="logo-mark.png" width="129" height="150" alt="LeadUnity logo">
     <h1>LeadUnity</h1>
-    <p>
-      The academic portal for thesis and project proposals. Form your team,
-      submit a proposal, get matched with a supervisor, and track every
-      approval in one place.
-    </p>
-    <ul>
-      <li>Team formation</li>
-      <li>Proposal submission</li>
-      <li>Supervisor matching</li>
-      <li>Approval tracking</li>
-      <li>Marking</li>
-    </ul>
-    <div class="spinner" role="status" aria-label="Loading LeadUnity"></div>
+    <p>The academic portal for thesis and project proposals.</p>
     <noscript>
-      <p style="color:#F87171">
+      <p style="color:#DC2626">
         LeadUnity needs JavaScript to run. Please enable JavaScript, or install
         the Android app.
       </p>
